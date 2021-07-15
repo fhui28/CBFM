@@ -1,0 +1,279 @@
+#' @title Simulate data from a CBFM
+#' 
+#' @description 
+#' `r lifecycle::badge("stable")`
+#' 
+#' Simulates spatio-temporal multivariate abundance data based on a CBFM and given the various parameter values as appropriate.
+#'
+#' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
+#' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (or at least for the majority of them!); please see [mgcv::formula.gam()] for more details. 
+#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument). 
+#' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param offset A matrix of offset terms.  
+#' @param betas A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.
+#' @param basis_effects_mat A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.   
+#' @param Sigma A list containing the covariance matrix of the species-specific regression coefficients, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{Sigma$Space} must be supplied.
+#' @param G A list containing the baseline between-species correlation matrix, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{G$Space} must be supplied.
+#' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as the simulated response matrix is to be.
+#' @param dispparam A vector of species-specific dispersion parameters, to be used for distributions that require one.  
+#' @param powerparam A vector of species-specific power parameters, to be used for distributions that require one. 
+#' @param offset A matrix of offset terms.  
+#' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
+#' @param only_y If \code{TRUE}, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if \code{FALSE}, then additional information about is returned.
+#' 
+#' @details 
+#' Simulates spatio-temporal multivariate abundance data from a community-level basis function model (CBFM). For the purposes of the package, the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
+#' 
+#' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
+#'
+#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. 
+#' 
+#' As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the i-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the j-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating 
+#' 
+#' \deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
+#' 
+#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
+#' 
+#' Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion and power parameters as appropriate.
+#' 
+#' \subsection{Distributions}{
+#' 
+#' Currently the following response distributions are permitted (in alphabetal order): 
+#' \describe{
+#' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{binomial(link = "logit")}: }{Binomial distribution, noting only the logit link is permitted. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)} where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
+#' \item{\code{Gamma(link = "log")}: }{Gamma distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{gaussian(link = "identity")}: }{Gaussian or normal distribution, noting only the identity link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi}, where \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
+#' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
+#' }
+#' }
+#' 
+#' @return 
+#' If \code{only_y = TRUE}, then the simulated spatio-temporal multivariate abundance response matrix. Otherwise, a list with the following components (if applicable):
+#' \describe{
+#' \item{y }{The simulated spatio-temporal multivariate abundance response matrix.}
+#' \item{basis_effects_mat }{The matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. This either comes directly from the supplied argument or is a simulated as discussed in Details above.}
+#' \item{linear_predictor }{The matrix of linear predictors \eqn{\eta_{ij}}'s.}
+#' \item{linear_predictor_B }{The matrix of linear predictors corresponding to the basis functions only i.e., \eqn{b_i^\top a_j}'s.}
+#' }
+#' 
+#' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
+#' 
+#' @seealso [CBFM()] for fitting CBFMs and [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit.
+#' 
+#' @examples
+#' \donttest{
+#' library(autoFRK)
+#' library(FRK)
+#' library(MASS)
+#' library(mvtnorm)
+#' library(sp)
+#' library(RandomFields)
+#' library(tidyverse)
+#' 
+#' set.seed(2021)
+#' num_sites <- 500 # 500 (units) sites 
+#' num_spp <- 50 # Number of species
+#' num_X <- 4 # Number of regression slopes
+#' 
+#' spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_intercepts <- runif(num_spp, -2, 0)
+#' 
+#' # Simulate spatial coordinates and environmental covariate components
+#' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
+#' X <- rmvnorm(num_sites, mean = rep(0,4)) 
+#' colnames(X) <- c("temp", "depth", "chla", "O2")
+#' dat <- data.frame(xy, X)
+#' useformula <- ~ temp + depth + chla + O2
+#' 
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' 
+#' true_Sigma_space <- rWishart(1, num_basisfunctions+1, 
+#' diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
+#' true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
+#' cov2cor
+#' 
+#' 
+#' # Generates spatial multivariate presence-absence data 
+#' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
+#' simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
+#' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' 
+#' # Generates spatial multivariate presence-absence data 
+#' # Manually supply basis function coefficients 
+#' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+#' simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
+#' B_space = basisfunctions)
+#' 
+#' 
+#' # Generates spatial multivariate count data 
+#' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
+#' spp_dispersion <- runif(num_spp)
+#' simy <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
+#' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
+#' dispparam = spp_dispersion, max_resp = 20000, 
+#' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' }
+#' 
+#' @export
+#' 
+#' @import Matrix 
+#' @importFrom mgcv gam model.matrix.gam
+#' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois 
+#' @importFrom tweedie rtweedie
+#' 
+
+create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
+     betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
+     trial_size = 1, dispparam = NULL, powerparam = NULL, max_resp = Inf, only_y = FALSE) {
+     
+     if(!(family$family %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie"))) #"ztpoisson","ztnegative.binomial"
+          stop("Family is currently not supported. Sorry!")
+     
+     formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+     nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
+     X <- model.matrix(nullfit)
+     rm(tmp_formula, nullfit)
+
+     num_units <- nrow(X)
+     num_spp <- nrow(betas)
+     
+     .check_family(family = family, y = Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE), trial_size = trial_size) 
+     
+     if(is.null(basis_effects_mat)) {
+          .check_B_forms(B_space = B_space, B_time = B_time, B_spacetime = B_spacetime, G = G, Sigma = Sigma, extra_check = TRUE)
+          }
+     
+     B <- cbind(B_space, B_time, B_spacetime)
+     B <- Matrix(B, sparse = TRUE)
+     if(is.null(rownames(B)))
+          rownames(B) <- paste0("units", 1:nrow(B))
+
+     if(!is.null(basis_effects_mat)) {
+          message("Because basis_effects_mat is supplied, inputs for Sigma and G are ignored.")
+          if(ncol(B) != ncol(basis_effects_mat))
+               stop("The number of columns in cbind(B_space, B_time, B_spacetime) must match that the number of columns in basis_effects_mat.")
+          }
+     
+     ## Generate species coefficients for basis functions, if required
+     basismat_notsupplied <- is.null(basis_effects_mat)
+     if(basismat_notsupplied) {
+          basis_effects_mat <- NULL
+     
+          if(!is.null(B_space)) {
+               true_cholGSigma <- kronecker(t(chol(G$space)), t(chol(Sigma$space)))
+               basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_space)*num_spp), nrow = num_spp, byrow = TRUE))
+               rm(true_cholGSigma)
+               }
+          if(!is.null(B_time)) {
+               true_cholGSigma <- kronecker(t(chol(G$time)), t(chol(Sigma$time)))
+               basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_time)*num_spp), nrow = num_spp, byrow = TRUE))
+               rm(true_cholGSigma)
+               }
+          if(!is.null(B_spacetime)) {
+               true_cholGSigma <- kronecker(t(chol(G$spacetime)), t(chol(Sigma$spacetime)))
+               basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_spacetime)*num_spp), nrow = num_spp, byrow = TRUE))
+               rm(true_cholGSigma)
+               }
+          }
+          
+          
+     ## Generate response
+     true_eta_B <- tcrossprod(B, basis_effects_mat)
+     true_eta <- tcrossprod(X, betas) + true_eta_B
+     if(!is.null(offset))
+          true_eta <- true_eta + offset
+     
+     sim_y <- matrix(NA, nrow = num_units, ncol = num_spp, dimnames = list(units = paste0("unit", 1:num_units), response = paste0("spp", 1:num_spp)))
+     for(j in 1:num_spp) {
+          if(family$family == "beta")
+               sim_y[,j] <- rbeta(num_units, shape1 = binomial()$linkinv(true_eta[,j])*dispparam[j], shape2 = (1-binomial()$linkinv(true_eta[,j]))*dispparam[j])
+          if(family$family == "binomial")
+               sim_y[,j] <- rbinom(num_units, size = ifelse(length(trial_size) == 1, trial_size, trial_size[,j]), prob = family$linkinv(true_eta[,j]))
+          if(family$family == "Gamma")
+               sim_y[,j] <- rgamma(num_units, scale = exp(true_eta[,j])*dispparam[j], shape = 1/dispparam[j])
+          if(family$family == "gaussian")
+               sim_y[,j] <- rnorm(num_units, mean = true_eta[,j], sd = sqrt(dispparam[j]))
+          if(family$family == "negative.binomial")
+               sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j])
+          if(family$family == "poisson")
+               sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
+          if(family$family == "tweedie")
+               sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+#           if(family$family == "ztpoisson")
+#                sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
+#           if(family$family == "ztnegative.binomial")
+#                sim_y[,j] <- rztnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j]) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
+          }
+
+     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma")) {
+          inner_counter <- 0
+          while(any(sim_y > max_resp) & inner_counter < 10) {
+               if(basismat_notsupplied) {
+                    basis_effects_mat <- NULL
+               
+                    if(!is.null(B_space)) {
+                         true_cholGSigma <- kronecker(t(chol(G$space)), t(chol(Sigma$space)))
+                         basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_space)*num_spp), nrow = num_spp, byrow = TRUE))
+                         rm(true_cholGSigma)
+                         }
+                    if(!is.null(B_time)) {
+                         true_cholGSigma <- kronecker(t(chol(G$time)), t(chol(Sigma$time)))
+                         basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_time)*num_spp), nrow = num_spp, byrow = TRUE))
+                         rm(true_cholGSigma)
+                         }
+                    if(!is.null(B_spacetime)) {
+                         true_cholGSigma <- kronecker(t(chol(G$spacetime)), t(chol(Sigma$spacetime)))
+                         basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_spacetime)*num_spp), nrow = num_spp, byrow = TRUE))
+                         rm(true_cholGSigma)
+                         }
+                    
+                    true_eta_B <- tcrossprod(B, basis_effects_mat)
+                    true_eta <- tcrossprod(X, betas) + true_eta_B
+                    if(!is.null(offset))
+                         true_eta <- true_eta + offset
+                    }
+               
+               for(j in 1:num_spp)
+                    {
+                    if(family$family == "beta")
+                         sim_y[,j] <- rbeta(num_units, shape1 = binomial()$linkinv(true_eta[,j])*dispparam[j], shape2 = (1-binomial()$linkinv(true_eta[,j]))*dispparam[j])
+                    if(family$family == "binomial")
+                         sim_y[,j] <- rbinom(num_units, size = ifelse(length(trial_size) == 1, trial_size, trial_size[,j]), prob = family$linkinv(true_eta[,j]))
+                    if(family$family == "Gamma")
+                         sim_y[,j] <- rgamma(num_units, scale = exp(true_eta[,j])*dispparam[j], shape = 1/dispparam[j])
+                    if(family$family == "gaussian")
+                         sim_y[,j] <- rnorm(num_units, mean = true_eta[,j], sd = sqrt(dispparam[j]))
+                    if(family$family == "negative.binomial")
+                         sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j])
+                    if(family$family == "poisson")
+                         sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
+                    if(family$family == "tweedie")
+                         sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+#                     if(family$family == "ztpoisson")
+#                          sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) 
+#                     if(family$family == "ztnegative.binomial")
+#                          sim_y[,j] <- rztnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j]) 
+                    }
+               inner_counter <- inner_counter + 1
+               }
+          }
+          
+     out <- list(y = sim_y, basis_effects_mat = basis_effects_mat, linear_predictor = true_eta, linear_predictor_B = true_eta_B)
+     
+     if(only_y)
+          out <- sim_y
+     return(out)
+     }
+
