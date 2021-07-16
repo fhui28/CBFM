@@ -1,5 +1,10 @@
 # CBFM (Community-level basis function models)
 
+  <!-- badges: start -->
+  [![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM)
+  [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+  <!-- badges: end -->
+  
 `CBFM` is an R package for spatio-temporal joint species distributing modeling of multivariate abundance data, based on the use of community-level basis functions. As an alternative (but by no means necessarily superior) approach to the increasingly popular framework generalized linear latent variable model (GLLVM), and as the name suggests, community-level basis function models (CBFMs) build on the idea of fixed-rank kriging (FRK), where spatial and/or temporally indexed basis functions are included to account for spatio-temporal correlations both within and between species. In doing, CBFMs bear a lot of similarity to and thus can be set up as a type of generalized additive model (GAM).
 
 
