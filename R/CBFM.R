@@ -1,17 +1,7 @@
 ##----------------------
 ## Community-level Basis Function Model (CBFM): Estimation done using PQL, plus maximum Laplace approximated (restricted) log-likelihood estimation for the covariance matrices
 
-## Changes since version 5
-# - Replace beta with probit to do beta with logistic, in line with logistic regression for binomial data
-# - zero truncated Poisson and negative binomial removed due to a dependency on countreg <install.packages("countreg", repos="http://R-Forge.R-project.org") ## Moved fron pscl>, which is not on CRAN. I do not think it will be used much anyway so all goo!
-# - Some name changes
-
-## TODO: 
-## - Making it into an R package [summary.CBFM.R help file remains to be done and need to firmed up after coverage results from simulations come through; termplot.CBFM for parameteric plots; coefplot.CBFM] and pushing onto to github for version control
-## - Add confint functions, after summary is done
-## - Any additional stickers? use_github_actions() and badges associated with that 
-## - ZIP/ZINB with just a specifc-specific zero inflation probability? Hard to do with smooths
-## - Computational Bottleneck of G and Sigma
+## See Github issues for TODO list
 ##----------------------
 
 #' @title Community-level basis function models (CBFMs)
