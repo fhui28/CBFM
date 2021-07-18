@@ -14,10 +14,13 @@ Down the road, you can install the package on CRAN using:
 ```
 install.packages("CBFM")
 ```
-Currently, the developmental version of `CBFM` is available and can be installed from github with the help of `devtools` package using:
+Currently, *a* version of `CBFM` is available and can be installed from github with the help of `devtools` package using:
 ```
 devtools::install_github("fhui28/CBFM")
 ```
+
+Alternatively, or things above do not work, you may download a (supposedly) stable release of `CBFM` by choosing the latest release on the right hand side of this Github webpage, and install it manually on your machine.
+
 
 # Getting started
 
