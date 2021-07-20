@@ -34,16 +34,9 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
      
         if(G_control$method == "LA") {
                 ## Note weights are on a per-species basis i.e., site runs faster than species
-                if(family$family[1] != "tweedie") 
-                        weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                                      zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
-                if(family$family[1] == "tweedie") {
-                        two_minus_powerparam <- rep(2-powerparam, each = nrow(B))
-                        exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*linpred_vec)
-                        exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*linpred_vec)
-                        weights_mat <-  rep(1/dispparam, each = nrow(B)) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y_vec*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
-                        rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
-                        }
+                weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                              powerparam = rep(powerparam, each = nrow(B)), 
+                                              zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
 
                 ## Set up to to REML as opposed to ML
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
@@ -216,16 +209,9 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
 
         if(Sigma_control$method == "LA") {
                 ## Note weights are on a per-species basis i.e., site runs faster than species
-                if(family$family[1] != "tweedie") 
-                        weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                                      zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
-                if(family$family[1] == "tweedie") {
-                        two_minus_powerparam <- rep(2-powerparam, each = nrow(B))
-                        exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*linpred_vec)
-                        exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*linpred_vec)
-                        weights_mat <-  rep(1/dispparam, each = nrow(B)) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y_vec*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
-                        rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
-                        }
+                weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                              powerparam = rep(powerparam, each = nrow(B)), 
+                                              zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
 
                 ## Set up to to REML as opposed to ML
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)

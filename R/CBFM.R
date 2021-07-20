@@ -1997,25 +1997,16 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(stderrors) {          
           if(control$trace)
                message("Calculating (components of) the covariance (standard error) matrix...")
-               
-          if(family$family[1] != "tweedie") {
-               weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictor, y = y, 
-                    phi = matrix(out_CBFM$dispparam, num_units, num_spp, byrow = TRUE), 
-                    zeroinfl_prob_intercept = matrix(out_CBFM$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 
-                    trial_size = trial_size, domore = TRUE)
-               if(family$family[1] != "zipoisson")
-                    weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
-               if(family$family[1] == "zipoisson")
-                    weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
-               }
-          if(family$family[1] == "tweedie") {
-               two_minus_powerparam <- matrix(2-out_CBFM$powerparam, num_units, num_spp, byrow = TRUE)
-               exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*out_CBFM$linear_predictor)
-               exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*out_CBFM$linear_predictor)
-               weights_mat <-  matrix(1/out_CBFM$dispparam, num_units, num_spp, byrow = TRUE) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
-               rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
-               }               
-               
+          
+          weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictor, y = y, 
+                                        phi = matrix(out_CBFM$dispparam, num_units, num_spp, byrow = TRUE), 
+                                        powerparam = matrix(out_CBFM$powerparam, num_units, num_spp, byrow = TRUE),
+                                        zeroinfl_prob_intercept = matrix(out_CBFM$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 
+                                        trial_size = trial_size, domore = TRUE)
+          if(family$family[1] != "zipoisson")
+               weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
+          if(family$family[1] == "zipoisson")
+               weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
           
           # Bottom right of covariance matrix
           D1minusCAinvB_fn <- function(j) {                
