@@ -15,11 +15,11 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. 
 #' 
-#' This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included in the fitted CBFM. 
+#' This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included in the fitted CBFM. For zero-inflated distributions, it will also return the estimated species-specific probabilities of zero-inflation on the logit scale i.e., \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. 
 #' 
 #' This function does \emph{not} return the estimated regression coefficients associated with the basis functions i.e., the \eqn{\hat{a}_j}'s. These can be obtained from \code{object$basis_effects_mat}.
 #'
-#' @return A matrix of estimated species-specific regression coefficients corresponding to the model matrix created, where the number of rows is equal to the number of species.
+#' @return A matrix of estimated species-specific regression coefficients corresponding to the model matrix created, where the number of rows is equal to the number of species. For zero-inflated distributions, it returns a list containing both the matrix of estimated species-specific regression coefficients corresponding to the model matrix created, and a vector of estimated species-specific probabilities of zero-inflation on the logit scale.
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #'
@@ -70,7 +70,7 @@
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 #' tcrossprod(true_lvs, spp_loadings)
 #' simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
-#' prob = binomial()$linkinv(eta)), nrow = num_sites)
+#' prob = plogis(eta)), nrow = num_sites)
 #' rm(X, mm, spp_loadings, true_lvs, xy, eta)
 #' 
 #' 
@@ -95,5 +95,8 @@ coef.CBFM <- function(object, ...) {
     if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
 
-     return(object$betas)
+     out <- object$betas
+     if(object$family$family[1] == "zipoisson")
+          out <- list(betas = object$betas, zeroinfl_prob = object$zeroinfl_prob_intercept)
+     return(out)
      }

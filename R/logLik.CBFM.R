@@ -99,7 +99,9 @@ logLik.CBFM <- function(object, ...) {
      if(object$family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","ztnegative.binomial"))                       
           num_params <- num_params + length(object$dispparam)
      if(object$family$family %in% c("tweedie"))                        
-          num_params <- num_params + 1
+          num_params <- num_params + length(object$powerparam)
+     if(object$family$family %in% c("zipoisson"))                        
+          num_params <- num_params + length(object$zeroinfl_prob)
      
      
      attributes(logL)$df <- num_params

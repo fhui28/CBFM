@@ -6,9 +6,9 @@
 #' A specified family object for the beta distribution using the logit link function. 
 #'
 #' @details 
-#' This family object was cretated specifically for fitting CBFMs to continuous data between but excluding zero and one. 
+#' This family object was created specifically for fitting CBFMs. 
 #' 
-#' @return A matrix of fitted values, with the same dimensions as the response matrix used in the fitting process.
+#' @return An object of class "family".
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 

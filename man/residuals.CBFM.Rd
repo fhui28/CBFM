@@ -9,7 +9,7 @@
 \arguments{
 \item{object}{An object of class "CBFM".}
 
-\item{type}{The type of residuals which should be returned. Currently the options available are: "reponse" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.}
+\item{type}{The type of residuals which should be returned. Currently the options available are: "repose" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.}
 
 \item{seed}{This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.}
 
@@ -24,7 +24,10 @@ A matrix of residuals.
 Calculate various types of residuals from a fitted \code{CBFM} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
 }
 \details{
-Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then the \code{type = "response"} corresponds to raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success".
+Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then:
+
+For \code{type = "response"}, this returns the raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success".
+For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_j)\hat{\mu}_{ij}} where \eqn{\hat{\pi}_j} is the estimated species-specific probability of zero inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
 
 For \code{type = "pearson"}, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance.
 

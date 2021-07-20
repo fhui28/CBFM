@@ -12,7 +12,7 @@
 \item{...}{Not used in this case.}
 }
 \value{
-A matrix of estimated species-specific regression coefficients corresponding to the model matrix created, where the number of rows is equal to the number of species.
+A matrix of estimated species-specific regression coefficients corresponding to the model matrix created, where the number of rows is equal to the number of species. For zero-inflated distributions, it returns a list containing both the matrix of estimated species-specific regression coefficients corresponding to the model matrix created, and a vector of estimated species-specific probabilities of zero-inflation on the logit scale.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
@@ -26,7 +26,7 @@ For the purposes of the package, the CBFM is characterized by the following mean
 
 where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j.
 
-This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included in the fitted CBFM.
+This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included in the fitted CBFM. For zero-inflated distributions, it will also return the estimated species-specific probabilities of zero-inflation on the logit scale i.e., \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation.
 
 This function does \emph{not} return the estimated regression coefficients associated with the basis functions i.e., the \eqn{\hat{a}_j}'s. These can be obtained from \code{object$basis_effects_mat}.
 }
@@ -75,7 +75,7 @@ set.seed(NULL)
 eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 tcrossprod(true_lvs, spp_loadings)
 simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
-prob = binomial()$linkinv(eta)), nrow = num_sites)
+prob = plogis(eta)), nrow = num_sites)
 rm(X, mm, spp_loadings, true_lvs, xy, eta)
 
 

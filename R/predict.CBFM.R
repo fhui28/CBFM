@@ -12,6 +12,7 @@
 #' @param new_B_time A matrix of new temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.  
 #' @param new_B_spacetime A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.  
 #' @param type The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.
+#' Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the *actual predicted mean values* of the distribution, consistent with what \code{object$fitted} returns. 
 #' @param se_fit When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.
 #' @param coverage The coverage probability of the uncertainty intervals for prediction. Defaults to 0.95, which corresponds to 95% uncertainty intervals.
 #' @param ncores To speed up calculation of the standard error estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
@@ -20,9 +21,12 @@
 #' @details 
 #' The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained on the associated large sample normality result of the estimated parameters. Both of these are similar to [mgcv::predict.gam()].
 #' 
+#' The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}. 
+#' 
+#' 
 #' @return If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
 #' \item{fit: }{A matrix of predicted values.}
-#' \item{stderr: }{A matrix of estimated standard errors associated with the predictions.}
+#' \item{stderr: }{A matrix of standard errors associated with the uncertainty intervals for the predictions.}
 #' \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the predictions.}
 #' \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 #' Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned. 
@@ -40,121 +44,159 @@
 #' 
 #' @import foreach 
 #' @import Matrix
+#' @importFrom abind abind
 #' @importFrom doParallel registerDoParallel
 #' @importFrom mgcv gam model.matrix.gam predict.gam
 #' @importFrom parallel detectCores
-#' @importFrom stats qnorm
+#' @importFrom stats qnorm plogis
 #' @md
 
 predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, type = c("link", "response"), se_fit = FALSE, coverage = 0.95, ncores = NULL, ...) {
-     if(is.null(ncores))
-          registerDoParallel(cores = detectCores()-1)
-     if(!is.null(ncores))
-          registerDoParallel(cores = ncores)
-     
-     
-     if(!is.null(manualX)) {
-          new_X <- manualX
-          warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula_X and/or newdata.")
-          }
-     if(is.null(manualX)) {
-          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-          nullfit <- gam(tmp_formula, data = data.frame(response = rnorm(nrow(object$data)), object$data), fit = TRUE, control = list(maxit = 1))
-          if(is.null(newdata))
-               new_X <- predict.gam(nullfit, type = "lpmatrix")
-          if(!is.null(newdata))
-               new_X <- predict.gam(nullfit, newdata = data.frame(newdata), type = "lpmatrix")
-          rm(tmp_formula, nullfit)
-          }
-     if(ncol(new_X) != ncol(object$betas))
-          stop("Number of columns in new_X should match the number of columns in new_X.")
+        if(is.null(ncores))
+                registerDoParallel(cores = detectCores()-1)
+        if(!is.null(ncores))
+                registerDoParallel(cores = ncores)
+        
+        if(!is.null(manualX)) {
+                new_X <- manualX
+                warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula_X and/or newdata.")
+                }
+        if(is.null(manualX)) {
+                tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+                nullfit <- gam(tmp_formula, data = data.frame(response = rnorm(nrow(object$data)), object$data), fit = TRUE, control = list(maxit = 1))
+                if(is.null(newdata))
+                        new_X <- predict.gam(nullfit, type = "lpmatrix")
+                if(!is.null(newdata))
+                        new_X <- predict.gam(nullfit, newdata = data.frame(newdata), type = "lpmatrix")
+                rm(tmp_formula, nullfit)
+                }
+        if(ncol(new_X) != ncol(object$betas))
+                stop("Number of columns in new_X should match the number of columns in new_X.")
 
-     newB <- NULL
-     if(!is.null(new_B_space)) {
-          if(object$num_B_space != ncol(new_B_space))
-               stop("The number of columns of new_B_space does not object$num_B_space.")
-          newB <- cbind(newB, new_B_space)
-          }
-     if(!is.null(new_B_time)) {
-          if(object$num_B_time != ncol(new_B_time))
-               stop("The number of columns of new_B_time does not object$num_B_time.")
-          newB <- cbind(newB, new_B_time)
-          }
-     if(!is.null(new_B_spacetime)) {
-          if(object$num_B_spacetime != ncol(new_B_spacetime))
-               stop("The number of columns of new_B_spacetime does not object$num_B_spacetime.")
-          newB <- cbind(newB, new_B_spacetime)
-          }
-     if(is.null(newB))
-          newB <- object$B
-     if(!is.null(newB)) {
-          if(nrow(newB) != nrow(new_X))
-               stop("newB does not contain the same number of rows as the model matrix created based on object and/or newdata.")
-          if(ncol(newB) != ncol(object$basis_effects_mat))
-               stop("newB does not contain the same number of columns as the number of columns in object$basis_effects_mat.")
-          }
+        new_B <- NULL
+        if(!is.null(new_B_space)) {
+                if(object$num_B_space != ncol(new_B_space))
+                        stop("The number of columns of new_B_space does not object$num_B_space.")
+                new_B <- cbind(new_B, new_B_space)
+                }
+        if(!is.null(new_B_time)) {
+                if(object$num_B_time != ncol(new_B_time))
+                        stop("The number of columns of new_B_time does not object$num_B_time.")
+                new_B <- cbind(new_B, new_B_time)
+                }
+        if(!is.null(new_B_spacetime)) {
+                if(object$num_B_spacetime != ncol(new_B_spacetime))
+                        stop("The number of columns of new_B_spacetime does not object$num_B_spacetime.")
+                new_B <- cbind(new_B, new_B_spacetime)
+                }
+        if(is.null(new_B))
+                new_B <- object$B
+        if(!is.null(new_B)) {
+                if(nrow(new_B) != nrow(new_X))
+                        stop("new_B does not contain the same number of rows as the model matrix created based on object and/or newdata.")
+                if(ncol(new_B) != ncol(object$basis_effects_mat))
+                        stop("new_B does not contain the same number of columns as the number of columns in object$basis_effects_mat.")
+                }
           
-     type <- match.arg(type, choices = c("link", "response"))
-     num_spp <- nrow(object$betas)
-     num_X <- ncol(new_X)
-     num_basisfns <- ncol(newB)
+        type <- match.arg(type, choices = c("link", "response"))
+        num_spp <- nrow(object$betas)
+        num_X <- ncol(new_X)
+        num_basisfns <- ncol(new_B)
      
      
-     if(se_fit == TRUE & object$stderrors == FALSE)
-          stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.")
+        if(se_fit == TRUE & object$stderrors == FALSE)
+                stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.")
 
-     ptpred <- tcrossprod(new_X, object$betas) + tcrossprod(newB, object$basis_effects_mat)
-     ptpred <- as.matrix(ptpred)
-     colnames(ptpred) <- rownames(object$betas)          
+        ptpred <- tcrossprod(new_X, object$betas) + tcrossprod(new_B, object$basis_effects_mat)
+        ptpred <- as.matrix(ptpred)
+        colnames(ptpred) <- rownames(object$betas)          
 
-     if(!se_fit) {
-          if(type == "response") {
-               if(object$family$family != "ztnegative.binomial")
-                    ptpred <- object$family$linkinv(ptpred)
+        if(!se_fit) {
+                if(type == "response") {
+                        if(!(object$family$family %in% c("ztnegative.binomial","zipoisson")))
+                                ptpred <- object$family$linkinv(ptpred)
+                        if(object$family$family == "zipoisson")
+                                ptpred <- object$family$linkinv(ptpred) * matrix(1-plogis(object$zeroinfl_prob_intercept), nrow(new_X), num_spp, byrow = TRUE)
                # if(object$family$family == "ztnegative.binomial")
                #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
                }
           return(ptpred)
           }
      
-     if(se_fit) {
-          ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
+        if(se_fit) {
+                ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
+                need_sim <- FALSE
+                if(object$family$family[1] == "zipoisson" & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated componet, which does not need simulation
+                        need_sim <- TRUE
           
-          stderr1_fun <- function(j) {
-               out1 <- object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE]
-               return(diag(new_X %*% tcrossprod(out1, new_X)))
-               }
-          stderr2_fun <- function(j) {
-               out1 <- object$covar_components$topright[[j]]
-               return(diag(new_X %*% tcrossprod(out1, newB)))
-               }
-          stderr3_fun <- function(j) {
-               out1 <- object$covar_components$bottomright[[j]]
-               return(diag(newB %*% tcrossprod(out1, newB)))
-               }
+                if(!need_sim) {
+                        stderr1_fun <- function(j) {
+                                out1 <- object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE]
+                                return(diag(new_X %*% tcrossprod(out1, new_X)))
+                                }
+                        stderr2_fun <- function(j, num_X, num_basisfns) {
+                                out1 <- .extractcovarblocks_topright(j = j, Q = object$covar_components$topright, num_X = num_X, num_basisfns = num_basisfns)
+                                return(diag(new_X %*% tcrossprod(out1, new_B)))
+                                }
+                        stderr3_fun <- function(j, num_basisfns) {
+                                out1 <- .extractcovarblocks_bottomright(j = j, Q = object$covar_components$bottomright, num_basisfns = num_basisfns)
+                                return(diag(new_B %*% tcrossprod(out1, new_B)))
+                                }
 
-          stderr <- foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr1_fun(j = j)
-          stderr <- stderr + 2 * foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr2_fun(j = j)
-          stderr <- stderr + foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr3_fun(j = j)          
-          stderr <- as.matrix(stderr)
-          colnames(stderr) <- rownames(object$betas)    
+                        stderr <- foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr1_fun(j = j)
+                        stderr <- stderr + 2 * foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr2_fun(j = j, num_X = num_X, num_basisfns = num_basisfns)
+                        stderr <- stderr + foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr3_fun(j = j, num_basisfns = num_basisfns)          
+                        stderr <- as.matrix(stderr)
+                        colnames(stderr) <- rownames(object$betas)    
           
-          alllower <- ptpred - ci_alpha * sqrt(stderr) 
-          allupper <- ptpred + ci_alpha * sqrt(stderr)
-          if(type == "response") {
-               if(object$family$family != "ztnegative.binomial") {
-                    ptpred <- object$family$linkinv(ptpred)
-                    alllower <- object$family$linkinv(alllower)
-                    allupper <- object$family$linkinv(allupper)
-                    }
-               # if(object$family$family == "ztnegative.binomial") {
-               #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
-               #      alllower <- object$family$linkinv(eta = alllower, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
-               #      allupper <- object$family$linkinv(eta = allupper, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
-               #      }
-               }
-          
-          return(list(fit = ptpred, stderr = sqrt(stderr), lower = alllower, upper = allupper))
-          }
-     }
-     
+                        alllower <- ptpred - ci_alpha * sqrt(stderr) 
+                        allupper <- ptpred + ci_alpha * sqrt(stderr)
+                        if(type == "response") {
+                                if(object$family$family != "ztnegative.binomial") {
+                                        ptpred <- object$family$linkinv(ptpred)
+                                        alllower <- object$family$linkinv(alllower)
+                                        allupper <- object$family$linkinv(allupper)
+                                        }
+                   # if(object$family$family == "ztnegative.binomial") {
+                   #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
+                   #      alllower <- object$family$linkinv(eta = alllower, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
+                   #      allupper <- object$family$linkinv(eta = allupper, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
+                   #      }
+                                }
+                        }
+
+                if(need_sim) {
+                        ## UP TO HERE!
+                        num_reps <- 400
+                
+                        if(object$family$family[1] == "zipoisson" & type == "response") {
+                                mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$basis_effects_mat)))
+                                bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
+                                                                  cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
+                                bigcholcovar <- t(chol(bigcholcovar))
+                    
+                                innerzip_predfn <- function(j) {
+                                        parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
+                                        zeroinfl_prob_sim <- plogis(parameters_sim[,1])
+                                        betas_sim <- parameters_sim[,2:(num_X+1), drop=FALSE]
+                                        basiseff_sim <- parameters_sim[,-(1:(num_X+1)), drop=FALSE]
+                        
+                                        ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                                        ptpred <- as.matrix(object$family$linkinv(ptpred) * matrix(1-zeroinfl_prob_sim, nrow(new_X), num_spp, byrow = TRUE))
+                                        return(ptpred)
+                                        }
+                    
+                                allpreds <- foreach(j = 1:num_reps) %dopar% innerzip_predfn(j = j)
+                                rm(bigcholcovar, mu_vec)
+                                allpreds <- abind(allpreds, along = 3)
+                                ptpred <- apply(allpreds, c(1,2), mean)
+                                stderr <- apply(allpreds, c(1,2), var)
+                                alllower <- apply(allpreds, c(1,2), quantile, prob = (1-coverage)/2)
+                                allupper <- apply(allpreds, c(1,2), quantile, prob = coverage + (1-coverage)/2) 
+                                rm(allpreds)
+                                gc()
+                                }
+                        }
+                return(list(fit = ptpred, stderr = sqrt(stderr), lower = alllower, upper = allupper))
+                }
+        }

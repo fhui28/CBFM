@@ -21,16 +21,17 @@
 #' @param ncores To speed up fitting, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as \code{y}.
-#' @param dofit Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compiliation directory; please see the \code{TMB_directories} argument below.
+#' @param dofit Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compilation directory; please see the \code{TMB_directories} argument below.
 #' @param stderrors Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed. 
-#' @param start_params Starting values for the CBFM. If desired, then a list shoulf be supplied, which must contain at least one the following terms: 
+#' @param start_params Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms: 
 #' \itemize{
 #' \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.} 
 #' \item{basis_effect_mat: }{A matrix of starting values for the species-specific regression coefficients related to the combined matrix of basis functions. Again, the number of rows is equal to the number of species, while the number of columns should equal to \code{ncol(B_space, B_time, B_spacetime)} (or whatever the supplied basis functions are).}
 #' \item{dispparam: }{A vector of starting values for the species-specific dispersion parameters, to be used for distributions that require one.}
 #' \item{powerparam: }{A vector of starting values for the species-specific power parameters, to be used for distributions that require one.}
+#' \item{zeroinfl_prob: }{A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. }
 #' }
-#' @param TMB_directories A list wuth two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a verison of the C++ file will be copied to the \code{compile} directory.
+#' @param TMB_directories A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.
 #' @param control A list of parameters for controlling the fitting process for the "outer" PQL estimation part of the CBFM. This should be a list with the following arguments:
 #' \itemize{
 #' \item{maxit: }{The maximum number of iterations for the outer algorithm.} 
@@ -90,6 +91,8 @@
 #'    
 #' Having said that, it is in principle possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular dataset, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this is also strongly dependent more on the type of basis functions used. 
 #' 
+#' **Note:** For zero-inflated distributions such as the zero-inflated Poisson distribution, it is the mean of the non-zero inflated component that is modeled and *not* the mean of the entire distribution.
+#' 
 #' In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. Specifically, in this package we assume follow a multivariate normal distribution as follows:
 #'   
 #' \deqn{(a_1,\ldots,a_m) \sim N(0, kronecker(G, \Sigma)),} 
@@ -116,6 +119,7 @@
 #' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
 #' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 #' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
+#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 #' }
 #' 
 #' 
@@ -127,11 +131,11 @@
 #' \describe{
 #' \item{\code{B_space}: }{We have found that the multi-resolution thin-plate spline basis functions (Tzeng and Huang, 2018), as implemented in [autoFRK::mrts()], work fairly well here as spatial basis functions. They are simple to use and require the user to only supply the number of basis functions, which itself is tied to the resolution at which the practitioner wants to model their spatial correlations. For spatial multivariate abundance data we have usually found that 50 or less spatial basis functions of such type are required.
 #' 
-#' Another option for spatial basis functions is to use [FRK::auto_basis()], which produces basis functions that are sparse in design but consequently require \emph{many} more in number compared to the multi-resolution thin-plate splines mentioned above. This approach is more customizable however, with the choice of resolutions, basis function centers, and apreture among other choices; please see Zammit-Mangion and Cressie (2017) and Wilke et al. (2019) for more details.}
-#' \item{\code{B_time}: }{Both of the approaches mentioned above for \code{B_space} can also be applied here, although with temporal basis functions we have generally found the approach implemented in [FRK::auto_basis()] to work satisfactorily in many cases, given their customizability and sparsity (local support). The multi-resolution thin-plate spline basis functions approach, when applied soley in the 1-D temporal dimension, can produce long-term temporal trends that may be undesirable.}
+#' Another option for spatial basis functions is to use [FRK::auto_basis()], which produces basis functions that are sparse in design but consequently require \emph{many} more in number compared to the multi-resolution thin-plate splines mentioned above. This approach is more customizable however, with the choice of resolutions, basis function centers, and aperture among other choices; please see Zammit-Mangion and Cressie (2017) and Wilke et al. (2019) for more details.}
+#' \item{\code{B_time}: }{Both of the approaches mentioned above for \code{B_space} can also be applied here, although with temporal basis functions we have generally found the approach implemented in [FRK::auto_basis()] to work satisfactorily in many cases, given their customizability and sparsity (local support). The multi-resolution thin-plate spline basis functions approach, when applied solely in the 1-D temporal dimension, can produce long-term temporal trends that may be undesirable.}
 #' \item{\code{B_spacetime}: }{A general and most parsimonious starting point for constructing spatio-temporal basis functions is to make use of a tensor-product form (analogous to [mgcv::te()]). That is, after constructing a set of spatial and a set of temporal basis functions, we can use the [tensorproduct()] function to construct the tensor-product and include them \code{B_spacetime}. 
 #' 
-#' It is recommended that both 'ingredient' basis functions used in the tensor-product are sparse in design to faciliate computation e.g., as implemented in [FRK::auto_basis()]; see the [FRK::FRK-package()] package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same 'ingredient' basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to act different resolutions of the spatio-temporal correlation.} 
+#' It is recommended that both 'ingredient' basis functions used in the tensor-product are sparse in design to facilitate computation e.g., as implemented in [FRK::auto_basis()]; see the [FRK::FRK-package()] package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same 'ingredient' basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to act different resolutions of the spatio-temporal correlation.} 
 #' }
 #' 
 #' ## A note on estimation and inference
@@ -140,7 +144,7 @@
 #' 
 #' Standard errors and resulting techniques like confidence intervals are based on the approximate large sample distribution of the regression coefficients, and use the so-called Bayesian posterior covariance matrix for the coefficients, similar to (but not as sophisticated as!) what is provided  [mgcv::summary.gam()]. Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}. They can lead to standard errors that are potentially too small, so please keep this in mind. 
 #' 
-#' Also, the current estimation approach does not provide uncertainty quatification of \eqn{\Sigma} and \eqn{G}, analogus to how the [mgcv] package (at least bu default) does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!  
+#' Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}, analogous to how the [mgcv] package (at least bu default) does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!  
 #' 
 #' 
 #' @return An object of class "CBFM" includes the following components, not necessarily in the order below (and as appropriate):
@@ -155,12 +159,13 @@
 #' \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.} 
 #' \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
 #' \item{logLik: }{The value of the PQL likelihood upon convergence.}
-#' \item{betas: }{The estimated matrix of species-specific regresson coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
-#' \item{basis_effects_mat: }{The estimated matrix of species-specific regresson coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
+#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
+#' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
 #' \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
-#' \item{linear_predictor: }{The estimated matrix of linear predictors. }
-#' \item{fitted: }{The estimated matrix of fitted values. }
+#' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
+#' \item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. }
+#' \item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.}
 #' \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 #' \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 #' \item{Sigma_time/Loading_Sigma_time/nugget_Sigma_time: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied.}
@@ -168,17 +173,20 @@
 #' \item{Sigma_spacetime/Loading_Sigma_spacetime/nugget_Sigma_spacetime: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied.}
 #' \item{G_spacetime/Loading_G_spacetime/nugget_G_spacetime: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied.}
 #' \item{stderrors: }{The supplied argument for \code{stderrors} i.e., whether standard errors were calculated.}
-#' \item{covar_components: }{If \code{stderrors = TRUE}, then a list containing with the following components: 1) \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}.; 2) \code{topright}, which is a list containing components of the top-right block of the full Bayesian posterior covariance matrix (each element in the list corresponds to one species). The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}.; 3) \code{bottomright}, which is a list containing components of the bottom-right block of the full Bayesian posterior covariance matrix (each element in the list corresponds to one species). The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
-#' 
-#' Note that to save memory, rather than returning the full Bayesian posterior covariance matrix, only relevant sub-blocks that are needed for standard errors and inference/prediction are returned. 
+#' \item{covar_components: }{If \code{stderrors = TRUE}, then a list containing with the following components: 
+#' 1) \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, and the species-specific zero-inflated probabilities on the logit scale if the response distribution involved one;
+#' 2) \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}; 
+#' 3) \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 #' 
 #' Please use the [summary()] function to obtain standard errors and confidence interval limits in a more user-friendly form.}
 #' 
 #'
 #' @details # Warning
-#' CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functios from the space-time coordinate of each observational unit. Please do not use them for data that is not spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in [gllvm::gllvm()]. 
+#' CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are **not** spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in [gllvm::gllvm()]. 
 #' 
-#' Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, analogous to [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quatification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable. 
+#' Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above.
+#' 
+#' Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, analogous to [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable. 
 #'
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -257,6 +265,7 @@
 #' spp_intercepts <- runif(num_spp, -2, 0)
 #' 
 #' # Simulate spatial coordinates and environmental covariate components
+#' # We will use this information in later examples as well
 #' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 #' X <- rmvnorm(num_sites, mean = rep(0,4)) 
 #' colnames(X) <- c("temp", "depth", "chla", "O2")
@@ -266,6 +275,7 @@
 #' as.matrix
 #' 
 #' # Simulate latent variable component
+#' # We will use this information in later examples as well
 #' true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
 #' x = xy$x, y = xy$y, n = 2)@data %>% 
 #' as.matrix
@@ -273,17 +283,19 @@
 #' set.seed(NULL)
 #' 
 #' # Simulate spatial multivariate abundance data (presence-absence)
+#' # We will use this information in later examples as well
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 #' tcrossprod(true_lvs, spp_loadings)
 #' simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
-#' prob = binomial()$linkinv(eta)), nrow = num_sites)
+#' prob = plogis(eta)), nrow = num_sites)
 #' 
 #' # Form training and test sets
-#' simy_train <- simy[1:500,]
-#' simy_test <- simy[501:1000,]
 #' dat_train <- dat[1:500,]
 #' dat_test <- dat[501:1000,]
+#' simy_train <- simy[1:500,]
+#' simy_test <- simy[501:1000,]
 #' rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
+#' 
 #' 
 #' # Fit stacked GLM as a baseline
 #' fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
@@ -312,6 +324,7 @@
 #' 
 #' summary(fitcbfm) %>% 
 #' str
+#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -373,11 +386,23 @@
 #' ## Example 1b: Repeat Example 1a but illustrate the use of smoothing terms in CBFM
 #' ## Since the true model only involves parametric terms, then we do not expect its performance
 #' ## to be as good as assuming the right form for the mean model.
-#' ## It is purely for illusttation purposes. 
-#' ## Please note this will take a while to run...get a cup of tea! 
+#' ## It is purely for illustration purposes. 
+#' ## Please note this will take a while to run...get a cup of tea and stretch your legs! 
 #' ##------------------------------
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # This is the same set up as Example 1a
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' # Training set basis functions
+#' train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' # Testing set basis functions
+#' test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' predict(newx = dat_test[,c("x","y")]) %>% 
+#' as.matrix %>%
+#' {.[,-c(1)]} 
+#' 
 #' # Fit CBFM 
-#' # Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 #' tic <- proc.time()
 #' fitcbfm_gam <- CBFM(y = simy_train, formula_X = ~ s(temp) + s(depth) + s(chla) + s(O2), 
 #' data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
@@ -386,6 +411,7 @@
 #' 
 #' summary(fitcbfm_gam) %>% 
 #' str
+#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_cbfm_gam <- predict(fitcbfm_gam, newdata = dat_test, type = "response", 
@@ -427,21 +453,35 @@
 #' 
 #' 
 #' ##------------------------------
-#' ## Example 1c: Repeat Example 1a but illustrate applications to counts 
+#' ## Example 1c: Repeat Example 1a but illustrate applications to Poisson count data 
 #' ##------------------------------
-#' # Poisson counts first
+#' # Simulate spatial multivariate abundance data
 #' simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta)), nrow = num_sites)
 #' 
 #' # Form training and test sets
 #' simy_train <- simy[1:500,]
 #' simy_test <- simy[501:1000,]
 #' 
+#' 
 #' # Fit stacked GLM as a baseline
 #' fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = "poisson", 
 #' data = dat_train)
 #' 
+#' 
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # This is the same set up as examples above
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' # Training set basis functions
+#' train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' # Testing set basis functions
+#' test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' predict(newx = dat_test[,c("x","y")]) %>% 
+#' as.matrix %>%
+#' {.[,-c(1)]} 
+#' 
 #' # Fit Poisson CBFM 
-#' # Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
 #' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -451,6 +491,7 @@
 #' 
 #' summary(fitcbfm) %>% 
 #' str
+#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -497,7 +538,10 @@
 #' theme_bw()
 #' 
 #' 
-#' # Now simulate overdispersed counts
+#' ##------------------------------
+#' ## Example 1d: Repeat Example 1a but illustrate applications to negative binomial count data 
+#' ##------------------------------
+#' # Simulate spatial multivariate abundance data
 #' spp_dispersion <- runif(num_spp)
 #' simy <- matrix(rnbinom(num_sites * num_spp, mu = exp(eta), 
 #' size = matrix(1/spp_dispersion, nrow = num_sites, ncol = num_spp, byrow = TRUE)),
@@ -507,15 +551,30 @@
 #' simy_train <- simy[1:500,]
 #' simy_test <- simy[501:1000,]
 #' 
+
 #' # Fit stacked GLM as a baseline
-#' # Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 #' fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = "negative.binomial",
 #' data = dat_train)
 #' 
+#' 
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # This is the same set up as examples above
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' # Training set basis functions
+#' train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' # Testing set basis functions
+#' test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' predict(newx = dat_test[,c("x","y")]) %>% 
+#' as.matrix %>%
+#' {.[,-c(1)]} 
+#' 
 #' # Fit negative binomial CBFM
-#' ## Please note the negative binomial distribution is not necessarily required for 
-#' ## overdispersed count data, since the latent variables can to some degree account for
-#' ## overdispersion. 
+#' # Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
+#' # Please note the negative binomial distribution is not necessarily required for 
+#' # overdispersed count data, since the latent variables can to some degree account for
+#' # overdispersion. 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
 #' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -523,8 +582,9 @@
 #' toc <- proc.time()
 #' toc - tic
 #' 
-#' #' summary(fitcbfm) %>% 
+#' summary(fitcbfm) %>% 
 #' str
+#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -573,9 +633,116 @@
 #' theme_bw()
 #' 
 #' 
+#' ##------------------------------
+#' ## Example 1e: Repeat Example 1a but illustrate applications to ZIP count data 
+#' ##------------------------------
+#' library(pscl)
+#' 
+#' # Probability of zero-inflation 
+#' spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5) 
+#' 
+#' # Simulate spatial multivariate abundance data
+#' component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, 
+#' prob = matrix(spp_zeroinfl_prob, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
+#' simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta) * (1-component_ind)), 
+#' num_sites, num_spp)
+#' rm(component_ind)
+#' 
+#' # Form training and test sets
+#' simy_train <- simy[1:500,]
+#' simy_test <- simy[501:1000,]
+#' 
+#' 
+#' # Fit stacked ZIP regression models as a baseline
+#' fitstacked <- NULL 
+#' for(j in 1:num_spp) {
+#' fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, 
+#' data = data.frame(resp = simy_train[,j], dat_train))
+#' }
+#' 
+#' 
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # This is the same set up as examples above
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' # Training set basis functions
+#' train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' # Testing set basis functions
+#' test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' predict(newx = dat_test[,c("x","y")]) %>% 
+#' as.matrix %>%
+#' {.[,-c(1)]} 
+#' 
+#' # Fit zero-inflated Poisson CBFM
+#' tic <- proc.time()
+#' useformula <- ~ temp + depth + chla + O2
+#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' B_space = train_basisfunctions, family = zipoisson(), control = list(trace = 1))
+#' toc <- proc.time()
+#' toc - tic
+#' 
+#' summary(fitcbfm) %>% 
+#' str
+#' 
+#' 
+#' # Calculate predictions onto test dataset
+#' predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+#' newdata = dat_test, type = "response"))
+#' predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
+#' new_B_space = test_basisfunctions)
+#' 
+#' # Evaluation predictions
+#' # Pseudo R-squared across species
+#' pseudoR2 <- data.frame(
+#' stacked = sapply(1:num_spp, function(j) { 
+#' out <- cor(predictions_stacked[,j], simy_test[,j], method = "spearman")
+#' out^2 * sign(out)     
+#' }),
+#' cbfm = sapply(1:num_spp, function(j) { 
+#' out <- cor(predictions_cbfm[,j], simy_test[,j], method = "spearman")
+#' out^2 * sign(out)     
+#' })
+#' )
+#' 
+#' boxplot(pseudoR2, main = "Pseudo-R2", names = c("Stacked GLM", "CBFM"))
+#' 
+#' ggplot(pseudoR2, aes(x = stacked, y = cbfm)) +
+#' geom_point() +
+#' geom_abline(intercept = 0, slope = 1, linetype = 2) +
+#' labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
+#' theme_bw()
+#' 
+#' # Predictive deviance across species (lower is better)
+#' # Need to define density of zero-inflated Poisson distribution first (or get it from a package)
+#' dlzipois <- function(y, lambda, p0) {
+#' logp <- log(1-p0) + dpois(y, lambda = lambda, log=TRUE)
+#' logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
+#' return(logp)
+#' }
+#' preddeviance <- data.frame(
+#' stacked = sapply(1:num_spp, function(j) { 
+#' -2*sum(dlzipois(simy_test[,j], lambda = predictions_stacked[,j], 
+#' p0 = plogis(fitstacked[[j]]$coefficients$zero[1])))
+#' }),
+#' cbfm = sapply(1:num_spp, function(j) { 
+#' -2*sum(dlzipois(simy_test[,j], lambda = predictions_cbfm[,j], 
+#' p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j])))
+#' })
+#' )
+#' 
+#' boxplot(preddeviance, main = "Deviance", names = c("Stacked GLM", "CBFM"))
+#' 
+#' ggplot(preddeviance, aes(x = stacked, y = cbfm)) +
+#' geom_point() +
+#' geom_abline(intercept = 0, slope = 1, linetype = 2) +
+#' labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
+#' theme_bw()
+#' 
+#' 
 #' 
 #' ##------------------------------
-#' ## Example 1d: Repeat Example 1a but illustrate applications to biomass 
+#' ## Example 1f: Repeat Example 1a but illustrate applications to biomass 
 #' ##------------------------------
 #' library(tweedie)
 #' library(statmod)
@@ -597,8 +764,21 @@
 #' family = tweedie(var.power = 1.6, link.power = 0), data = dat_train)
 #' })
 #' 
+#' 
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # This is the same set up as examples above
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' # Training set basis functions
+#' train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' # Testing set basis functions
+#' test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' predict(newx = dat_test[,c("x","y")]) %>% 
+#' as.matrix %>%
+#' {.[,-c(1)]} 
+#' 
 #' # Fit Tweedie CBFM
-#' # Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
 #' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -608,6 +788,7 @@
 #' 
 #' summary(fitcbfm) %>% 
 #' str
+#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- sapply(1:num_spp, function(j) {
@@ -670,8 +851,8 @@
 #' library(Hmsc)
 #' library(devtools)
 #' 
-#' # "The makedata function included in the vignette folder produces datasets 
-#' # based on the Hmsc model"
+#' # The makedata function included in the vignette folder produces datasets 
+#' # based on the Hmsc model
 #' source_url("https://raw.githubusercontent.com/hmsc-r/HMSC/master/vignettes/makedata.R")
 #' 
 #' tmp = makedata(ns=50, ny=200, spatial=TRUE)
@@ -697,6 +878,7 @@
 #' 
 #' summary(fitcbfm) %>% 
 #' str
+#' 
 #' 
 #' # Evaluate in-sample performance (similar to what was done in the Hmsc vignette)
 #' # with the = evaluateModelFit() function 
@@ -755,8 +937,13 @@
 #' family = binomial())
 #' 
 #' 
+#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' num_basisfunctions <- 20 # Number of spatial basis functions to use
+#' basisfunctions <- mrts(all.data$xy, num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' 
 #' # Fit CBFM 
-#' # Please make sure you set up spatial basis functions for CBFM, we do so in Example 2a
 #' # Note also that Hmsc generates and fits models assuming a probit link, 
 #' # but CBFM uses a logit link
 #' tic <- proc.time()
@@ -764,6 +951,7 @@
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
+#' 
 #' 
 #' # Evaluate in-sample performance (similar to what was done in the Hmsc vignette)
 #' # with the = evaluateModelFit() function 
@@ -835,8 +1023,9 @@
 #' spp_intercepts <- runif(num_spp, -2, 0)
 #' 
 #' # Simulate spatio-temporal coordinates and environmental covariate components
-#' # Note we assume that each site is only visited once, but the code belows can be adapted to 
+#' # Note we assume that each site is only visited once, but the code below can be adapted to 
 #' # when the same sites are repeatedly visited
+#' # We will also use this information in examples below
 #' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 #' X <- rmvnorm(num_sites, mean = rep(0,4)) 
 #' colnames(X) <- c("temp", "depth", "chla", "O2")
@@ -846,6 +1035,7 @@
 #' as.matrix
 #' 
 #' # Simulate latent variable component
+#' # We will also use this information in examples below
 #' true_space_lvs <- RFsimulate(model = RMexp(var = 1, scale = 2), x = xy$x, y = xy$y, 
 #' n = 2)@data %>% 
 #' as.matrix
@@ -855,13 +1045,13 @@
 #' spp_space_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 #' spp_time_loadings <- matrix(runif(num_spp * 2, -0.5, 0.5), nrow = num_spp) 
 #' 
-#' 
 #' # Simulate spatial multivariate abundance data (presence-absence)
+#' # We will also use this information in examples below
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 #' tcrossprod(true_space_lvs, spp_space_loadings) +
 #' tcrossprod(true_time_lvs, spp_time_loadings)
 #' simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
-#' prob = binomial()$linkinv(eta)), nrow = num_sites)
+#' prob = plogis(eta)), nrow = num_sites)
 #' 
 #' # Form training and test sets
 #' simy_train <- simy[1:500,]
@@ -870,6 +1060,7 @@
 #' dat_test <- dat[501:1000,]
 #' rm(X, eta, mm, spp_space_loadings, spp_time_loadings, true_space_lvs, true_time_lvs,
 #' xy, simy)
+#' 
 #' 
 #' # Fit stacked GLM as a baseline
 #' fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
@@ -896,7 +1087,6 @@
 #' train_time_basisfunctions <- time_basisfunctions[1:500,] 
 #' test_time_basisfunctions <- time_basisfunctions[501:1000,] 
 #' rm(time_basisfunctions, time_knots)
-#' 
 #' 
 #' # Fit CBFM with Additive spatial and temporal basis functions 
 #' tic <- proc.time()
@@ -982,6 +1172,7 @@
 #' toc <- proc.time()
 #' toc - tic
 #' 
+#' 
 #' test_st_basisfunctions <- tensorproduct(test_space_basisfunctions, test_time_basisfunctions)
 #' predictions_cbfm_tensor <- predict(fitcbfm_tensor, newdata = dat_test, type = "response", 
 #' new_B_spacetime = test_st_basisfunctions)
@@ -1036,7 +1227,7 @@
 #' @import Matrix
 #' @importFrom compiler cmpfun
 #' @importFrom doParallel registerDoParallel
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma plogis qlogis ppois rpois runif pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma plogis qlogis dpois ppois rpois runif pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
 #' @importFrom mgcv betar gam ldTweedie logLik.gam model.matrix.gam nb rTweedie Tweedie tw
@@ -1045,13 +1236,14 @@
 #' @importFrom TMB MakeADFun
 #' @md
 
+
 CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, 
-     start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
+     start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
      control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 0, ridge = 0), 
-     Sigma_control = list(rank = 10, maxit = 1000, tol = 1e-4, method = "LA", trace = 0), 
-     G_control = list(rank = 10, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)) {
+     Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0), 
+     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)) {
           
      ##----------------
      ## Opening checks and all that jazz
@@ -1071,7 +1263,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(is.null(rownames(y)))
           rownames(y) <- paste0("units", 1:nrow(y))
           
-          
+
+     ## Form full basis function matrix B
      .check_B_forms(B_space = B_space, B_time = B_time, B_spacetime = B_spacetime)
      which_B_used <- c(0,0,0)
      num_spacebasisfns <- num_timebasisfns <- num_spacetimebasisfns <- 0
@@ -1104,6 +1297,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      Sigma_control <- .fill_Sigma_control(control = Sigma_control, which_B_used = which_B_used)
      G_control <- .fill_G_control(control = G_control, which_B_used = which_B_used)
 
+     ## Form covariate model matrix B
      formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
      tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
      nullfit <- gam(tmp_formula, data = data.frame(data, response = y[,1]), fit = TRUE, control = list(maxit = 1))
@@ -1126,16 +1320,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      num_spp <- ncol(y)
      num_X <- ncol(X)
      num_basisfns <- ncol(B)
-     for(k0 in 1:length(which_B_used)) { 
-          if(which_B_used[k0] == 1) {
-               .check_ranks(num_spp = num_spp, rank_G = G_control$rank[sum(which_B_used[1:k0])], 
-                    num_basisfns = c(num_spacebasisfns,num_timebasisfns,num_spacetimebasisfns)[k0], rank_Sigma = Sigma_control$rank[sum(which_B_used[1:k0])])
-               }
-          }
-
-
+     .check_ranks2(num_spp = num_spp, which_B_used = which_B_used, G_control = G_control, 
+                   vec_num_basisfns = c(num_spacebasisfns,num_timebasisfns,num_spacetimebasisfns), Sigma_control = Sigma_control)
+     
      ##----------------
      ## Compile TMB C++ files
+     ## Adapted from how JT does it with VAST, which is simple and I rather like!
      ##----------------
      if(sum(which_B_used) == 1)
           getDLL <- "cbfm_oneB"
@@ -1144,7 +1334,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(sum(which_B_used) == 3)
           getDLL <- "cbfm_threeB"
      if(control$trace > 0) {
-          # Adapted from how JT does it with VAST, which is simple and I rather like!
           message("Compiling TMB C++ file...")
           }
      
@@ -1161,6 +1350,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      TMB::compile(paste0(getDLL, ".cpp"), flags = "-Wno-ignored-attributes -O2 -mfpmath=sse -msse2 -mstackrealign" )
      dyn.load(paste0(TMB_directories$compile, "/", TMB::dynlib(getDLL)))
      setwd(origwd)
+     
      
      ##----------------
      ## Obtain starting values 
@@ -1198,6 +1388,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = Tweedie(p = 1.6, link = "log")), silent = TRUE)
                     fit0$logLik <- as.vector(logLik(fit0))
                     }
+               if(family$family == "zipoisson") {
+                    # Initial weights/posterior probabilities of being in zero-inflation component
+                    init_pi <- mean(y[,j] == 0)
+                    init_lambda <- mean(y[,j])
+                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
+                    
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson"), silent = TRUE)
+                    fit0$logLik <- .dzipoisson_log(y = y[,j], eta = fit0$linear.predictors, zeroinfl_prob = init_lambda)
+                    }
                
                if(inherits(fit0, "try-error"))
                     fit0 <- list(coefficients = runif(ncol(X)), residuals = rnorm(nrow(X)), logLik = -Inf)
@@ -1211,22 +1410,24 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           }
      if(is.null(start_params$basis_effects_mat))
           start_params$basis_effects_mat <- matrix(0, nrow = num_spp, ncol = num_basisfns)
-     if(family$family[1] %in% c("poisson","binomial"))                        
-          start_params$dispparam <- rep(1, num_spp)          
-     if(family$family[1] %in% c("gaussian","Gamma","tweedie")) {                        
-          if(is.null(start_params$dispparam))
-               start_params$dispparam <- 0.5 * colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
-          }
-     if(family$family[1] %in% c("negative.binomial")) {                        
-          if(is.null(start_params$dispparam))
+     if(is.null(start_params$dispparam)) {
+          if(family$family[1] %in% c("poisson","binomial", "zipoisson"))                        
+               start_params$dispparam <- rep(1, num_spp)          
+          if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
+                    start_params$dispparam <- 0.5 * colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
+          if(family$family[1] %in% c("negative.binomial")) 
                start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/theta.mm(y = y[,j], mu = exp(X%*%start_params$betas[j,] + B%*%start_params$basis_effects_mat[j,]), dfr = num_units - num_X - num_basisfns))
-          }
-     if(family$family[1] %in% c("Beta")) {                        
-          if(is.null(start_params$dispparam))
+          if(family$family[1] %in% c("Beta")) 
                start_params$dispparam <- rep(0.5, num_spp)          
           }
      if(is.null(start_params$powerparam))
           start_params$powerparam <- rep(ifelse(family$family[1] == "tweedie", 1.6, 0), num_spp)
+     if(is.null(start_params$zeroinfl_prob)) {
+          if(family$family[1] == "zipoisson")
+               start_params$zeroinfl_prob_intercept <- binomial()$linkfun(colMeans(y == 0)+1e-3) 
+          if(family$family[1] != "zipoisson")
+               start_params$zeroinfl_prob_intercept <- rep(0, num_spp) 
+          }
      
      if(which_B_used[1]) {
           start_params$Sigma_space <- diag(1, nrow = num_spacebasisfns)
@@ -1314,6 +1515,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     basis_effects_mat = start_params$basis_effects_mat,
                     dispparam = start_params$dispparam,
                     powerparam = start_params$powerparam,
+                    zeroinfl_prob_intercept = start_params$zeroinfl_prob_intercept,
                     logLik = start_params$logLik
                     )
                     
@@ -1325,138 +1527,182 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(counter > 0) {          
                tidbits_data <- make_tidibits_data()
                }
+
           
-          
-          ##-------------------------
-          ## Update smoothing coefficients for all basis functions, one response at a time
-          ##-------------------------
+          inner_err <- Inf
+          cw_inner_logL <- -Inf
           if(control$trace > 0)
-               message("Updating all coefficients and dispersion/power parameters...")                         
-          update_basiscoefsspp_fn <- function(j) {
-               tidbits_parameters <- list(basis_effects = new_fit_CBFM_ptest$basis_effects_mat[j,])
+               message("Updating all coefficients and dispersion/power parameters (also running inner EM algorithm if appropriate)...")         
+          while(inner_err > 0.25) {
+               ##-------------------------
+               ## Updating zero-inflation probabilities for distributions that need it. Note it is parameterized in terms of an intercept on the logit scale
+               ## Also E-step before that if need be
+               ##-------------------------
+               getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B) # Posterior probabilities of zero-inflation
+               #if(family$family[1] == "zipoisson") {
+               #     for(j in 1:num_spp) {
+               #          cwfit <- glm(resp ~ 1, data = data.frame(resp = getweights[,j]), family = binomial())
+               #          new_fit_CBFM_ptest$zeroinfl_prob_intercept[j] <- coef(cwfit)[1]
+               #          }
+               #     }
+               #rm(cwfit,j)
+               new_fit_CBFM_ptest$zeroinfl_prob_intercept <- binomial()$linkfun(colMeans(getweights + 1e-5))
                
-               tidbits_data$y <- y[,j]
-               tidbits_data$Xbeta <- as.vector(X %*% new_fit_CBFM_ptest$betas[j,])
-               tidbits_data$dispparam <- new_fit_CBFM_ptest$dispparam[j]
-               tidbits_data$powerparam <- new_fit_CBFM_ptest$powerparam[j]
-               tidbits_data$offset <- offset[,j]
-               if(sum(which_B_used) == 1)
-                    tidbits_data$other_basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
-               if(sum(which_B_used) == 2) {
-                    if(identical(which_B_used, c(1,1,0))) { 
+               
+               ##-------------------------
+               ## Update smoothing coefficients for all basis functions, one species at a time
+               ##-------------------------
+               update_basiscoefsspp_fn <- function(j) {
+                    tidbits_parameters <- list(basis_effects = new_fit_CBFM_ptest$basis_effects_mat[j,])
+                    
+                    tidbits_data$y <- y[,j]
+                    tidbits_data$Xbeta <- as.vector(X %*% new_fit_CBFM_ptest$betas[j,])
+                    tidbits_data$dispparam <- new_fit_CBFM_ptest$dispparam[j]
+                    tidbits_data$powerparam <- new_fit_CBFM_ptest$powerparam[j]
+                    tidbits_data$estep_weights <- as.vector(getweights[,j])
+                    tidbits_data$offset <- offset[,j]
+                    if(sum(which_B_used) == 1)
+                         tidbits_data$other_basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
+                    if(sum(which_B_used) == 2) {
+                         if(identical(which_B_used, c(1,1,0))) { 
+                              tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
+                              tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
+                              }
+                         if(identical(which_B_used, c(1,0,1))) { 
+                              tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
+                              tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
+                              }
+                         if(identical(which_B_used, c(0,1,1))) { 
+                              tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
+                              tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
+                              }
+                         }
+                    if(sum(which_B_used) == 3) {
                          tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
                          tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
+                         tidbits_data$other_basis_effects_mat_B3 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
                          }
-                    if(identical(which_B_used, c(1,0,1))) { 
-                         tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
-                         tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
-                         }
-                    if(identical(which_B_used, c(0,1,1))) { 
-                         tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
-                         tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
-                         }
-                    }
-               if(sum(which_B_used) == 3) {
-                    tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
-                    tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
-                    tidbits_data$other_basis_effects_mat_B3 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
-                    }
-               tidbits_data$spp_ind <- j
-               tidbits_data$family <- .family_to_counter(family = family)
-               tidbits_data$trial_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units, family = family)
-
-               tidbits_constraints <- list(lower = rep(control$optim_lower, sum(sapply(tidbits_parameters, length))),
-                    upper = rep(control$optim_upper, sum(sapply(tidbits_parameters, length)))
-                    )
                     
-               CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
-               
-               new_fit_CBFM <- nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr, 
-                    lower = tidbits_constraints$lower, upper = tidbits_constraints$upper)
-               #new_fit_CBFM <- optim(par = CBFM_objs$par, fn = CBFM_objs$fn, gr = CBFM_objs$gr, method = "BFGS")
-               
-               return(new_fit_CBFM)
-               }
-          update_basiscoefsspp_cmpfn <- compiler::cmpfun(update_basiscoefsspp_fn)
-               
-          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
-          for(j in 1:num_spp) {
-               new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par[grep("basis_effects", names(all_update_coefs[[j]]$par))]
-               }
-          rm(all_update_coefs, update_basiscoefsspp_fn)
+                    tidbits_data$spp_ind <- j
+                    tidbits_data$family <- .family_to_counter(family = family)
+                    tidbits_data$trial_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units, family = family)
+     
+                    tidbits_constraints <- list(lower = rep(control$optim_lower, sum(sapply(tidbits_parameters, length))),
+                         upper = rep(control$optim_upper, sum(sapply(tidbits_parameters, length)))
+                         )
+                         
+                    CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
+                    
+                    new_fit_CBFM <- nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr, 
+                         lower = tidbits_constraints$lower, upper = tidbits_constraints$upper)
+                    #new_fit_CBFM <- optim(par = CBFM_objs$par, fn = CBFM_objs$fn, gr = CBFM_objs$gr, method = "BFGS")
+                    
+                    return(new_fit_CBFM)
+                    }
+               update_basiscoefsspp_cmpfn <- compiler::cmpfun(update_basiscoefsspp_fn)
+                    
+               all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
+               for(j in 1:num_spp) {
+                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par[grep("basis_effects", names(all_update_coefs[[j]]$par))]
+                    }
+               rm(all_update_coefs, update_basiscoefsspp_fn)
 
           
-          ##-------------------------
-          ## Update component of linear predictor related to model matrix X, one response at a time
-          ##-------------------------
-          update_Xcoefsspp_fn <- function(j) {
-               tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-               new_offset <- offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
-               Hmat <- diag(control$ridge+1e-15, nrow = ncol(X))
+               ##-------------------------
+               ## Update coefficients related to covariate model matrix X, and other nusiance paramters, one response at a time
+               ##-------------------------
+               update_Xcoefsspp_fn <- function(j) {
+                    tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+                    new_offset <- offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
+                    Hmat <- diag(control$ridge+1e-15, nrow = ncol(X))
+                    
+                    if(family$family %in% c("gaussian","poisson","Gamma")) {
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              H = Hmat, family = family), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = family)
+                         }
+                    if(family$family %in% c("binomial")) {
+                         tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
+                         use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
+     
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, method = "ML", 
+                              H = Hmat, family = family), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = family)
+                         }
+                    if(family$family %in% c("negative.binomial")) {
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              H = Hmat, family = nb()), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = nb())
+                         }
+                    if(family$family %in% c("Beta")) {
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              H = Hmat, family = betar(link = "logit")), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = betar(link = "logit"))
+                         }
+                    if(family$family %in% c("tweedie")) {
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              H = Hmat, family = tw(link = "log")), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = tw(link = "log"))
+                         }
+                    if(family$family %in% c("zipoisson")) {
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", weights = 1-getweights[,j],
+                              H = Hmat, family = "poisson"), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", weights = 1-getweights[,j], family = "poisson")
+                         }
+                    
+                    out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = as.vector(logLik(fit0)), 
+                         fit = fit0, S = .get_bigS(fit_gam = fit0, num_X = num_X))
+                    if(family$family %in% c("gaussian","Gamma"))                        
+                         out$dispparam <- fit0$sig2
+                    if(family$family == "negative.binomial")                        
+                         out$dispparam <- 1/fit0$family$getTheta(TRUE)
+                    if(family$family == "Beta")                        
+                         out$dispparam <- exp(fit0$family$getTheta(TRUE))
+                    if(family$family == "tweedie") {                        
+                         out$dispparam <- fit0$sig2
+                         out$powerparam <- fit0$family$getTheta(TRUE)
+                         }
                
-               if(family$family %in% c("gaussian","poisson","Gamma")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                         H = Hmat, family = family), silent = TRUE)
-                    if(inherits(fit0, "try-error"))
-                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = family)
+                    return(out)
+                    }               
+               update_Xcoefsspp_cmpfn <- compiler::cmpfun(update_Xcoefsspp_fn)
+               
+               all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
+               new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
+               new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
+               for(j in 1:num_spp) {
+                    if(family$family[1] %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta"))                        
+                         new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
+                    if(family$family[1] == "tweedie") {                        
+                         new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
+                         }
                     }
-               if(family$family %in% c("binomial")) {
-                    tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
-                    use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
+               new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
+               if(family$family[1] == "zipoisson") {
+                    cw_logL <- 0
+                    for(j in 1:num_spp) {
+                         cw_logL <- cw_logL + sum(.dzipoisson_log(y = y[,j], eta = new_fit_CBFM_ptest$linear_predictor[,j], 
+                                                                  zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]))
+                                                  )
+                         }
+                    new_fit_CBFM_ptest$logLik <- cw_logL
+                    rm(cw_logL)
+                    }
+               
+               inner_err <- new_fit_CBFM_ptest$logLik - cw_inner_logL
+               cw_inner_logL <- new_fit_CBFM_ptest$logLik
+               #print(new_fit_CBFM_ptest$logLik)
+               rm(all_update_coefs, update_Xcoefsspp_fn)
 
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, method = "ML", 
-                         H = Hmat, family = family), silent = TRUE)
-                    if(inherits(fit0, "try-error"))
-                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = family)
-                    }
-               if(family$family %in% c("negative.binomial")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                         H = Hmat, family = nb()), silent = TRUE)
-                    if(inherits(fit0, "try-error"))
-                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = nb())
-                    }
-               if(family$family %in% c("Beta")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                         H = Hmat, family = betar(link = "logit")), silent = TRUE)
-                    if(inherits(fit0, "try-error"))
-                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = betar(link = "logit"))
-                    }
-               if(family$family %in% c("tweedie")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                         H = Hmat, family = tw(link = "log")), silent = TRUE)
-                    if(inherits(fit0, "try-error"))
-                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = tw(link = "log"))
-                    }
-               
-               out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = as.vector(logLik(fit0)), 
-                    fit = fit0, S = .get_bigS(fit_gam = fit0, num_X = num_X))
-               if(family$family %in% c("gaussian","Gamma"))                        
-                    out$dispparam <- fit0$sig2
-               if(family$family == "negative.binomial")                        
-                    out$dispparam <- 1/fit0$family$getTheta(TRUE)
-               if(family$family == "Beta")                        
-                    out$dispparam <- exp(fit0$family$getTheta(TRUE))
-               if(family$family == "tweedie") {                        
-                    out$dispparam <- fit0$sig2
-                    out$powerparam <- fit0$family$getTheta(TRUE)
-                    }
-          
-               return(out)
-               }               
-          update_Xcoefsspp_cmpfn <- compiler::cmpfun(update_Xcoefsspp_fn)
-               
-          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
-          new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
-          new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
-          for(j in 1:num_spp) {
-               if(family$family %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta"))                        
-                    new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
-               if(family$family == "tweedie") {                        
-                    new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
-                    }
-               }
-          new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
-          rm(all_update_coefs, update_Xcoefsspp_fn)
+               if(!(family$family[1] %in% c("zipoisson")))
+                    break;
+               }          
           
           
           ##-------------------------
@@ -1467,26 +1713,30 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(which_B_used[1]) {
                new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
-                    Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, y_vec = as.vector(y), linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), 
-                    dispparam = new_fit_CBFM_ptest$dispparam, powerparam = new_fit_CBFM_ptest$powerparam, trial_size = trial_size, family = family, G_control = G_control)
+                    Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor),  dispparam = new_fit_CBFM_ptest$dispparam, 
+                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                    trial_size = trial_size, family = family, G_control = G_control)
                new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1)
                rm(new_G_space)
                }
           if(which_B_used[2]) {
                new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
-                    Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), 
-                    dispparam = new_fit_CBFM_ptest$dispparam, powerparam = new_fit_CBFM_ptest$powerparam, trial_size = trial_size, 
-                    family = family, G_control = G_control)
+                    Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                    trial_size = trial_size, family = family, G_control = G_control)
                new_LoadingnuggetG_time <- update_LoadingG_fn(G = new_G_time, G_control = G_control, use_rank_element = sum(which_B_used[1:2]))
                rm(new_G_time)
                }
           if(which_B_used[3]) {
                new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
-                    Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), 
-                    dispparam = new_fit_CBFM_ptest$dispparam, powerparam = new_fit_CBFM_ptest$powerparam, trial_size = trial_size, 
-                    family = family, G_control = G_control)
+                    Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                    trial_size = trial_size, family = family, G_control = G_control)
                new_LoadingnuggetG_spacetime <- update_LoadingG_fn(G = new_G_spacetime, G_control = G_control, use_rank_element = sum(which_B_used[1:3]))
                rm(new_G_spacetime)
                }
@@ -1501,27 +1751,30 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(which_B_used[1]) {
                new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
-                    Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, y_vec = as.vector(y), linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), 
-                    dispparam = new_fit_CBFM_ptest$dispparam, powerparam = new_fit_CBFM_ptest$powerparam, trial_size = trial_size, 
-                    family = family, Sigma_control = Sigma_control)
+                    Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                    trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                new_LoadingnuggetSigma_space <- update_LoadingSigma_fn(Sigma = new_Sigma_space, Sigma_control = Sigma_control, use_rank_element = 1)
                rm(new_Sigma_space)
                }
           if(which_B_used[2]) {
                new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
-                    Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, y_vec = as.vector(y), linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), 
-                    dispparam = new_fit_CBFM_ptest$dispparam, powerparam = new_fit_CBFM_ptest$powerparam, trial_size = trial_size, 
-                    family = family, Sigma_control = Sigma_control)
+                    Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor),  dispparam = new_fit_CBFM_ptest$dispparam, 
+                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                    trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                new_LoadingnuggetSigma_time <- update_LoadingSigma_fn(Sigma = new_Sigma_time, Sigma_control = Sigma_control, use_rank_element = sum(which_B_used[1:2]))
                rm(new_Sigma_time)
                }
           if(which_B_used[3]) {
                new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
-                    Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), 
-                    dispparam = new_fit_CBFM_ptest$dispparam, powerparam = new_fit_CBFM_ptest$powerparam, trial_size = trial_size, 
-                    family = family, Sigma_control = Sigma_control)
+                    Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                    trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                new_LoadingnuggetSigma_spacetime <- update_LoadingSigma_fn(Sigma = new_Sigma_spacetime, Sigma_control = Sigma_control, 
                     use_rank_element = sum(which_B_used[1:3]))
                rm(new_Sigma_spacetime)
@@ -1531,7 +1784,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           ##-------------------------
           ## Finish iteration
           ##-------------------------
-          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), log(new_fit_CBFM_ptest$dispparam), new_fit_CBFM_ptest$powerparam)
+          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), 
+                          log(new_fit_CBFM_ptest$dispparam), new_fit_CBFM_ptest$powerparam, new_fit_CBFM_ptest$zeroinfl_prob_intercept)
           new_logLik <- new_fit_CBFM_ptest$logLik
           if(which_B_used[1])
                new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
@@ -1555,12 +1809,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     message("Iteration: ", counter, "\t Difference in parameter estimates: ", round(diff,5))
                if(control$convergence_type == "logLik")
                     message("Iteration: ", counter, "\t Ratio in PQL log-likelihoods: ", round(diff,5))
-#               message("Iteration: ", counter, "\t Difference in betas: ", 
-#                    round(mean((new_fit_CBFM_ptest$betas - cw_fit_CBFM_ptest$betas)^2),5))
-#                message("Iteration: ", counter, "\t Current PQL log-likelihoods: ", cw_logLik)
-#                message("Iteration: ", counter, "\t New PQL log-likelihoods: ", new_logLik)
-#                message("Iteration: ", counter, "\t Difference in PQL log-likelihoods: ", round(new_logLik - cw_logLik,5))
-#                message("Iteration: ", counter, "\t Ratio in PQL log-likelihoods: ", round(new_logLik/cw_logLik,5))
                }
                
           cw_params <- new_params
@@ -1575,26 +1823,59 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      ## Do final fit -- just of coefficients and dispersion/power parameters only. 
      ##-------------------------
      tidbits_data <- make_tidibits_data()
+     inner_err <- Inf
+     cw_inner_logL <- -Inf
+     while(inner_err > 0.25) {
                
-     all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
-     for(j in 1:num_spp) {
-          new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par[grep("basis_effects", names(all_update_coefs[[j]]$par))]
-          }
-     rm(all_update_coefs)
-          
-     all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
-     new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
-     new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
-     for(j in 1:num_spp) {
-          if(family$family %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta"))                        
-               new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
-          if(family$family == "tweedie") {                        
-               new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
+          getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B) # Posterior probabilities of zero-inflation
+          #if(family$family[1] == "zipoisson") {
+          #     for(j in 1:num_spp) {
+          #          cwfit <- glm(resp ~ 1, data = data.frame(resp = getweights[,j]), family = binomial())
+          #          new_fit_CBFM_ptest$zeroinfl_prob_intercept[j] <- coef(cwfit)[1]
+          #          }
+          #     }
+          #rm(cwfit,j)
+          new_fit_CBFM_ptest$zeroinfl_prob_intercept <- binomial()$linkfun(colMeans(getweights + 1e-5))
+     
+          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
+          for(j in 1:num_spp) {
+               new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par[grep("basis_effects", names(all_update_coefs[[j]]$par))]
                }
+          rm(all_update_coefs)
+          
+          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
+          new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
+          new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
+          for(j in 1:num_spp) {
+               if(family$family %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta"))                        
+                    new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
+               if(family$family == "tweedie") {                        
+                    new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
+                    }
+               }
+          new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
+          if(family$family[1] == "zipoisson") {
+               cw_logL <- 0
+               for(j in 1:num_spp) {
+                    cw_logL <- cw_logL + sum(.dzipoisson_log(y = y[,j], eta = new_fit_CBFM_ptest$linear_predictor[,j], 
+                                                        zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]))
+                                             )
+                    }
+               new_fit_CBFM_ptest$logLik <- cw_logL
+               rm(cw_logL)
+               }
+          
+          inner_err <- new_fit_CBFM_ptest$logLik - cw_inner_logL
+          cw_inner_logL <- new_fit_CBFM_ptest$logLik
+          #print(new_fit_CBFM_ptest$logLik)
+
+          if(!(family$family[1] %in% c("zipoisson")))
+               break;
           }
-     new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
      all_S <- sapply(all_update_coefs, function(x) x$S)
-     rm(all_update_coefs)
+     rm(all_update_coefs, tidbits_data, inner_err, cw_inner_logL, cw_logLik, 
+        cw_params, new_params, diff, counter)
+     gc()
      
      new_logLik <- new_fit_CBFM_ptest$logLik
      if(which_B_used[1])
@@ -1607,10 +1888,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
      if(which_B_used[3])
           new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-               basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
+               basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE],
                Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
      
-
+     
      ##-----------------
      ## Format output
      ##-----------------
@@ -1631,20 +1912,24 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
      out_CBFM$powerparam <- new_fit_CBFM_ptest$powerparam
+     out_CBFM$zeroinfl_prob_intercept <- new_fit_CBFM_ptest$zeroinfl_prob_intercept
      out_CBFM$linear_predictor <- new_fit_CBFM_ptest$linear_predictor
-     rm(new_fit_CBFM_ptest)
+     rm(new_fit_CBFM_ptest, getweights)
 
      # ## Get restricted CBFM estimates of the coefficients (really more for exploration at this point in time)
      #OLSmatrix_transpose <- X %*% solve(crossprod(X))
      #out_CBFM$partitioned_beta <- out_CBFM$betas + tcrossprod(out_CBFM$basis_effects_mat, B) %*% OLSmatrix_transpose
      #rm(OLSmatrix_transpose)
 
-     if(family$family != "ztnegative.binomial")
+     if(!(family$family %in% c("ztnegative.binomial","zipoisson")))
           out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictor)
-     if(family$family == "ztnegative.binomial")
-          out_CBFM$fitted <- family$linkinv(eta = out_CBFM$linear_predictor, phi = matrix(out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+     if(family$family == "zipoisson")
+          out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictor) * matrix(1-plogis(out_CBFM$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)
+     #if(family$family == "ztnegative.binomial")
+     #     out_CBFM$fitted <- family$linkinv(eta = out_CBFM$linear_predictor, phi = matrix(out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
      
-     names(out_CBFM$dispparam) <- names(out_CBFM$powerparam)  <- colnames(y)
+     names(out_CBFM$dispparam) <- names(out_CBFM$powerparam) <- names(out_CBFM$zeroinfl_prob_intercept) <- colnames(y)
+     
      if(which_B_used[1]) {
           out_CBFM$Sigma_space <- new_LoadingnuggetSigma_space$cov
           out_CBFM$Loading_Sigma_space <- new_LoadingnuggetSigma_space$Loading
@@ -1713,11 +1998,16 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(control$trace)
                message("Calculating (components of) the covariance (standard error) matrix...")
                
-          ## Weights -- negative hessian or observed information
           if(family$family[1] != "tweedie") {
                weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictor, y = y, 
-                    phi = matrix(out_CBFM$dispparam, num_units, num_spp, byrow = TRUE), trial_size = trial_size, return_matrix = TRUE)
-                    }
+                    phi = matrix(out_CBFM$dispparam, num_units, num_spp, byrow = TRUE), 
+                    zeroinfl_prob_intercept = matrix(out_CBFM$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 
+                    trial_size = trial_size, domore = TRUE)
+               if(family$family[1] != "zipoisson")
+                    weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
+               if(family$family[1] == "zipoisson")
+                    weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
+               }
           if(family$family[1] == "tweedie") {
                two_minus_powerparam <- matrix(2-out_CBFM$powerparam, num_units, num_spp, byrow = TRUE)
                exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*out_CBFM$linear_predictor)
@@ -1726,15 +2016,28 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
                }               
                
+          
           # Bottom right of covariance matrix
           D1minusCAinvB_fn <- function(j) {                
-               XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = control$ridge+1e-15, n = num_X) + all_S[[j]]
+               if(family$family[1] != "zipoisson")
+                    XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = control$ridge+1e-15, n = num_X) + all_S[[j]]
+               if(family$family[1] == "zipoisson") {
+                    Xi <- bdiag(matrix(1, num_units, 1), X)
+                    bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
+                    bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
+                    XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = control$ridge+1e-15, n = num_X+1) + bdiag(matrix(0,1,1), all_S[[j]])
+                    }
                XTWX_inv <- chol2inv(chol( 0.5*(XTWX_inv + t(XTWX_inv)) ))
-               BTWX <- crossprod(B, X*weights_mat[,j])               
-               return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
+               if(family$family[1] != "zipoisson") {
+                    BTWX <- crossprod(B, X*weights_mat[,j])               
+                    return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
+                    }
+               if(family$family[1] == "zipoisson") {
+                    BTWX <- crossprod(B, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% Xi               
+                    return(crossprod(B*sqrt(weights_mat_betabeta[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
+                    }
                }
           all_D1minusCAinvB <- foreach(j = 1:num_spp) %dopar% D1minusCAinvB_fn(j = j)
-          #all_D1minusCAinvB <- lapply(1:num_spp, function(j) D1minusCAinvB_fn(j = j))
           all_D1minusCAinvB <- bdiag(all_D1minusCAinvB)
           if(identical(which_B_used, c(1,0,0)))
                DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(chol2inv(chol(out_CBFM$G_space)), chol2inv(chol(out_CBFM$Sigma_space))))
@@ -1759,11 +2062,21 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           rm(all_D1minusCAinvB, D1minusCAinvB_fn)
           DminusCAinvB_inv <- chol2inv(chol(DminusCAinvB_inv)) ## Bottleneck! 
 
-          # Top right of covariance matrix
+          # Top right of covariance matrix -- Could probably remove this if you use the same calculations above
           AinvandB_fn <- function(j) {
-               XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x=control$ridge+1e-15, n = num_X) + all_S[[j]]
+               if(family$family[1] != "zipoisson")
+                    XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x=control$ridge+1e-15, n = num_X) + all_S[[j]]
+               if(family$family[1] == "zipoisson") {
+                    Xi <- bdiag(matrix(1, num_units, 1), X)
+                    bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
+                    bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
+                    XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = control$ridge+1e-15, n = num_X+1) + bdiag(matrix(0,1,1), all_S[[j]])
+                    }
                XTWX_inv <- chol2inv(chol( 0.5*(XTWX_inv + t(XTWX_inv)) ))
-               XTWB <- crossprod(X*weights_mat[,j], B)
+               if(family$family[1] != "zipoisson")
+                    XTWB <- crossprod(X*weights_mat[,j], B)
+               if(family$family[1] == "zipoisson")
+                    XTWB <- crossprod(Xi, rbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% B
                return(list(Ainv = XTWX_inv, B = XTWB))
                }
           all_AinvandB <- foreach(j = 1:num_spp) %dopar% AinvandB_fn(j = j)
@@ -1779,25 +2092,27 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           rm(all_AinvandB, AinvBDminusCAinvB_inv, AinvandB_fn, DminusCAinvB_inv)
                     
                     
-          ## To space memory, and because the block-diagonality, extract relevant principle submatrices only
-          subfn <- function(j, Q) { 
-               return(Q[(num_X*j - num_X + 1):(num_X*j), (num_basisfns*j - num_basisfns + 1):(num_basisfns*j)]) 
-               }
-          out_CBFM$covar_components$topright <- foreach(j = 1:num_spp) %dopar% subfn(j = j, Q = out_CBFM$covar_components$topright)
+          # ## All matrices are dense. But to save memory and because only certain components of the matrices are needed later on, extract relevant principle submatrices only
+          #out_CBFM$covar_components$topright <- foreach(j = 1:num_spp) %dopar% .extractcovarblocks_topright(j = j, Q = out_CBFM$covar_components$topright)               
+          #out_CBFM$covar_components$bottomright <- foreach(j = 1:num_spp) %dopar% .extractcovarblocks_bottomright(j = j, Q = out_CBFM$covar_components$bottomright)
                
-          subfn <- function(j, Q) { 
-               return(Q[(num_basisfns*j - num_basisfns + 1):(num_basisfns*j), (num_basisfns*j - num_basisfns + 1):(num_basisfns*j)]) 
+          if(family$family[1] != "zipoisson")
+               rownames(out_CBFM$covar_components$topleft) <- colnames(out_CBFM$covar_components$topleft) <- rownames(out_CBFM$covar_components$topright) <-
+                    apply(as.data.frame.table(t(out_CBFM$betas))[,1:2],1,function(x) paste(x, collapse = ":"))
+          if(family$family[1] == "zipoisson") {
+               make_tab <- cbind(out_CBFM$zeroinfl_prob_intercept, out_CBFM$betas)
+               colnames(make_tab)[1] <- "ZeroInfl(Intercept)"
+               rownames(out_CBFM$covar_components$topleft) <- colnames(out_CBFM$covar_components$topleft) <- rownames(out_CBFM$covar_components$topright) <-
+                    apply(as.data.frame.table(t(make_tab))[,1:2],1,function(x) paste(x, collapse = ":"))
+               rm(make_tab)
                }
-          out_CBFM$covar_components$bottomright <- foreach(j = 1:num_spp) %dopar% subfn(j = j, Q = out_CBFM$covar_components$bottomright)
-               
-          rm(subfn)               
           
-          rownames(out_CBFM$covar_components$topleft) <- colnames(out_CBFM$covar_components$topleft) <- #rownames(out_CBFM$covar_components$topright) <- 
-               apply(as.data.frame.table(t(out_CBFM$betas))[,1:2],1,function(x) paste(x, collapse = ":"))
+          colnames(out_CBFM$covar_components$topright) <- rownames(out_CBFM$covar_components$bottomright) <- colnames(out_CBFM$covar_components$bottomright) <-
+               apply(as.data.frame.table(t(out_CBFM$basis_effects_mat))[,1:2],1,function(x) paste(x, collapse = ":"))
           } 
  
  
-     if(!(family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","ztnegative.binomial")))                        
+     if(!(family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie")))                        
           out_CBFM$dispparam <- NULL
      if(!(family$family %in% c("tweedie")))                        
           out_CBFM$powerparam <- NULL

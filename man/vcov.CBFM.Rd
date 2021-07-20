@@ -13,9 +13,9 @@
 }
 \value{
 A list containing with the following components:
-\item{topleft: }{A matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}.}
-\item{topright: }{A list containing components of the top-right block of the full Bayesian posterior covariance matrix (each element in the list corresponds to one species). The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}.}
-\item{bottomright: }{A list containing components of the bottom-right block of the full Bayesian posterior covariance matrix (each element in the list corresponds to one species). The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.}
+\item{topleft: }{A matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, and the species-specific zero-inflated probabilities on the logit scale if the response distribution involved one.}
+\item{topright: }{matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}.}
+\item{bottomright: }{A matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}

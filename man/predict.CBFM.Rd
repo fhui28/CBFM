@@ -31,7 +31,8 @@
 
 \item{new_B_spacetime}{A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.}
 
-\item{type}{The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.}
+\item{type}{The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.
+Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the \emph{actual predicted mean values} of the distribution, consistent with what \code{object$fitted} returns.}
 
 \item{se_fit}{When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.}
 
@@ -44,7 +45,7 @@
 \value{
 If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
 \item{fit: }{A matrix of predicted values.}
-\item{stderr: }{A matrix of estimated standard errors associated with the predictions.}
+\item{stderr: }{A matrix of standard errors associated with the uncertainty intervals for the predictions.}
 \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the predictions.}
 \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned.
@@ -56,6 +57,8 @@ Takes a fitted \code{CBFM} object and produces predictions given (potentially) a
 }
 \details{
 The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained on the associated large sample normality result of the estimated parameters. Both of these are similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
+
+The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
 }
 \examples{
 \donttest{

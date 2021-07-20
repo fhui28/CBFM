@@ -14,6 +14,7 @@ Type objective_function<Type>::operator() () {
      DATA_VECTOR(dispparam);
      DATA_VECTOR(powerparam);
      DATA_VECTOR(offset); 
+     DATA_VECTOR(estep_weights); 
      DATA_MATRIX(other_basis_effects_mat_B1);
      DATA_MATRIX(other_basis_effects_mat_B2);
      DATA_MATRIX(other_basis_effects_mat_B3);
@@ -136,6 +137,11 @@ Type objective_function<Type>::operator() () {
      if(family == 9) { //zero-truncated poisson
           for(int i=0; i<num_units; i++) { 
                nll -= (dpois(y(i), exp(eta(i)), true) - log(1 - exp(-eta(i))));
+               }
+          }
+     if(family == 10) { //zero-inflated poisson
+          for(int i=0; i<num_units; i++) { 
+               nll -= (Type(1)-estep_weights(i))*dpois(y(i), exp(eta(i)), true);
                }
           }
           

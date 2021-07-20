@@ -17,6 +17,7 @@ Description: Spatio-temporal joint species distribution modeling via community-l
     This is because by using a basis function approach, CBFMs can be set up as a type of generalized additive model (GAM), from which we can leverage from existing methods developed for GAMs.
 License: GPL-2
 Imports: 
+    abind,
     compiler,
     doParallel,
     foreach,
@@ -47,6 +48,7 @@ Suggests:
     Hmsc,
     mvabund,
     mvtnorm,
+    pscl,
     RandomFields,
     rmarkdown,
     ROCR,

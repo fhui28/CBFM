@@ -18,14 +18,14 @@ CBFM(
   dofit = TRUE,
   stderrors = TRUE,
   start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL,
-    powerparam = NULL),
+    powerparam = NULL, zeroinfl_prob = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
   control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type =
     "parameters", tol = 1e-04, seed = NULL, trace = 0, ridge = 0),
-  Sigma_control = list(rank = 10, maxit = 1000, tol = 1e-04, method = "LA", trace = 0),
-  G_control = list(rank = 10, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit =
-    1000, tol = 1e-04, method = "LA", trace = 0)
+  Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-04, method = "LA", trace = 0),
+  G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000,
+    tol = 1e-04, method = "LA", trace = 0)
 )
 }
 \arguments{
@@ -49,19 +49,20 @@ CBFM(
 
 \item{trial_size}{Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as \code{y}.}
 
-\item{dofit}{Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compiliation directory; please see the \code{TMB_directories} argument below.}
+\item{dofit}{Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compilation directory; please see the \code{TMB_directories} argument below.}
 
 \item{stderrors}{Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed.}
 
-\item{start_params}{Starting values for the CBFM. If desired, then a list shoulf be supplied, which must contain at least one the following terms:
+\item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
 \itemize{
 \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.}
 \item{basis_effect_mat: }{A matrix of starting values for the species-specific regression coefficients related to the combined matrix of basis functions. Again, the number of rows is equal to the number of species, while the number of columns should equal to \code{ncol(B_space, B_time, B_spacetime)} (or whatever the supplied basis functions are).}
 \item{dispparam: }{A vector of starting values for the species-specific dispersion parameters, to be used for distributions that require one.}
 \item{powerparam: }{A vector of starting values for the species-specific power parameters, to be used for distributions that require one.}
+\item{zeroinfl_prob: }{A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. }
 }}
 
-\item{TMB_directories}{A list wuth two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a verison of the C++ file will be copied to the \code{compile} directory.}
+\item{TMB_directories}{A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.}
 
 \item{control}{A list of parameters for controlling the fitting process for the "outer" PQL estimation part of the CBFM. This should be a list with the following arguments:
 \itemize{
@@ -106,12 +107,13 @@ An object of class "CBFM" includes the following components, not necessarily in 
 \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.}
 \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
 \item{logLik: }{The value of the PQL likelihood upon convergence.}
-\item{betas: }{The estimated matrix of species-specific regresson coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
-\item{basis_effects_mat: }{The estimated matrix of species-specific regresson coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
+\item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
+\item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
 \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
-\item{linear_predictor: }{The estimated matrix of linear predictors. }
-\item{fitted: }{The estimated matrix of fitted values. }
+\item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. \emph{Note this is presented on the logit scale}, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
+\item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. }
+\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.}
 \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 \item{Sigma_time/Loading_Sigma_time/nugget_Sigma_time: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied.}
@@ -119,9 +121,12 @@ An object of class "CBFM" includes the following components, not necessarily in 
 \item{Sigma_spacetime/Loading_Sigma_spacetime/nugget_Sigma_spacetime: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied.}
 \item{G_spacetime/Loading_G_spacetime/nugget_G_spacetime: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied.}
 \item{stderrors: }{The supplied argument for \code{stderrors} i.e., whether standard errors were calculated.}
-\item{covar_components: }{If \code{stderrors = TRUE}, then a list containing with the following components: 1) \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}.; 2) \code{topright}, which is a list containing components of the top-right block of the full Bayesian posterior covariance matrix (each element in the list corresponds to one species). The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}.; 3) \code{bottomright}, which is a list containing components of the bottom-right block of the full Bayesian posterior covariance matrix (each element in the list corresponds to one species). The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
-
-Note that to save memory, rather than returning the full Bayesian posterior covariance matrix, only relevant sub-blocks that are needed for standard errors and inference/prediction are returned.
+\item{covar_components: }{If \code{stderrors = TRUE}, then a list containing with the following components:
+\enumerate{
+\item \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, and the species-specific zero-inflated probabilities on the logit scale if the response distribution involved one;
+\item \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat};
+\item \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
+}
 
 Please use the \code{\link[=summary]{summary()}} function to obtain standard errors and confidence interval limits in a more user-friendly form.}
 }
@@ -158,6 +163,8 @@ It is up to the practitioner as to what 'flavor' of CBFM that wish to fit, depen
 
 Having said that, it is in principle possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular dataset, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this is also strongly dependent more on the type of basis functions used.
 
+\strong{Note:} For zero-inflated distributions such as the zero-inflated Poisson distribution, it is the mean of the non-zero inflated component that is modeled and \emph{not} the mean of the entire distribution.
+
 In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. Specifically, in this package we assume follow a multivariate normal distribution as follows:
 
 \deqn{(a_1,\ldots,a_m) \sim N(0, kronecker(G, \Sigma)),}
@@ -184,6 +191,7 @@ Currently the following response distributions are permitted (in alphabetal orde
 \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
 \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
+\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 }
 }
 
@@ -195,11 +203,11 @@ At the same time, it would be remiss to at least provide some brief recommendati
 \describe{
 \item{\code{B_space}: }{We have found that the multi-resolution thin-plate spline basis functions (Tzeng and Huang, 2018), as implemented in \code{\link[autoFRK:mrts]{autoFRK::mrts()}}, work fairly well here as spatial basis functions. They are simple to use and require the user to only supply the number of basis functions, which itself is tied to the resolution at which the practitioner wants to model their spatial correlations. For spatial multivariate abundance data we have usually found that 50 or less spatial basis functions of such type are required.
 
-Another option for spatial basis functions is to use \code{\link[FRK:auto_basis]{FRK::auto_basis()}}, which produces basis functions that are sparse in design but consequently require \emph{many} more in number compared to the multi-resolution thin-plate splines mentioned above. This approach is more customizable however, with the choice of resolutions, basis function centers, and apreture among other choices; please see Zammit-Mangion and Cressie (2017) and Wilke et al. (2019) for more details.}
-\item{\code{B_time}: }{Both of the approaches mentioned above for \code{B_space} can also be applied here, although with temporal basis functions we have generally found the approach implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}} to work satisfactorily in many cases, given their customizability and sparsity (local support). The multi-resolution thin-plate spline basis functions approach, when applied soley in the 1-D temporal dimension, can produce long-term temporal trends that may be undesirable.}
+Another option for spatial basis functions is to use \code{\link[FRK:auto_basis]{FRK::auto_basis()}}, which produces basis functions that are sparse in design but consequently require \emph{many} more in number compared to the multi-resolution thin-plate splines mentioned above. This approach is more customizable however, with the choice of resolutions, basis function centers, and aperture among other choices; please see Zammit-Mangion and Cressie (2017) and Wilke et al. (2019) for more details.}
+\item{\code{B_time}: }{Both of the approaches mentioned above for \code{B_space} can also be applied here, although with temporal basis functions we have generally found the approach implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}} to work satisfactorily in many cases, given their customizability and sparsity (local support). The multi-resolution thin-plate spline basis functions approach, when applied solely in the 1-D temporal dimension, can produce long-term temporal trends that may be undesirable.}
 \item{\code{B_spacetime}: }{A general and most parsimonious starting point for constructing spatio-temporal basis functions is to make use of a tensor-product form (analogous to \code{\link[mgcv:te]{mgcv::te()}}). That is, after constructing a set of spatial and a set of temporal basis functions, we can use the \code{\link[=tensorproduct]{tensorproduct()}} function to construct the tensor-product and include them \code{B_spacetime}.
 
-It is recommended that both 'ingredient' basis functions used in the tensor-product are sparse in design to faciliate computation e.g., as implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}}; see the \code{\link[FRK:FRK-package]{FRK::FRK-package()}} package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same 'ingredient' basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to act different resolutions of the spatio-temporal correlation.}
+It is recommended that both 'ingredient' basis functions used in the tensor-product are sparse in design to facilitate computation e.g., as implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}}; see the \code{\link[FRK:FRK-package]{FRK::FRK-package()}} package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same 'ingredient' basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to act different resolutions of the spatio-temporal correlation.}
 }
 }
 
@@ -209,13 +217,15 @@ As mentioned above, because CBFMs uses a basis function approach to model spatio
 
 Standard errors and resulting techniques like confidence intervals are based on the approximate large sample distribution of the regression coefficients, and use the so-called Bayesian posterior covariance matrix for the coefficients, similar to (but not as sophisticated as!) what is provided  \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}. They can lead to standard errors that are potentially too small, so please keep this in mind.
 
-Also, the current estimation approach does not provide uncertainty quatification of \eqn{\Sigma} and \eqn{G}, analogus to how the \link{mgcv} package (at least bu default) does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!
+Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}, analogous to how the \link{mgcv} package (at least bu default) does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!
 }
 }
 \section{Warning}{
-CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functios from the space-time coordinate of each observational unit. Please do not use them for data that is not spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}}.
+CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}}.
 
-Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quatification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable.
+Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above.
+
+Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable.
 }
 
 \examples{
@@ -244,6 +254,7 @@ spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- runif(num_spp, -2, 0)
 
 # Simulate spatial coordinates and environmental covariate components
+# We will use this information in later examples as well
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- rmvnorm(num_sites, mean = rep(0,4)) 
 colnames(X) <- c("temp", "depth", "chla", "O2")
@@ -253,6 +264,7 @@ scale \%>\%
 as.matrix
 
 # Simulate latent variable component
+# We will use this information in later examples as well
 true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
 x = xy$x, y = xy$y, n = 2)@data \%>\% 
 as.matrix
@@ -260,17 +272,19 @@ spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
 set.seed(NULL)
 
 # Simulate spatial multivariate abundance data (presence-absence)
+# We will use this information in later examples as well
 eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 tcrossprod(true_lvs, spp_loadings)
 simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
-prob = binomial()$linkinv(eta)), nrow = num_sites)
+prob = plogis(eta)), nrow = num_sites)
 
 # Form training and test sets
-simy_train <- simy[1:500,]
-simy_test <- simy[501:1000,]
 dat_train <- dat[1:500,]
 dat_test <- dat[501:1000,]
+simy_train <- simy[1:500,]
+simy_test <- simy[501:1000,]
 rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
+
 
 # Fit stacked GLM as a baseline
 fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
@@ -299,6 +313,7 @@ toc - tic
 
 summary(fitcbfm) \%>\% 
 str
+
 
 # Calculate predictions onto test dataset
 predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -360,11 +375,23 @@ theme_bw()
 ## Example 1b: Repeat Example 1a but illustrate the use of smoothing terms in CBFM
 ## Since the true model only involves parametric terms, then we do not expect its performance
 ## to be as good as assuming the right form for the mean model.
-## It is purely for illusttation purposes. 
-## Please note this will take a while to run...get a cup of tea! 
+## It is purely for illustration purposes. 
+## Please note this will take a while to run...get a cup of tea and stretch your legs! 
 ##------------------------------
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as Example 1a
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
 # Fit CBFM 
-# Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 tic <- proc.time()
 fitcbfm_gam <- CBFM(y = simy_train, formula_X = ~ s(temp) + s(depth) + s(chla) + s(O2), 
 data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
@@ -373,6 +400,7 @@ toc-tic
 
 summary(fitcbfm_gam) \%>\% 
 str
+
 
 # Calculate predictions onto test dataset
 predictions_cbfm_gam <- predict(fitcbfm_gam, newdata = dat_test, type = "response", 
@@ -414,21 +442,35 @@ theme_bw()
 
 
 ##------------------------------
-## Example 1c: Repeat Example 1a but illustrate applications to counts 
+## Example 1c: Repeat Example 1a but illustrate applications to Poisson count data 
 ##------------------------------
-# Poisson counts first
+# Simulate spatial multivariate abundance data
 simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta)), nrow = num_sites)
 
 # Form training and test sets
 simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
 
+
 # Fit stacked GLM as a baseline
 fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = "poisson", 
 data = dat_train)
 
+
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as examples above
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
 # Fit Poisson CBFM 
-# Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -438,6 +480,7 @@ toc - tic
 
 summary(fitcbfm) \%>\% 
 str
+
 
 # Calculate predictions onto test dataset
 predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -484,7 +527,10 @@ labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 theme_bw()
 
 
-# Now simulate overdispersed counts
+##------------------------------
+## Example 1d: Repeat Example 1a but illustrate applications to negative binomial count data 
+##------------------------------
+# Simulate spatial multivariate abundance data
 spp_dispersion <- runif(num_spp)
 simy <- matrix(rnbinom(num_sites * num_spp, mu = exp(eta), 
 size = matrix(1/spp_dispersion, nrow = num_sites, ncol = num_spp, byrow = TRUE)),
@@ -495,14 +541,28 @@ simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
 
 # Fit stacked GLM as a baseline
-# Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = "negative.binomial",
 data = dat_train)
 
+
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as examples above
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
 # Fit negative binomial CBFM
-## Please note the negative binomial distribution is not necessarily required for 
-## overdispersed count data, since the latent variables can to some degree account for
-## overdispersion. 
+# Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
+# Please note the negative binomial distribution is not necessarily required for 
+# overdispersed count data, since the latent variables can to some degree account for
+# overdispersion. 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -510,8 +570,9 @@ B_space = train_basisfunctions, family = nb2(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
 
-#' summary(fitcbfm) \%>\% 
+summary(fitcbfm) \%>\% 
 str
+
 
 # Calculate predictions onto test dataset
 predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -560,9 +621,116 @@ labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 theme_bw()
 
 
+##------------------------------
+## Example 1e: Repeat Example 1a but illustrate applications to ZIP count data 
+##------------------------------
+library(pscl)
+
+# Probability of zero-inflation 
+spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5) 
+
+# Simulate spatial multivariate abundance data
+component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, 
+prob = matrix(spp_zeroinfl_prob, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
+simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta) * (1-component_ind)), 
+num_sites, num_spp)
+rm(component_ind)
+
+# Form training and test sets
+simy_train <- simy[1:500,]
+simy_test <- simy[501:1000,]
+
+
+# Fit stacked ZIP regression models as a baseline
+fitstacked <- NULL 
+for(j in 1:num_spp) {
+fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, 
+data = data.frame(resp = simy_train[,j], dat_train))
+}
+
+
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as examples above
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
+# Fit zero-inflated Poisson CBFM
+tic <- proc.time()
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+B_space = train_basisfunctions, family = zipoisson(), control = list(trace = 1))
+toc <- proc.time()
+toc - tic
+
+summary(fitcbfm) \%>\% 
+str
+
+
+# Calculate predictions onto test dataset
+predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "response"))
+predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
+new_B_space = test_basisfunctions)
+
+# Evaluation predictions
+# Pseudo R-squared across species
+pseudoR2 <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+out <- cor(predictions_stacked[,j], simy_test[,j], method = "spearman")
+out^2 * sign(out)     
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+out <- cor(predictions_cbfm[,j], simy_test[,j], method = "spearman")
+out^2 * sign(out)     
+})
+)
+
+boxplot(pseudoR2, main = "Pseudo-R2", names = c("Stacked GLM", "CBFM"))
+
+ggplot(pseudoR2, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
+theme_bw()
+
+# Predictive deviance across species (lower is better)
+# Need to define density of zero-inflated Poisson distribution first (or get it from a package)
+dlzipois <- function(y, lambda, p0) {
+logp <- log(1-p0) + dpois(y, lambda = lambda, log=TRUE)
+logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
+return(logp)
+}
+preddeviance <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+-2*sum(dlzipois(simy_test[,j], lambda = predictions_stacked[,j], 
+p0 = plogis(fitstacked[[j]]$coefficients$zero[1])))
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+-2*sum(dlzipois(simy_test[,j], lambda = predictions_cbfm[,j], 
+p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j])))
+})
+)
+
+boxplot(preddeviance, main = "Deviance", names = c("Stacked GLM", "CBFM"))
+
+ggplot(preddeviance, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
+theme_bw()
+
+
 
 ##------------------------------
-## Example 1d: Repeat Example 1a but illustrate applications to biomass 
+## Example 1f: Repeat Example 1a but illustrate applications to biomass 
 ##------------------------------
 library(tweedie)
 library(statmod)
@@ -584,8 +752,21 @@ glm(simy_train[,j] ~ temp + depth + chla + O2,
 family = tweedie(var.power = 1.6, link.power = 0), data = dat_train)
 })
 
+
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as examples above
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
 # Fit Tweedie CBFM
-# Please make sure you set up spatial basis functions for CBFM, we do so in Example 1a
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -595,6 +776,7 @@ toc - tic
 
 summary(fitcbfm) \%>\% 
 str
+
 
 # Calculate predictions onto test dataset
 predictions_stacked <- sapply(1:num_spp, function(j) {
@@ -657,8 +839,8 @@ rm(list = ls())
 library(Hmsc)
 library(devtools)
 
-# "The makedata function included in the vignette folder produces datasets 
-# based on the Hmsc model"
+# The makedata function included in the vignette folder produces datasets 
+# based on the Hmsc model
 source_url("https://raw.githubusercontent.com/hmsc-r/HMSC/master/vignettes/makedata.R")
 
 tmp = makedata(ns=50, ny=200, spatial=TRUE)
@@ -684,6 +866,7 @@ toc - tic
 
 summary(fitcbfm) \%>\% 
 str
+
 
 # Evaluate in-sample performance (similar to what was done in the Hmsc vignette)
 # with the = evaluateModelFit() function 
@@ -742,8 +925,13 @@ fitstacked <- manyglm(all.data$Y ~ X.categorical + X.covariate, data = all.data$
 family = binomial())
 
 
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+num_basisfunctions <- 20 # Number of spatial basis functions to use
+basisfunctions <- mrts(all.data$xy, num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+
 # Fit CBFM 
-# Please make sure you set up spatial basis functions for CBFM, we do so in Example 2a
 # Note also that Hmsc generates and fits models assuming a probit link, 
 # but CBFM uses a logit link
 tic <- proc.time()
@@ -751,6 +939,7 @@ fitcbfm <- CBFM(y = all.data$Y, formula_X = all.data$X.formula, data = all.data$
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
+
 
 # Evaluate in-sample performance (similar to what was done in the Hmsc vignette)
 # with the = evaluateModelFit() function 
@@ -822,8 +1011,9 @@ spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- runif(num_spp, -2, 0)
 
 # Simulate spatio-temporal coordinates and environmental covariate components
-# Note we assume that each site is only visited once, but the code belows can be adapted to 
+# Note we assume that each site is only visited once, but the code below can be adapted to 
 # when the same sites are repeatedly visited
+# We will also use this information in examples below
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- rmvnorm(num_sites, mean = rep(0,4)) 
 colnames(X) <- c("temp", "depth", "chla", "O2")
@@ -833,6 +1023,7 @@ scale \%>\%
 as.matrix
 
 # Simulate latent variable component
+# We will also use this information in examples below
 true_space_lvs <- RFsimulate(model = RMexp(var = 1, scale = 2), x = xy$x, y = xy$y, 
 n = 2)@data \%>\% 
 as.matrix
@@ -842,13 +1033,13 @@ as.matrix
 spp_space_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 spp_time_loadings <- matrix(runif(num_spp * 2, -0.5, 0.5), nrow = num_spp) 
 
-
 # Simulate spatial multivariate abundance data (presence-absence)
+# We will also use this information in examples below
 eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 tcrossprod(true_space_lvs, spp_space_loadings) +
 tcrossprod(true_time_lvs, spp_time_loadings)
 simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
-prob = binomial()$linkinv(eta)), nrow = num_sites)
+prob = plogis(eta)), nrow = num_sites)
 
 # Form training and test sets
 simy_train <- simy[1:500,]
@@ -857,6 +1048,7 @@ dat_train <- dat[1:500,]
 dat_test <- dat[501:1000,]
 rm(X, eta, mm, spp_space_loadings, spp_time_loadings, true_space_lvs, true_time_lvs,
 xy, simy)
+
 
 # Fit stacked GLM as a baseline
 fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
@@ -883,7 +1075,6 @@ time_basisfunctions <- eval_basis(time_basisfunctions, s = as.matrix(dat$time))
 train_time_basisfunctions <- time_basisfunctions[1:500,] 
 test_time_basisfunctions <- time_basisfunctions[501:1000,] 
 rm(time_basisfunctions, time_knots)
-
 
 # Fit CBFM with Additive spatial and temporal basis functions 
 tic <- proc.time()
@@ -968,6 +1159,7 @@ G_control = list(rank = 10, method = "simple"),
 Sigma_control = list(rank = 10, method = "simple"), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
+
 
 test_st_basisfunctions <- tensorproduct(test_space_basisfunctions, test_time_basisfunctions)
 predictions_cbfm_tensor <- predict(fitcbfm_tensor, newdata = dat_test, type = "response", 

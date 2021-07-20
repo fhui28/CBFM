@@ -31,7 +31,7 @@ With CBFM being set up much a like generalized additive model or GAM, then simul
 \item{...}{not used.}
 }
 \value{
-A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance datasets is given by the last index.
+A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -49,9 +49,9 @@ As an example, suppose we have a CBFM which involves spatial and temporal (but n
 
 \deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),}
 
-where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}.
+where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kronecker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}.
 
-Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion and power parameters as appropriate. In this function, all parameter are replaced by their estimated values from the fitted CBFM, as appropriate.
+Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion/power/zero inflation probability parameters as appropriate. In this function, all parameter are replaced by their estimated values from the fitted CBFM, as appropriate.
 }
 \examples{
  \donttest{

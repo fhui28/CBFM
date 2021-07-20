@@ -49,14 +49,14 @@
      
 
 .check_family <- function(family, y, trial_size) {
-     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta")))     #"ztpoisson", "ztnegative.binomial"
+     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", "zipoisson")))     #"ztpoisson", "ztnegative.binomial"
           stop("Family currently not supported. Sorry!")
      #if((family$family %in% c("ztpoisson", "ztnegative.binomial")) & any(y == 0))
      #     stop("zero counts not allowed for zero truncated distributions.")
      
      if(family$family[1] == "gaussian" & family$link != "identity")
           stop("Currently Gaussian family only permits the identity link.")
-     if(family$family[1] %in% c("Gamma","negative.binomial","poisson", "tweedie") & family$link != "log")
+     if(family$family[1] %in% c("Gamma","negative.binomial","poisson", "tweedie", "zipoisson") & family$link != "log")
           stop("Supplied family currently only permits the log link function to be used.")
      if(family$family[1] %in% c("beta","binomial") & family$link != "logit")
           stop("Supplied family currently only permits the logit link function to be used.")
@@ -101,6 +101,16 @@
           }
      }
      
+
+.check_ranks2 <- function(num_spp, which_B_used, G_control, vec_num_basisfns, Sigma_control) {
+     for(k0 in 1:length(which_B_used)) { 
+          if(which_B_used[k0] == 1) {
+               .check_ranks(num_spp = num_spp, rank_G = G_control$rank[sum(which_B_used[1:k0])], 
+                            num_basisfns = vec_num_basisfns[k0], rank_Sigma = Sigma_control$rank[sum(which_B_used[1:k0])])
+               }
+          }
+     }
+
      
 .check_start_params <- function(start_params, num_spp, num_basisfns, num_X) {
      if(!is.null(start_params$betas)) {
@@ -122,6 +132,10 @@
      if(!is.null(start_params$powerparam)) {
           if(length(start_params$powerparam) != num_spp)
                stop("The length of start_params$powerparam is not appropriate. Please check and amend.")
+          }          
+     if(!is.null(start_params$zeroinfl_prob)) {
+          if(length(start_params$zeroinfl_prob) != num_spp)
+               stop("The length of start_params$zeroinfl_prob is not appropriate. Please check and amend.")
           }          
      }
 
@@ -157,6 +171,8 @@
           family_counter <- 8
      if(family$family[1] == "ztpoisson")
           family_counter <- 9
+     if(family$family[1] == "zipoisson")
+          family_counter <- 10
      
      return(family_counter)
      }

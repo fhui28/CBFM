@@ -5,7 +5,17 @@
      }
           
      
+## Two functions used to extract relevant principle submatrices of the Bayesian posterior covariance matrix from the CBFM fit. 
+## This was initially done to save memory and because only certain components of the matrices are needed later on, but has since been abandoned since some predictions need to simulate from the whole kitchen sink!
+.extractcovarblocks_topright <- function(j, Q, num_X, num_basisfns) { 
+     return(Q[(num_X*j - num_X + 1):(num_X*j), (num_basisfns*j - num_basisfns + 1):(num_basisfns*j)]) 
+     }
 
+.extractcovarblocks_bottomright <- function(j, Q, num_basisfns) { 
+     return(Q[(num_basisfns*j - num_basisfns + 1):(num_basisfns*j), (num_basisfns*j - num_basisfns + 1):(num_basisfns*j)]) 
+     }
+
+               
 ## Get the full S matrix from GAMs. Relies on the fact that gam always move the parametric terms first
 .get_bigS <- function(fit_gam, num_X) {
      bigS <- Matrix::Matrix(0, num_X, num_X, sparse = TRUE)

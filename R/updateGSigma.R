@@ -9,66 +9,69 @@
 #      }
 
      
-update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_vec, dispparam, powerparam, trial_size, family, G_control, return_correlation = TRUE) {
-     num_spp <- nrow(basis_effects_mat)
-     num_basisfns <- ncol(Sigmainv)
-     trial_size <- as.vector(trial_size)
+update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_vec, dispparam, powerparam, zeroinfl_prob_intercept,  
+                        trial_size, family, G_control, return_correlation = TRUE) {
+        
+        num_spp <- nrow(basis_effects_mat)
+        num_basisfns <- ncol(Sigmainv)
+        trial_size <- as.vector(trial_size)
 
-     if(num_spp == 1) 
-          return(solve(Ginv))
+        if(num_spp == 1) 
+                return(solve(Ginv))
      
-     G_control$method <- match.arg(G_control$method, choices = c("simple","LA")) 
-     G_control$inv_method <- "chol2inv" #match.arg(G_control$inv_method, choices = c("chol2inv","schulz"))
-     A_Sigmain_AT <- basis_effects_mat %*% tcrossprod(Sigmainv, basis_effects_mat)
+        G_control$method <- match.arg(G_control$method, choices = c("simple","LA")) 
+        G_control$inv_method <- "chol2inv" #match.arg(G_control$inv_method, choices = c("chol2inv","schulz"))
+        A_Sigmain_AT <- basis_effects_mat %*% tcrossprod(Sigmainv, basis_effects_mat)
 
-     if(family$family == "binomial") {
-          linpred_vec[linpred_vec > 5] <- 5
-          linpred_vec[linpred_vec < -5] <- -5
-          }
+        if(family$family == "binomial") {
+                linpred_vec[linpred_vec > 5] <- 5
+                linpred_vec[linpred_vec < -5] <- -5
+                }
      
-     if(G_control$method == "simple") {
-          new_G <- A_Sigmain_AT / num_basisfns
-          }
+        if(G_control$method == "simple") {
+                new_G <- A_Sigmain_AT / num_basisfns
+                }
      
-     if(G_control$method == "LA") {
-          ## Note weights are on a per-species basis i.e., site runs faster than species
-          if(family$family[1] != "tweedie") 
-               weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), trial_size = trial_size)
-          if(family$family[1] == "tweedie") {
-               two_minus_powerparam <- rep(2-powerparam, each = nrow(B))
-               exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*linpred_vec)
-               exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*linpred_vec)
-               weights_mat <-  rep(1/dispparam, each = nrow(B)) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y_vec*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
-               rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
-               }
+        if(G_control$method == "LA") {
+                ## Note weights are on a per-species basis i.e., site runs faster than species
+                if(family$family[1] != "tweedie") 
+                        weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                                      zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
+                if(family$family[1] == "tweedie") {
+                        two_minus_powerparam <- rep(2-powerparam, each = nrow(B))
+                        exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*linpred_vec)
+                        exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*linpred_vec)
+                        weights_mat <-  rep(1/dispparam, each = nrow(B)) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y_vec*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
+                        rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
+                        }
 
-          ## Set up to to REML as opposed to ML
-          weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
-          inner_fn <- function(j) {
-               XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j]))))
-               BTWX <- crossprod(B, X*weights_mat[,j])               
-               return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
-               }
+                ## Set up to to REML as opposed to ML
+                weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+                inner_fn <- function(j) {
+                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j]))))
+                        BTWX <- crossprod(B, X*weights_mat[,j])               
+                        return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                        }
           
-          BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-          BWB_minus_BWX_XWXinv_XWB <- bdiag(BWB_minus_BWX_XWXinv_XWB)
-          gc()
+                BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+                BWB_minus_BWX_XWXinv_XWB <- bdiag(BWB_minus_BWX_XWXinv_XWB)
+                gc()
      
-          vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Diagonal(n = num_spp), Sigmainv[,k]))) 
-          Q2 <- kronecker(Diagonal(n = num_spp), vecPsi)
-          needonly_cols <- unlist(sapply(1:num_spp, function(j) return((j-1)*num_spp + j:num_spp)))
-          Q2 <- Q2[, needonly_cols, drop = FALSE]
-          rm(vecPsi, weights_mat)
-          gc()
+                vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Diagonal(n = num_spp), Sigmainv[,k]))) 
+                Q2 <- kronecker(Diagonal(n = num_spp), vecPsi)
+                needonly_cols <- unlist(sapply(1:num_spp, function(j) return((j-1)*num_spp + j:num_spp)))
+                Q2 <- Q2[, needonly_cols, drop = FALSE]
+                rm(vecPsi, weights_mat)
+                gc()
           
-          counter <- 0
-          diff <- 10
-          cw_G <- chol2inv(chol(Ginv))
-          while(diff > G_control$tol & counter < G_control$maxit) {
-               cw_Ginv_Sigmainv <- as(kronecker(chol2inv(chol(cw_G)), Sigmainv), "sparseMatrix")
+                counter <- 0
+                diff <- 10
+                cw_G <- chol2inv(chol(Ginv))
+                while(diff > G_control$tol & counter < G_control$maxit) {
+                        cw_Ginv_Sigmainv <- as(kronecker(chol2inv(chol(cw_G)), Sigmainv), "sparseMatrix")
 
-               if(G_control$inv_method == "chol2inv")
-                    Q1 <- as.vector(chol2inv(chol(forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                        if(G_control$inv_method == "chol2inv")
+                                Q1 <- as.vector(chol2inv(chol(forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
                          
 #                if(G_control$inv_method == "schulz") {
 #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
@@ -76,28 +79,28 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
 #                     rm(mat)
 #                     }
                
-               new_G <- matrix(0, nrow = num_spp, ncol = num_spp)
-               if(num_spp > 1)
-                    new_G[lower.tri(new_G, diag = TRUE)] <- crossprod(Q2, Q1)
+                        new_G <- matrix(0, nrow = num_spp, ncol = num_spp)
+                        if(num_spp > 1)
+                                new_G[lower.tri(new_G, diag = TRUE)] <- crossprod(Q2, Q1)
 #                if(num_spp == 1)
 #                     new_G <- matrix(as.vector(crossprod(Q2, Q1)), 1, 1)
-               new_G <- new_G + t(new_G) - diag(x = diag(new_G), nrow = num_spp)
-               new_G <- (new_G + A_Sigmain_AT)/num_basisfns
-               new_G <- forceSymmetric(new_G) 
+                        new_G <- new_G + t(new_G) - diag(x = diag(new_G), nrow = num_spp)
+                        new_G <- (new_G + A_Sigmain_AT)/num_basisfns
+                        new_G <- forceSymmetric(new_G) 
                
-               diff <- 0.5 * mean(as.vector((new_G - cw_G)^2))
-               if(G_control$trace > 0)
-                    message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
-               cw_G <- new_G
-               counter <- counter + 1
-               }
-          }
+                        diff <- 0.5 * mean(as.vector((new_G - cw_G)^2))
+                        if(G_control$trace > 0)
+                                message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
+                        cw_G <- new_G
+                        counter <- counter + 1
+                        }
+                }
 
-     if(return_correlation)
-          new_G <- stats::cov2cor(as.matrix(new_G))
+        if(return_correlation)
+                new_G <- stats::cov2cor(as.matrix(new_G))
           
-     return(as.matrix(new_G))
-     }
+        return(as.matrix(new_G))
+        }
      
      
 update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRUE) {
@@ -190,64 +193,66 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
      }
      
 
-update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linpred_vec, dispparam, powerparam, trial_size, family, Sigma_control) {
-     num_spp <- nrow(basis_effects_mat)
-     num_basisfns <- ncol(Sigmainv)
-     trial_size <- as.vector(trial_size)
+update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linpred_vec, dispparam, powerparam, zeroinfl_prob_intercept, 
+                            trial_size, family, Sigma_control) {
+        num_spp <- nrow(basis_effects_mat)
+        num_basisfns <- ncol(Sigmainv)
+        trial_size <- as.vector(trial_size)
      
-     Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","LA")) #,"REML-LA"
-     Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) #,"REML-LA"
+        Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","LA")) #,"REML-LA"
+        Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) #,"REML-LA"
      
-     AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
+        AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
      
-     if(family$family == "binomial") {
-          linpred_vec[linpred_vec > 5] <- 5
-          linpred_vec[linpred_vec < -5] <- -5
-          }
+        if(family$family == "binomial") {
+                linpred_vec[linpred_vec > 5] <- 5
+                linpred_vec[linpred_vec < -5] <- -5
+                }
 
           
-     if(Sigma_control$method == "simple") {
-          new_Sigma <- AT_Ginv_A / num_spp
-          }
+        if(Sigma_control$method == "simple") {
+                new_Sigma <- AT_Ginv_A / num_spp
+                }
 
-     if(Sigma_control$method == "LA") {
-          ## Note weights are on a per-species basis i.e., site runs faster than species
-          if(family$family[1] != "tweedie") 
-               weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), trial_size = trial_size)
-          if(family$family[1] == "tweedie") {
-               two_minus_powerparam <- rep(2-powerparam, each = nrow(B))
-               exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*linpred_vec)
-               exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*linpred_vec)
-               weights_mat <-  rep(1/dispparam, each = nrow(B)) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y_vec*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
-               rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
-               }
+        if(Sigma_control$method == "LA") {
+                ## Note weights are on a per-species basis i.e., site runs faster than species
+                if(family$family[1] != "tweedie") 
+                        weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                                      zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
+                if(family$family[1] == "tweedie") {
+                        two_minus_powerparam <- rep(2-powerparam, each = nrow(B))
+                        exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam*linpred_vec)
+                        exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1)*linpred_vec)
+                        weights_mat <-  rep(1/dispparam, each = nrow(B)) * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y_vec*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
+                        rm(two_minus_powerparam, exp_one_minus_powerparam_linpred, exp_two_minus_powerparam_linpred)
+                        }
 
-          ## Set up to to REML as opposed to ML
-          weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
-          inner_fn <- function(j) {
-               XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j]))))
-               BTWX <- crossprod(B, X*weights_mat[,j])               
-               return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
-               }
+                ## Set up to to REML as opposed to ML
+                weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+                inner_fn <- function(j) {
+                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j]))))
+                        BTWX <- crossprod(B, X*weights_mat[,j])               
+                        return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                        }
                
-          BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-          BWB_minus_BWX_XWXinv_XWB <- bdiag(BWB_minus_BWX_XWXinv_XWB)
-          gc()               
+                BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+                BWB_minus_BWX_XWXinv_XWB <- bdiag(BWB_minus_BWX_XWXinv_XWB)
+                gc()               
 
-          Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Diagonal(n = num_basisfns), kronecker(Ginv[,k], Diagonal(n = num_basisfns)))) )
-          needonly_cols <- unlist(sapply(1:num_basisfns, function(j) (j-1)*num_basisfns + j:num_basisfns))
-          Q2 <- Q2[, needonly_cols, drop = FALSE]
-          rm(weights_mat)
-          gc()
+                Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Diagonal(n = num_basisfns), kronecker(Ginv[,k], Diagonal(n = num_basisfns)))) )
+                needonly_cols <- unlist(sapply(1:num_basisfns, function(j) (j-1)*num_basisfns + j:num_basisfns))
+                Q2 <- Q2[, needonly_cols, drop = FALSE]
+                rm(weights_mat)
+                gc()
 
-          counter <- 0
-          diff <- 10
-          cw_Sigma <- chol2inv(chol(Sigmainv))
-          while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
-               cw_Ginv_Sigmainv <- Matrix(kronecker(Ginv, chol2inv(chol(cw_Sigma))), sparse = TRUE)    
+                counter <- 0
+                diff <- 10
+                cw_Sigma <- chol2inv(chol(Sigmainv))
+                while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
+                        cw_Ginv_Sigmainv <- Matrix(kronecker(Ginv, chol2inv(chol(cw_Sigma))), sparse = TRUE)    
 
-               if(Sigma_control$inv_method == "chol2inv")
-                    Q1 <- as.vector(chol2inv(chol(forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                        if(Sigma_control$inv_method == "chol2inv")
+                                Q1 <- as.vector(chol2inv(chol(forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
                          
 #                if(Sigma_control$inv_method == "schulz") {
 #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
@@ -255,22 +260,22 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
 #                     rm(mat)
 #                     }
                
-               new_Sigma <- matrix(0, nrow = num_basisfns, ncol = num_basisfns)
-               new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
-               new_Sigma <- new_Sigma + t(new_Sigma) - diag(diag(new_Sigma))
-               new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
-               new_Sigma <- forceSymmetric(new_Sigma) 
+                        new_Sigma <- matrix(0, nrow = num_basisfns, ncol = num_basisfns)
+                        new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
+                        new_Sigma <- new_Sigma + t(new_Sigma) - diag(diag(new_Sigma))
+                        new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
+                        new_Sigma <- forceSymmetric(new_Sigma) 
                
-               diff <- 0.5 * mean(as.vector((new_Sigma - cw_Sigma)^2))
-               if(Sigma_control$trace > 0)
-                    message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
-               cw_Sigma <- new_Sigma
-               counter <- counter + 1
-               }
-
-          }
-     return(as.matrix(new_Sigma))
-     }
+                        diff <- 0.5 * mean(as.vector((new_Sigma - cw_Sigma)^2))
+                        if(Sigma_control$trace > 0)
+                                message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
+                        cw_Sigma <- new_Sigma
+                        counter <- counter + 1
+                        }
+                }
+        
+        return(as.matrix(new_Sigma))
+        }
 	
 
 update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element) {
@@ -309,6 +314,3 @@ update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element) {
      return(out)
      }
      
-
-
-

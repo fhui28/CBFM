@@ -24,11 +24,11 @@
 #' 
 #' \deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
 #' 
-#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
+#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kronecker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
 #' 
-#' Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion and power parameters as appropriate. In this function, all parameter are replaced by their estimated values from the fitted CBFM, as appropriate.
+#' Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion/power/zero inflation probability parameters as appropriate. In this function, all parameter are replaced by their estimated values from the fitted CBFM, as appropriate.
 #' 
-#' @return A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance datasets is given by the last index.
+#' @return A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
@@ -103,6 +103,7 @@
 #'
 #'
 #' @export
+#' @importFrom stats plogis
 #' @md
 #' 
 simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, conditional = TRUE, ...) {
@@ -139,7 +140,8 @@ simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, condit
           G = NULL,
           trial_size = object$trial_size,
           dispparam = object$dispparam, 
-          powerparam = object$dispparam, 
+          powerparam = object$powerparam, 
+          zeroinfl_prob = plogis(object$zeroinfl_prob_intercept), 
           max_resp = max_resp
           )
      if(object$which_B_used[1] == 1)
@@ -176,6 +178,7 @@ simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, condit
                trial_size = true_model$trial_size,
                dispparam = true_model$dispparam, 
                powerparam = true_model$dispparam, 
+               zeroinfl_prob = true_model$zeroinfl_prob, 
                max_resp = max_resp,
                only_y = TRUE)
           )

@@ -19,6 +19,7 @@
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as the simulated response matrix is to be.
 #' @param dispparam A vector of species-specific dispersion parameters, to be used for distributions that require one.  
 #' @param powerparam A vector of species-specific power parameters, to be used for distributions that require one. 
+#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. 
 #' @param offset A matrix of offset terms.  
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
 #' @param only_y If \code{TRUE}, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if \code{FALSE}, then additional information about is returned.
@@ -49,6 +50,7 @@
 #' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
 #' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 #' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
+#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 #' }
 #' }
 #' 
@@ -90,7 +92,7 @@
 #' dat <- data.frame(xy, X)
 #' useformula <- ~ temp + depth + chla + O2
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM 
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
 #' as.matrix %>%
@@ -108,6 +110,7 @@
 #' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 #' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 #' 
+#' 
 #' # Generates spatial multivariate presence-absence data 
 #' # Manually supply basis function coefficients 
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
@@ -116,28 +119,37 @@
 #' B_space = basisfunctions)
 #' 
 #' 
-#' # Generates spatial multivariate count data 
+#' # Generates spatial multivariate count data from a negative binomial distribution
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
 #' spp_dispersion <- runif(num_spp)
 #' simy <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 #' dispparam = spp_dispersion, max_resp = 20000, 
 #' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' 
+#' 
+#' # Generates spatial multivariate count data from a zero-inflated Poisson distribution 
+#' # Manually supply basis function coefficients 
+#' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
+#' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+#' simy <- create_CBFM_life(family = zipoisson(), formula_X = useformula, data = dat,
+#' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
+#' B_space = basisfunctions, zeroinfl_prob = spp_zeroinfl_prob)
 #' }
 #' 
 #' @export
 #' 
 #' @import Matrix 
 #' @importFrom mgcv gam model.matrix.gam
-#' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois 
+#' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois plogis
 #' @importFrom tweedie rtweedie
 #' 
 
 create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
      betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
-     trial_size = 1, dispparam = NULL, powerparam = NULL, max_resp = Inf, only_y = FALSE) {
+     trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
-     if(!(family$family %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie"))) #"ztpoisson","ztnegative.binomial"
+     if(!(family$family %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie", "zipoisson"))) #"ztpoisson","ztnegative.binomial"
           stop("Family is currently not supported. Sorry!")
      
      formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
@@ -198,7 +210,7 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
      sim_y <- matrix(NA, nrow = num_units, ncol = num_spp, dimnames = list(units = paste0("unit", 1:num_units), response = paste0("spp", 1:num_spp)))
      for(j in 1:num_spp) {
           if(family$family == "beta")
-               sim_y[,j] <- rbeta(num_units, shape1 = binomial()$linkinv(true_eta[,j])*dispparam[j], shape2 = (1-binomial()$linkinv(true_eta[,j]))*dispparam[j])
+               sim_y[,j] <- rbeta(num_units, shape1 = plogis(true_eta[,j])*dispparam[j], shape2 = (1-plogis(true_eta[,j]))*dispparam[j])
           if(family$family == "binomial")
                sim_y[,j] <- rbinom(num_units, size = ifelse(length(trial_size) == 1, trial_size, trial_size[,j]), prob = family$linkinv(true_eta[,j]))
           if(family$family == "Gamma")
@@ -211,13 +223,17 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
           if(family$family == "tweedie")
                sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+          if(family$family == "zipoisson") {
+                simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
+                }
 #           if(family$family == "ztpoisson")
 #                sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
 #           if(family$family == "ztnegative.binomial")
 #                sim_y[,j] <- rztnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j]) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
           }
 
-     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma")) {
+     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson")) {
           inner_counter <- 0
           while(any(sim_y > max_resp) & inner_counter < 10) {
                if(basismat_notsupplied) {
@@ -248,19 +264,23 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                for(j in 1:num_spp)
                     {
                     if(family$family == "beta")
-                         sim_y[,j] <- rbeta(num_units, shape1 = binomial()$linkinv(true_eta[,j])*dispparam[j], shape2 = (1-binomial()$linkinv(true_eta[,j]))*dispparam[j])
+                            sim_y[,j] <- rbeta(num_units, shape1 = plogis(true_eta[,j])*dispparam[j], shape2 = (1-plogis(true_eta[,j]))*dispparam[j])
                     if(family$family == "binomial")
-                         sim_y[,j] <- rbinom(num_units, size = ifelse(length(trial_size) == 1, trial_size, trial_size[,j]), prob = family$linkinv(true_eta[,j]))
+                            sim_y[,j] <- rbinom(num_units, size = ifelse(length(trial_size) == 1, trial_size, trial_size[,j]), prob = family$linkinv(true_eta[,j]))
                     if(family$family == "Gamma")
-                         sim_y[,j] <- rgamma(num_units, scale = exp(true_eta[,j])*dispparam[j], shape = 1/dispparam[j])
+                            sim_y[,j] <- rgamma(num_units, scale = exp(true_eta[,j])*dispparam[j], shape = 1/dispparam[j])
                     if(family$family == "gaussian")
-                         sim_y[,j] <- rnorm(num_units, mean = true_eta[,j], sd = sqrt(dispparam[j]))
+                            sim_y[,j] <- rnorm(num_units, mean = true_eta[,j], sd = sqrt(dispparam[j]))
                     if(family$family == "negative.binomial")
-                         sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j])
+                            sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j])
                     if(family$family == "poisson")
-                         sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
+                            sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
                     if(family$family == "tweedie")
-                         sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+                            sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+                    if(family$family == "zipoisson") {
+                            simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                            sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
+                            }
 #                     if(family$family == "ztpoisson")
 #                          sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) 
 #                     if(family$family == "ztnegative.binomial")

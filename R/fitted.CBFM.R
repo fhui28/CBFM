@@ -3,13 +3,13 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extracts fitted values from a \code{CBFM} fit.
+#' Extracts fitted mean values from a \code{CBFM} fit.
 #' 
 #' @param object An object of class "CBFM".
 #' @param ... Not used.
 #' 
 #' @details 
-#' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting.
+#' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.
 #' 
 #' @return A matrix of fitted values.
 #' 

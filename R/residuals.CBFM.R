@@ -6,12 +6,15 @@
 #' Calculate various types of residuals from a fitted \code{CBFM} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
 #' 
 #' @param object An object of class "CBFM".
-#' @param type The type of residuals which should be returned. Currently the options available are: "reponse" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
+#' @param type The type of residuals which should be returned. Currently the options available are: "repose" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
 #' @param seed This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.  
 #' @param ... Not used.
 #' 
 #' @details 
-#' Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then the \code{type = "response"} corresponds to raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success". 
+#' Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then:
+#' 
+#' For \code{type = "response"}, this returns the raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success". 
+#' For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_j)\hat{\mu}_{ij}} where \eqn{\hat{\pi}_j} is the estimated species-specific probability of zero inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
 #' 
 #' For \code{type = "pearson"}, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance. 
 #' 
@@ -95,7 +98,7 @@
 #' 
 #' @export
 #' 
-#' @importFrom stats runif qnorm pbeta pbinom pgamma pnorm ppois pnbinom
+#' @importFrom stats runif qnorm pbeta pbinom pgamma plogis pnorm ppois pnbinom
 #' @importFrom tweedie ptweedie 
 #' @md
 
@@ -129,6 +132,9 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                out <- out / sqrt(object$family$variance(object$fitted, 
                     phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE), 
                     power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+          if(object$family$family[1] %in% c("zipoisson")) 
+               out <- out / sqrt(object$family$actual_variance(object$fitted, 
+                    zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
           }
           
      if(type %in% c("PIT","dunnsmyth")) {
@@ -155,6 +161,13 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                     power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
                a[object$y == 0] <- 0
                out <- runif(length(object$y), min = a, max = b)
+               }
+          if(object$family$family[1] %in% c("zipoisson")) {
+               out <- runif(length(object$y), 
+                    min = .pzipois(object$y-1, lambda = exp(object$linear_predictor), 
+                                   zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                    max = .pzipois(object$y, lambda = exp(object$linear_predictor), 
+                                  zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
                }
 #           if(object$family$family[1] %in% c("ztpoisson"))
 #                out <- runif(length(object$y), min = pztpois(object$y-1, mean = object$fitted), max = ptzpois(object$y, mean = object$fitted))
