@@ -27,7 +27,7 @@ zipoisson <- function() {
         variance <- function(mu) 
                   return(mu)
         actual_variance <- function(mu, zeroinfl_prob) 
-                  return(mu + zeroinfl_prob/(1-zeroinfl_prob) * mu^2)
+                  return((1-zeroinfl_prob) * mu * (1 + zeroinfl_prob * mu))
 
         structure(list(family = "zipoisson", link = link, linkfun = linkfun, linkinv = linkinv, mu.eta = mu.eta, variance = variance,
                        actual_variance = actual_variance), class = "family")
@@ -41,7 +41,7 @@ zipoisson <- function() {
 #         return(sum(logp))
 #         }
 
-## Adapted from the countreg/pscl package, and acknowledgement goes to them
+## Adapted from the countreg/pscl package, and acknowledgement goes to its authors
 .dzipoisson_log <- function(eta, y, zeroinfl_prob) {
         logp <- log(1-zeroinfl_prob) + dpois(y, lambda = exp(eta), log=TRUE)
         logp[y == 0] <- log(exp(logp[y == 0]) + zeroinfl_prob)
@@ -49,22 +49,14 @@ zipoisson <- function() {
         return(sum(logp))
         }
 
-## Adapted from the VGAM package, and acknowledgement goes to them
-.pzipois <- function(q, lambda, zeroinfl_prob = 0) {
-        LLL <- max(length(zeroinfl_prob), length(lambda), length(q))
-        if (length(zeroinfl_prob)  != LLL) 
-                zeroinfl_prob  <- rep_len(zeroinfl_prob,  LLL)
-        if (length(lambda) != LLL) 
-                lambda <- rep_len(lambda, LLL)
-        if (length(q)      != LLL) 
-                q      <- rep_len(q,      LLL)
-        
-        ans <- ppois(q, lambda)
-        ans <- ifelse(q < 0, 0, zeroinfl_prob + (1 - zeroinfl_prob) * ans)
+## Adapted from the VGAM package, and acknowledgement goes to its authors
+## Assumes q, lambda and zeroinfl_prob are all of the same dimension 
+.pzipois <- function(q, lambda, zeroinfl_prob) {
+        ans <- zeroinfl_prob + (1 - zeroinfl_prob) * ppois(q, lambda)
+        ans[q < 0] <- 0
 
-        deflat.limit <- -1 / expm1(lambda)
-        ans[zeroinfl_prob < deflat.limit] <- NaN
+        ans[zeroinfl_prob < -1 / expm1(lambda)] <- NaN
         ans[zeroinfl_prob > 1] <- NaN
         
-        ans
+        return(ans)
         }
