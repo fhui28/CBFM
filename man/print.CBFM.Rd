@@ -4,7 +4,7 @@
 \alias{print.CBFM}
 \title{Print a CBFM object}
 \usage{
-print.CBFM(x, ...)
+\method{print}{CBFM}(x, ...)
 }
 \arguments{
 \item{x}{An object of class "CBFM".}

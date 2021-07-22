@@ -33,7 +33,6 @@ zinb2 <- function() {
         }
 
      
-## UP TO HERE!
 
 .dzinegativebinomial_log <- function(eta, y, zeroinfl_prob, phi) {
         logp <- log(1-zeroinfl_prob) + dnbinom(y, mu = exp(eta), size = 1/phi, log=TRUE)

@@ -1340,7 +1340,7 @@
 #' @import Matrix
 #' @importFrom compiler cmpfun
 #' @importFrom doParallel registerDoParallel
-#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom pnbinom rnbinom pbeta rbeta pexp rexp pgamma rgamma plogis qlogis dpois ppois rpois runif pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
+#'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
 #' @importFrom mgcv betar gam ldTweedie logLik.gam model.matrix.gam nb rTweedie Tweedie tw

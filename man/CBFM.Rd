@@ -163,7 +163,7 @@ It is up to the practitioner as to what 'flavor' of CBFM that wish to fit, depen
 
 Having said that, it is in principle possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular dataset, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this is also strongly dependent more on the type of basis functions used.
 
-\strong{Note:} For zero-inflated distributions such as the zero-inflated Poisson distribution, it is the mean of the non-zero inflated component that is modeled and \emph{not} the mean of the entire distribution.
+\strong{Note:} For zero-inflated distributions, it is the mean of the non-zero inflated component that is modeled and \emph{not} the mean of the entire distribution.
 
 In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. Specifically, in this package we assume follow a multivariate normal distribution as follows:
 
@@ -192,6 +192,7 @@ Currently the following response distributions are permitted (in alphabetal orde
 \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
 \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 }
 }
 
@@ -225,7 +226,7 @@ CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such 
 
 Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above.
 
-Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable.
+Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable.
 }
 
 \examples{
@@ -241,7 +242,7 @@ library(RandomFields)
 library(tidyverse)
 
 ##------------------------------
-## Example 1a: Fitting a CBFM to spatial multivariate presence-absence data 
+## **Example 1a: Fitting a CBFM to spatial multivariate presence-absence data**
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ##------------------------------
@@ -372,7 +373,7 @@ theme_bw()
 
 
 ##------------------------------
-## Example 1b: Repeat Example 1a but illustrate the use of smoothing terms in CBFM
+## **Example 1b: Repeat Example 1a but illustrate the use of smoothing terms in CBFM**
 ## Since the true model only involves parametric terms, then we do not expect its performance
 ## to be as good as assuming the right form for the mean model.
 ## It is purely for illustration purposes. 
@@ -442,7 +443,7 @@ theme_bw()
 
 
 ##------------------------------
-## Example 1c: Repeat Example 1a but illustrate applications to Poisson count data 
+## **Example 1c: Repeat Example 1a but illustrate applications to Poisson count data**
 ##------------------------------
 # Simulate spatial multivariate abundance data
 simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta)), nrow = num_sites)
@@ -528,7 +529,7 @@ theme_bw()
 
 
 ##------------------------------
-## Example 1d: Repeat Example 1a but illustrate applications to negative binomial count data 
+## **Example 1d: Repeat Example 1a but illustrate applications to negative binomial count data** 
 ##------------------------------
 # Simulate spatial multivariate abundance data
 spp_dispersion <- runif(num_spp)
@@ -622,7 +623,7 @@ theme_bw()
 
 
 ##------------------------------
-## Example 1e: Repeat Example 1a but illustrate applications to ZIP count data 
+## **Example 1e: Repeat Example 1a but illustrate applications to ZIP count data** 
 ##------------------------------
 library(pscl)
 
@@ -711,7 +712,7 @@ return(logp)
 preddeviance <- data.frame(
 stacked = sapply(1:num_spp, function(j) { 
 -2*sum(dlzipois(simy_test[,j], lambda = predictions_stacked[,j], 
-p0 = plogis(fitstacked[[j]]$coefficients$zero[1])))
+p0 = plogis(fitstacked[[j]]$coefficients$zero)))
 }),
 cbfm = sapply(1:num_spp, function(j) { 
 -2*sum(dlzipois(simy_test[,j], lambda = predictions_cbfm[,j], 
@@ -730,7 +731,119 @@ theme_bw()
 
 
 ##------------------------------
-## Example 1f: Repeat Example 1a but illustrate applications to biomass 
+## **Example 1f: Repeat Example 1a but illustrate applications to ZINB count data**
+##------------------------------
+# Probability of zero-inflation 
+spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5) 
+spp_dispersion <- runif(num_spp)
+
+# Simulate spatial multivariate abundance data
+# Note the deliberate "+2" on the linear predictor: This creates data that is a bit more 
+# clearly overdispersed and zero-inflated...
+component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, 
+prob = matrix(spp_zeroinfl_prob, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
+simy <- matrix(rnbinom(num_sites * num_spp, mu = exp(eta+2) * (1-component_ind),
+size = matrix(1/spp_dispersion, nrow = num_sites, ncol = num_spp, byrow = TRUE)),
+num_sites, num_spp)
+rm(component_ind)
+
+# Form training and test sets
+simy_train <- simy[1:500,]
+simy_test <- simy[501:1000,]
+
+
+# Fit stacked ZIP regression models as a baseline
+fitstacked <- NULL 
+for(j in 1:num_spp) {
+fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, 
+dist = "negbin", data = data.frame(resp = simy_train[,j], dat_train))
+}
+
+
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as examples above
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
+# Fit zero-inflated negative binomial CBFM
+tic <- proc.time()
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+B_space = train_basisfunctions, family = zinb2(), control = list(trace = 1))
+toc <- proc.time()
+toc - tic
+
+summary(fitcbfm) \%>\% 
+str
+
+
+# Calculate predictions onto test dataset
+predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "response"))
+predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
+new_B_space = test_basisfunctions)
+
+# Evaluation predictions
+# Pseudo R-squared across species
+pseudoR2 <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+out <- cor(predictions_stacked[,j], simy_test[,j], method = "spearman")
+out^2 * sign(out)     
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+out <- cor(predictions_cbfm[,j], simy_test[,j], method = "spearman")
+out^2 * sign(out)     
+})
+)
+
+boxplot(pseudoR2, main = "Pseudo-R2", names = c("Stacked GLM", "CBFM"))
+
+ggplot(pseudoR2, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
+theme_bw()
+
+# Predictive deviance across species (lower is better)
+# Need to define density of zero-inflated Poisson distribution first (or get it from a package)
+dlzinb <- function(y, lambda, p0, phi) {
+logp <- log(1-p0) + dnbinom(y, mu = lambda, size = 1/phi, log=TRUE)
+logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
+return(logp)
+}
+preddeviance <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+-2*sum(dlzinb(simy_test[,j], lambda = predictions_stacked[,j], 
+p0 = plogis(fitstacked[[j]]$coefficients$zero),
+phi = 1/fitstacked[[j]]$theta))
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+-2*sum(dlzinb(simy_test[,j], lambda = predictions_cbfm[,j], 
+p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j]),
+phi = fitcbfm$dispparam[j]))
+})
+)
+
+boxplot(preddeviance, main = "Deviance", names = c("Stacked GLM", "CBFM"))
+
+ggplot(preddeviance, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
+theme_bw()
+
+
+
+##------------------------------
+## **Example 1g Repeat Example 1a but illustrate applications to biomass**
 ##------------------------------
 library(tweedie)
 library(statmod)
@@ -831,7 +944,7 @@ rm(list = ls())
 
 
 ##------------------------------
-## Example 2a: Fitting a CBFM to multivariate spatial continuous data
+## **Example 2a: Fitting a CBFM to multivariate spatial continuous data**
 ## with a data generation pulled from the Hmsc vignette (also spatial latent variable model)
 ## Please see Case 6 in
 ## <https://cran.r-project.org/web/packages/Hmsc/vignettes/vignette_5_performance.pdf>
@@ -910,7 +1023,7 @@ boxplot(pearsonR2, main = "Pearson R-squared", names = c("Stacked GLM", "CBFM"))
 
 
 ##------------------------------
-## Example 2b: Repeat example 2a with presence-absence data
+## **Example 2b: Repeat example 2a with presence-absence data**
 ## Similar to a combination of Cases 2 and 6 in
 ## <https://cran.r-project.org/web/packages/Hmsc/vignettes/vignette_5_performance.pdf>
 ##------------------------------
@@ -997,7 +1110,7 @@ rm(list = ls())
 
 
 ##------------------------------
-## Example 3a: Fitting an additive CBFM to spatio-temporal multivariate presence-absence data 
+## **Example 3a: Fitting an additive CBFM to spatio-temporal multivariate presence-absence data**
 ## simulated from a spatio-temporal latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ## Also, the additive CBFM might take a while to fit...grab a cup of tea or coffee!
@@ -1142,7 +1255,7 @@ theme_bw()
 
 
 ##------------------------------
-## Example 3b: Repeat Example 3a but with tensor product basis functions
+## **Example 3b: Repeat Example 3a but with tensor product basis functions**
 ## Please note the data generation process (thus) differs from CBFM.
 ## To save some time, and for illustrative purposes, we wil use the fast method estimating
 ## the covariance matrices
