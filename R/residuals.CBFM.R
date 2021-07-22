@@ -14,7 +14,7 @@
 #' Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then:
 #' 
 #' For \code{type = "response"}, this returns the raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success". 
-#' For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_j)\hat{\mu}_{ij}} where \eqn{\hat{\pi}_j} is the estimated species-specific probability of zero inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
+#' For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_j)\hat{\mu}_{ij}} where \eqn{\hat{\pi}_j} is the estimated species-specific probability of zero-inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
 #' 
 #' For \code{type = "pearson"}, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance. 
 #' 
@@ -135,6 +135,11 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
           if(object$family$family[1] %in% c("zipoisson")) 
                out <- out / sqrt(object$family$actual_variance(object$fitted, 
                     zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
+          if(object$family$family[1] %in% c("zinegative.binomial")) 
+               out <- out / sqrt(object$family$actual_variance(object$fitted, 
+                    zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE),
+                    phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                    )
           }
           
      if(type %in% c("PIT","dunnsmyth")) {
@@ -168,6 +173,16 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                                    zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
                     max = .pzipois(object$y, lambda = exp(object$linear_predictor), 
                                   zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
+               }
+          if(object$family$family[1] %in% c("zinegative.binomial")) {
+               out <- runif(length(object$y), 
+                            min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictor), 
+                                   zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE),
+                                   phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                            max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictor), 
+                                  zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE),
+                                  phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                    )
                }
 #           if(object$family$family[1] %in% c("ztpoisson"))
 #                out <- runif(length(object$y), min = pztpois(object$y-1, mean = object$fitted), max = ptzpois(object$y, mean = object$fitted))

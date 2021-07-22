@@ -144,8 +144,7 @@
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
 #' simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
-#' B_space = basisfunctions, 
-#' dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
+#' B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
 #' }
 #' 
 #' @export

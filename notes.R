@@ -12,7 +12,7 @@ y = simy_train
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions
-family =  zipoisson()
+family =  zinb2()
 B_time = NULL
 B_spacetime = NULL
 offset = NULL
@@ -51,4 +51,31 @@ type = "response"
 se_fit = TRUE
 coverage = 0.95
 ncores = NULL
+
+
+##------------------------------------
+spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5)
+spp_dispersion <- runif(num_spp, 0, 1)
+spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
+                         betas = cbind(spp_intercepts+2, spp_slopes), basis_effects_mat = spp_basis_coefs, 
+                         B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
+# 
+# fitstacked <- NULL 
+# for(j in 1:num_spp) { 
+#      fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, dist = "negbin", data = data.frame(resp = simy$y[,j], dat))
+# }
+# 
+# par(mfrow =c(1,2))
+# plot(sapply(fitstacked, function(x) x$coefficients$zero) %>% plogis, spp_zeroinfl_prob); abline(0,1)
+# plot(sapply(fitstacked, function(x) 1/x$theta), spp_dispersion); abline(0,1)
+# 
+
+
+fitcbfm <- CBFM(y = simy$y, formula_X = useformula, data = dat, 
+     B_space = basisfunctions, family = zinb2(), control = list(trace = 1), stderrors = FALSE)
+
+
+plot(fitcbfm$dispparam, spp_dispersion); abline(0,1)
+plot(fitcbfm$zeroinfl_prob_intercept %>% plogis, spp_zeroinfl_prob); abline(0,1)
 

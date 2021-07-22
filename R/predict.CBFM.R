@@ -51,7 +51,8 @@
 #' @importFrom stats qnorm plogis
 #' @md
 
-predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, type = c("link", "response"), se_fit = FALSE, coverage = 0.95, ncores = NULL, ...) {
+predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, 
+                         type = c("link", "response"), se_fit = FALSE, coverage = 0.95, ncores = NULL, ...) {
         if(is.null(ncores))
                 registerDoParallel(cores = detectCores()-1)
         if(!is.null(ncores))
@@ -115,7 +116,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                 if(type == "response") {
                         if(!(object$family$family %in% c("zipoisson", "zinegative.binomial"))) #"ztnegative.binomial"
                                 ptpred <- object$family$linkinv(ptpred)
-                        if(!(object$family$family %in% c("zipoisson", "zinegative.binomial")))
+                        if(object$family$family %in% c("zipoisson", "zinegative.binomial"))
                                 ptpred <- object$family$linkinv(ptpred) * matrix(1-plogis(object$zeroinfl_prob_intercept), nrow(new_X), num_spp, byrow = TRUE)
                # if(object$family$family == "ztnegative.binomial")
                #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))

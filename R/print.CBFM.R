@@ -26,6 +26,7 @@ print.CBFM <- function(x, ...) {
      message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), "\nNo. of responses: ", ncol(x$fitted)) 
      message("Responses-environment relationship fitted: ", x$formula_X) 
      message("Number of columns in model matrix induced by formula_X: ", ncol(x$betas))
+     message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
      B_names <- c("B_space", "B_time", "B_spacetime")
      message("Basis functions included: ", B_names[x$which_B_used==1])

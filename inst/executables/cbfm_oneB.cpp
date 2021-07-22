@@ -108,6 +108,11 @@ Type objective_function<Type>::operator() () {
                nll -= (Type(1)-estep_weights(i))*dpois(y(i), exp(eta(i)), true);
                }
           }
+     if(family == 11) { //zero-inflated negative binomial
+          for(int i=0; i<num_units; i++) { 
+               nll -= (Type(1)-estep_weights(i))*dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+               }
+          }
           
           
      ADREPORT(basis_effects);

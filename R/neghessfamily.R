@@ -1,8 +1,8 @@
 ## Negative second derivative for a bunch of distributions
 ## Hidden and not exported
 
-.neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zeroinfl_prob_intercept = NULL, trial_size, 
-                           return_matrix = FALSE, domore = FALSE, tol = 1e-5) {
+.neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zeroinfl_prob_intercept = NULL, trial_size, return_matrix = FALSE, 
+                           domore = FALSE, tol = 1e-5) {
      
         if(family$family[1] %in% c("Beta")) {
                 .sbetalogit <- function(eta, y, phi) {
@@ -61,31 +61,51 @@
              out <-  1/phi * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
              }
      if(family$family[1] %in% c("zipoisson")) {
-                lambda <- exp(eta)
-                rhat <- numeric(length(y))
-                rhat[y == 0] <- as.vector(plogis(zeroinfl_prob_intercept + lambda))[y == 0]
-                out <- lambda * (1-rhat) * (1-lambda*rhat)
+             lambda <- exp(eta)
+             rhat <- numeric(length(y))
+             rhat[y == 0] <- as.vector(plogis(zeroinfl_prob_intercept + lambda))[y == 0]
+             out <- lambda * (1-rhat) * (1-lambda*rhat)
          
-                if(domore) {
+             if(domore) {
                  # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
-                        dhat <- exp(zeroinfl_prob_intercept) / (exp(zeroinfl_prob_intercept) + exp(-lambda))
-                        phat <- plogis(zeroinfl_prob_intercept)
-                        out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
+                     dhat <- exp(zeroinfl_prob_intercept) / (exp(zeroinfl_prob_intercept) + exp(-lambda))
+                     phat <- plogis(zeroinfl_prob_intercept)
+                     out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
                 
-                        out_zeroinflbetas <- -(exp(zeroinfl_prob_intercept) * lambda * exp(-lambda)) / (exp(zeroinfl_prob_intercept) + exp(-lambda))^2
-                        out_zeroinflbetas[y > 0] <- 0
-                        }
+                     out_zeroinflbetas <- -(exp(zeroinfl_prob_intercept) * lambda * exp(-lambda)) / (exp(zeroinfl_prob_intercept) + exp(-lambda))^2
+                     out_zeroinflbetas[y > 0] <- 0
+                     }
+             }
+     if(family$family[1] %in% c("zinegative.binomial")) { 
+             lambda <- exp(eta)
+             phat <- plogis(zeroinfl_prob_intercept)
+             
+             score_beta <- function(x, phi, phat) {
+                exp(x) * (1 + phi * exp(x))^(-1) / (1 + phat * (1 + phi * exp(x))^(1/phi))     
                 }
+             out <- grad(score_beta, x = eta, phi = phi, phat = phat)  * as.numeric(y == 0) # Being lazy here!
+             out <- out + (lambda * (1 + phi * y) / (1 + phi * lambda)^2) * as.numeric(y > 0)
+
+             if(domore) {
+                 # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
+                     dhat <- exp(zeroinfl_prob_intercept) * (1+phi*lambda)^(-1/phi) / (exp(zeroinfl_prob_intercept) + (1+phi*lambda)^(-1/phi))^2
+                     phat <- plogis(zeroinfl_prob_intercept)
+                     out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat
+                
+                     out_zeroinflbetas <- -(exp(zeroinfl_prob_intercept)*lambda*(1+phi*lambda)^(-1/phi-1)) / (exp(zeroinfl_prob_intercept) + (1+phi*lambda)^(-1/phi))^2
+                     out_zeroinflbetas[y > 0] <- 0
+                     }
+             }
 
         
-        out[out < tol] <- tol ## At the moment, needed primarily for ZIP models where weights have be negative (by design?!)
+        out[out < tol] <- tol ## At the moment, needed primarily for zero-inflated model models where weights have be negative (by design?!)
 
         if(!domore)
                 return(as.vector(out))
         if(domore) {
-                if(family$family[1] != "zipoisson")
+                if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                         return(list(out = as.vector(out)))
-                if(family$family[1] == "zipoisson")
+                if(family$family[1] %in% c("zipoisson","zinegative.binomial"))
                         return(list(out = as.vector(out), 
                                     out_zeroinflzeroinfl = out_zeroinflzeroinfl, # matrix of the same dimension as y
                                     out_zeroinflbetas = out_zeroinflbetas # matrix of the same dimension as y)
@@ -101,13 +121,16 @@
         num_units <- nrow(y)
         num_spp <- ncol(y)
         out <- Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
-        if(family$family == "zipoisson") {
+        if(family$family %in% c("zipoisson","zinegative.binomial")) {
                 fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
                 zeroinfl_prob <- plogis(cwfit$zeroinfl_prob_intercept)
                 
                 for(j in 1:num_spp) {
                         sel_zerospp <- which(y[,j] == 0)
-                        out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dpois(0, fitvals[sel_zerospp,j]))
+                        if(family$family[1] == "zipoisson")
+                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
+                        if(family$family[1] == "zinegative.binomial")
+                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
                         }
                 }
         

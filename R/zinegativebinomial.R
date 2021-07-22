@@ -48,9 +48,10 @@ zinb2 <- function() {
         ans <- zeroinfl_prob + (1 - zeroinfl_prob) * pnbinom(q, mu = lambda, size = 1/phi)
         ans[q < 0] <- 0
 
+        prob <- (1/phi) / (1/phi + lambda)
         prob0 <- prob^(1/phi)
         deflat.limit <- -prob0 / (1 - prob0)
-        ans[pstr0 < deflat.limit] <- NaN
-        ans[pstr0 > 1] <- NaN        
+        ans[zeroinfl_prob < deflat.limit] <- NaN
+        ans[zeroinfl_prob > 1] <- NaN        
         return(ans)
         }
