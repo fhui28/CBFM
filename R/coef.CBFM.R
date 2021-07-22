@@ -96,7 +96,7 @@ coef.CBFM <- function(object, ...) {
         stop("`object' is not of class \"CBFM\"")
 
      out <- object$betas
-     if(object$family$family[1] == "zipoisson")
+     if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial"))
           out <- list(betas = object$betas, zeroinfl_prob = object$zeroinfl_prob_intercept)
      return(out)
      }

@@ -34,14 +34,14 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
     num_basisfns <- nrow(object$basis_effects_mat)
      
     summary_output <- list(call = object$call, betas = round(object$betas, digits), basis_effects = round(object$basis_effects_mat, digits))
-    if(object$family$family[1] == "zipoisson")
+    if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
         summary_output$zeroinfl_prob <- round(plogis(object$zeroinfl_prob_intercept), digits)
      
     if(object$stderrors) {
         get_std_errs <- sqrt(diag(object$covar_components$topleft))
         ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
         
-        if(object$family$family[1] == "zipoisson") {
+        if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
             sel_zeroinfl <- seq(1, length = nrow(summary_output$betas), by = ncol(summary_output$betas)+1)
             zeroinfl_prob_resultstab <- data.frame(Estimate = round(object$zeroinfl_prob_intercept, digits), 
                                            std_err = round(get_std_errs[sel_zeroinfl], digits),

@@ -113,9 +113,9 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
 
         if(!se_fit) {
                 if(type == "response") {
-                        if(!(object$family$family %in% c("ztnegative.binomial","zipoisson")))
+                        if(!(object$family$family %in% c("zipoisson", "zinegative.binomial"))) #"ztnegative.binomial"
                                 ptpred <- object$family$linkinv(ptpred)
-                        if(object$family$family == "zipoisson")
+                        if(!(object$family$family %in% c("zipoisson", "zinegative.binomial")))
                                 ptpred <- object$family$linkinv(ptpred) * matrix(1-plogis(object$zeroinfl_prob_intercept), nrow(new_X), num_spp, byrow = TRUE)
                # if(object$family$family == "ztnegative.binomial")
                #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
@@ -126,7 +126,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
         if(se_fit) {
                 ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
                 need_sim <- FALSE
-                if(object$family$family[1] == "zipoisson" & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated componet, which does not need simulation
+                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial") & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated component, which does not need simulation
                         need_sim <- TRUE
           
                 if(!need_sim) {
@@ -152,11 +152,9 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                         alllower <- ptpred - ci_alpha * sqrt(stderr) 
                         allupper <- ptpred + ci_alpha * sqrt(stderr)
                         if(type == "response") {
-                                if(object$family$family != "ztnegative.binomial") {
-                                        ptpred <- object$family$linkinv(ptpred)
-                                        alllower <- object$family$linkinv(alllower)
-                                        allupper <- object$family$linkinv(allupper)
-                                        }
+                                ptpred <- object$family$linkinv(ptpred)
+                                alllower <- object$family$linkinv(alllower)
+                                allupper <- object$family$linkinv(allupper)
                    # if(object$family$family == "ztnegative.binomial") {
                    #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
                    #      alllower <- object$family$linkinv(eta = alllower, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
@@ -169,7 +167,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                         ## UP TO HERE!
                         num_reps <- 400
                 
-                        if(object$family$family[1] == "zipoisson" & type == "response") {
+                        if(object$family$family[1] %in% c("zipoisson","zinegative.binomial") & type == "response") {
                                 mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$basis_effects_mat)))
                                 bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                                                   cbind(t(object$covar_components$topright), object$covar_components$bottomright)))

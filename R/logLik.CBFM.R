@@ -100,7 +100,7 @@ logLik.CBFM <- function(object, ...) {
           num_params <- num_params + length(object$dispparam)
      if(object$family$family %in% c("tweedie"))                        
           num_params <- num_params + length(object$powerparam)
-     if(object$family$family %in% c("zipoisson"))                        
+     if(object$family$family %in% c("zipoisson", "zinegative.binomial"))                        
           num_params <- num_params + length(object$zeroinfl_prob)
      
      

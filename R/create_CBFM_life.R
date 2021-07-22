@@ -50,7 +50,8 @@
 #' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
 #' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 #' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
-#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+#' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 #' }
 #' }
 #' 
@@ -135,6 +136,16 @@
 #' simy <- create_CBFM_life(family = zipoisson(), formula_X = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 #' B_space = basisfunctions, zeroinfl_prob = spp_zeroinfl_prob)
+#' 
+#' 
+#' # Generates spatial multivariate count data from a zero-inflated negative binomial distribution 
+#' # Manually supply basis function coefficients 
+#' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
+#' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+#' simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
+#' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
+#' B_space = basisfunctions, 
+#' dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
 #' }
 #' 
 #' @export
@@ -149,7 +160,7 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
      betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
      trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
-     if(!(family$family %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie", "zipoisson"))) #"ztpoisson","ztnegative.binomial"
+     if(!(family$family[1] %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie", "zipoisson", "zinegative.binomial"))) #"ztpoisson","ztnegative.binomial"
           stop("Family is currently not supported. Sorry!")
      
      formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
@@ -227,13 +238,17 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                 simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
                 sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
                 }
+          if(family$family == "zinegative.binomial") {
+                simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
+                }
 #           if(family$family == "ztpoisson")
 #                sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
 #           if(family$family == "ztnegative.binomial")
 #                sim_y[,j] <- rztnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j]) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
           }
 
-     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson")) {
+     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson", "zinegative.binomial")) {
           inner_counter <- 0
           while(any(sim_y > max_resp) & inner_counter < 10) {
                if(basismat_notsupplied) {
@@ -280,6 +295,10 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                     if(family$family == "zipoisson") {
                             simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
                             sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
+                            }
+                    if(family$family == "zinegative.binomial") {
+                            simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                            sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
                             }
 #                     if(family$family == "ztpoisson")
 #                          sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) 

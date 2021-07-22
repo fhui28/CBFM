@@ -49,14 +49,14 @@
      
 
 .check_family <- function(family, y, trial_size) {
-     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", "zipoisson")))     #"ztpoisson", "ztnegative.binomial"
+     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", "zipoisson", "zinegative.binomial")))     #"ztpoisson", "ztnegative.binomial"
           stop("Family currently not supported. Sorry!")
      #if((family$family %in% c("ztpoisson", "ztnegative.binomial")) & any(y == 0))
      #     stop("zero counts not allowed for zero truncated distributions.")
      
      if(family$family[1] == "gaussian" & family$link != "identity")
           stop("Currently Gaussian family only permits the identity link.")
-     if(family$family[1] %in% c("Gamma","negative.binomial","poisson", "tweedie", "zipoisson") & family$link != "log")
+     if(family$family[1] %in% c("Gamma","negative.binomial","poisson", "tweedie", "zipoisson", "zinegative.binomial") & family$link != "log")
           stop("Supplied family currently only permits the log link function to be used.")
      if(family$family[1] %in% c("beta","binomial") & family$link != "logit")
           stop("Supplied family currently only permits the logit link function to be used.")
@@ -173,6 +173,8 @@
           family_counter <- 9
      if(family$family[1] == "zipoisson")
           family_counter <- 10
+     if(family$family[1] == "zinegative.binomial")
+          family_counter <- 11
      
      return(family_counter)
      }
