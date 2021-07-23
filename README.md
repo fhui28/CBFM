@@ -31,4 +31,9 @@ There are some existing and good \texttt{R} packages to fit joint species distri
 For general introductions to spatial and/or temporal modeling using basis functions, please check out the excellent [FRK](https://cran.r-project.org/web/packages/FRK/index.html) package for fixed rank kriging, which heavily inspired this package. Please also see the accompanying software article [FRK: An R Package for Spatial and Spatio-Temporal Prediction with Large Datasets](https://www.jstatsoft.org/article/view/v098i04) and references therein. A more gentle but nevertheless fantastic introduction to basis functions for modeling correlations aimed at ecologists is provided  [The basis function approach for modeling autocorrelation in ecological data](https://esajournals.onlinelibrary.wiley.com/doi/abs/10.1002/ecy.1674)
 
 
+# If you find any bugs and issues...
+
+Please make use of the Github issues and post it up there. Thanks heaps!
+
+Also, note this is **a place to post any bugs/issues/unusual behavior in relation to the package**. Please do not post any feature requests or general statistical modeling questions on Github issues. They will very likely be ignored and/or deleted without prior consent. Much appreciated.
 
