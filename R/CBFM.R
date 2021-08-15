@@ -151,7 +151,7 @@
 #' Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}, analogous to how the [mgcv] package (at least bu default) does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!  
 #' 
 #' 
-#' @return An object of class "CBFM" includes the following components, not necessarily in the order below (and as appropriate):
+#' @return An object of class "CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
 #' \item{call: }{The matched function call.}
 #' \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
 #' \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
@@ -182,7 +182,7 @@
 #' 2) \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}; 
 #' 3) \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 #' 
-#' Please use the [summary()] function to obtain standard errors and confidence interval limits in a more user-friendly form.}
+#' Please use the [summary()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 #' 
 #'
 #' @details # Warning

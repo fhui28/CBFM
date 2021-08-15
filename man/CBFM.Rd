@@ -98,7 +98,7 @@ CBFM(
 }}
 }
 \value{
-An object of class "CBFM" includes the following components, not necessarily in the order below (and as appropriate):
+An object of class "CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
 \item{call: }{The matched function call.}
 \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
 \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
@@ -131,7 +131,7 @@ An object of class "CBFM" includes the following components, not necessarily in 
 \item \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 }
 
-Please use the \code{\link[=summary]{summary()}} function to obtain standard errors and confidence interval limits in a more user-friendly form.}
+Please use the \code{\link[=summary]{summary()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

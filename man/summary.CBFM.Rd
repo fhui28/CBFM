@@ -16,12 +16,20 @@
 
 \item{coverage}{The coverage probability of the confidence intervals for the regression coefficients. Defaults to 0.95, which corresponds to 95\% confidence intervals.}
 
-\item{digits}{The number of significant figures to use when printing}
+\item{digits}{The number of significant figures to use when printing.}
 
 \item{...}{Not used.}
 }
 \value{
-TBC
+An object of class "summary.CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
+\describe{
+\item{call: }{The matched function call of \code{object}.}
+\item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created, rounded.}
+\item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. }
+\item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one, rounded. \emph{Note this is presented on the logit scale}, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
+\item{betas_results: }{If the \code{object$stderrors == TRUE}, then a data frame containing the point estimates, standard errors, corresponding Wald statistics and P-values, and the lower and upper limit of Wald confidence intervals for the regression coefficients corresponding to the model matrix created.}
+\item{zeroinf_prob__intercept_resultstab: }{If the \code{object$stderrors == TRUE}, then a data frame containing the point estimates, standard errors, corresponding Wald statistics and P-values, and the lower and upper limit of Wald confidence intervals for the probabilities of zero-inflation (if appropriate). Please note that the Wald-test is a test of whether the intercept is statistically different from i.e., whether the probability of zero-inflation is statistically different from 0.5. This may not be that useful in practice. }
+}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -29,8 +37,16 @@ TBC
 Takes a fitted \code{CBFM} object and produces some useful summaries from it.
 }
 \details{
-TBC
+Currently, the function is pretty basic in set up, returning the estimated matrix of species-specific regression coefficients corresponding to the model matrix created, the estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions, and the estimated vector of species-specific probabilities of zero-inflation (on the logit scale), for distributions which require one. If the \code{object$stderrors == TRUE}, then standard errors, Wald-tests, and Wald confidence intervals are also returned. As discussed in \code{\link[=CBFM]{CBFM()}}, the Wald tests are based on the Bayesian posterior covariance matrix of the coefficients.
+
+Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
+
+This summary function is currently \strong{extremely} basic, and in future versions of the package we are hoping to include much more (hopefully useful!) information. Apologies for the delay!
 }
+\section{Warning}{
+Note that if the model matrix created includes smoothing terms as in a generalized additive model or GAM, the Wald P-values and corresponding Wald confidence intervals are approximate and neglect corresponding smoothing parameter uncertainty; please see \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}} for more details. Besides, with the current primitive set up of this function, the currently Wald-type inference for individual smoothing coefficients is unlikely to be all that useful anyway!
+}
+
 \examples{
 \donttest{
 # Please see examples in the help file for the main CBFM function 
