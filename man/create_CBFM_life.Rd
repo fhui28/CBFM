@@ -27,7 +27,7 @@ create_CBFM_life(
 \arguments{
 \item{family}{a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.}
 
-\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (or at least for the majority of them!); please see [mgcv::formula.gam()] for more details.}
+\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.}
 
 \item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument).}
 

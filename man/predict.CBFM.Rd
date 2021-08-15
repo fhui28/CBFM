@@ -58,7 +58,7 @@ Takes a fitted \code{CBFM} object and produces predictions given (potentially) a
 \details{
 The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained on the associated large sample normality result of the estimated parameters. Both of these are similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
 
-The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
+The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
 }
 \examples{
 \donttest{

@@ -1,3 +1,10 @@
+## GENERAL APPROACH TO MODIFYING PACKAGE
+## 1. Do all changes
+## 2. Delete all Rd files in man (but not figures!) and the NAMESPACE file
+## 3. Check package (Ctrl+Shift+E)
+## 4. Build (optional)
+## 5. Push to github
+
 # Could use remotes to do installaton for countreg, but then likely can not officially put it up on CRAN
 Remotes: svn:://svn.r-forge.r-project.org/svnroot/countreg/
 

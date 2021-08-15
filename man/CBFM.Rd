@@ -17,6 +17,7 @@ CBFM(
   trial_size = 1,
   dofit = TRUE,
   stderrors = TRUE,
+  select = FALSE,
   start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL,
     powerparam = NULL, zeroinfl_prob = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
@@ -31,7 +32,7 @@ CBFM(
 \arguments{
 \item{y}{A response matrix, where each row corresponds to an observational unit i.e, a particular space-time coordinate, and each column corresponds to the species.}
 
-\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (or at least for the majority of them!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} for more details.}
+\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
 
 \item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument).}
 
@@ -52,6 +53,8 @@ CBFM(
 \item{dofit}{Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compilation directory; please see the \code{TMB_directories} argument below.}
 
 \item{stderrors}{Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed.}
+
+\item{select}{For cases where \code{formula_X} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note also this argument has not effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
 
 \item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
 \itemize{
@@ -147,7 +150,9 @@ Turning to more mathematical details, for the purposes of the package the CBFM i
 
 where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j.
 
-In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Note that smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in \code{\link[mgcv:gam.models]{mgcv::gam.models()}}. Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions which are included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
+In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Note that smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in \code{\link[mgcv:gam.models]{mgcv::gam.models()}}. Selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details.
+
+Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions which are included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,space}^\top a_{j,space} + b_{i,time}^\top a_{j,time},}
 

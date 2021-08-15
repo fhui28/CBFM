@@ -12,7 +12,7 @@
 #' Fits CBFMs to spatio-temporal multivariate abundance data, where the basis functions are used to account for spatio-temporal correlation within and between species. Three types of basis functions can supplied and included in conjunction with each other: 1) spatial basis fnuctions; 2) temporal basis functions; 3) spatio-temporal basis functions. For the part of the mean model corresponding to the measured covariates, CBFM currently permits both parametric terms and/or smoothing terms, where the latter makes use are included in a similar manner to [mgcv::gam()]. Estimation and inference for CBFM is based on a maximum penalized quasi-likelihood (PQL) estimation approach.
 #'
 #' @param y A response matrix, where each row corresponds to an observational unit i.e, a particular space-time coordinate, and each column corresponds to the species.
-#' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (or at least for the majority of them!); please see [mgcv::formula.gam()] for more details. 
+#' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details. 
 #' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument). 
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
@@ -23,6 +23,7 @@
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as \code{y}.
 #' @param dofit Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compilation directory; please see the \code{TMB_directories} argument below.
 #' @param stderrors Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed. 
+#' @param select For cases where \code{formula_X} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details, noting that its implementation for the purposes of CBFM is a *wee bit experimental*. Note also this argument has not effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.  
 #' @param start_params Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms: 
 #' \itemize{
 #' \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.} 
@@ -75,7 +76,9 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. 
 #' 
-#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Note that smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]. Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions which are included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
+#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Note that smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]. Selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details.   
+#' 
+#' Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions which are included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,space}^\top a_{j,space} + b_{i,time}^\top a_{j,time},}
 #'
@@ -1351,7 +1354,7 @@
 
 
 CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
-     offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, 
+     offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, 
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
      control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 0, ridge = 0), 
@@ -1466,7 +1469,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      
      
      ##----------------
-     ## Obtain starting values 
+     ## Obtain starting values -- Note that no selection is attempted here  
      ##----------------
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
      
@@ -1736,48 +1739,55 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     
                     if(family$family %in% c("gaussian","poisson","Gamma")) {
                          fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                              H = Hmat, family = family), silent = TRUE)
+                                         H = Hmat, family = family, select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = family)
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          family = family, select = select)
                          }
                     if(family$family %in% c("binomial")) {
                          tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
                          use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
      
                          fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, method = "ML", 
-                              H = Hmat, family = family), silent = TRUE)
+                                         H = Hmat, family = family, select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = family)
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          family = family, select = select)
                          }
                     if(family$family %in% c("negative.binomial")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                              H = Hmat, family = nb()), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML",
+                                         H = Hmat, family = nb(), select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = nb())
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          family = nb(), select = select)
                          }
                     if(family$family %in% c("Beta")) {
                          fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                              H = Hmat, family = betar(link = "logit")), silent = TRUE)
+                                         H = Hmat, family = betar(link = "logit"), select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = betar(link = "logit"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          family = betar(link = "logit"), select = select)
                          }
                     if(family$family %in% c("tweedie")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
-                              H = Hmat, family = tw(link = "log")), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML",
+                                         H = Hmat, family = tw(link = "log"), select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", family = tw(link = "log"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          family = tw(link = "log"), select = select)
                          }
                     if(family$family %in% c("zipoisson")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", weights = 1-getweights[,j],
-                              H = Hmat, family = "poisson"), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                         weights = 1-getweights[,j], H = Hmat, family = "poisson", select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", weights = 1-getweights[,j], family = "poisson")
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          weights = 1-getweights[,j], family = "poisson", select = select)
                          }
                     if(family$family %in% c("zinegative.binomial")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", weights = 1-getweights[,j],
-                              H = Hmat, family = nb()), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                         weights = 1-getweights[,j], H = Hmat, family = nb(), select = select), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", weights = 1-getweights[,j], family = nb())
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                                          weights = 1-getweights[,j], family = nb(), select = select)
                          }
                     
                     out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = as.vector(logLik(fit0)), 
