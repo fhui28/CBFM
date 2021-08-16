@@ -76,7 +76,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
             }
         
         betas_resultstab <- data.frame(
-            as.data.frame.table(object$betas), 
+            as.data.frame.table(t(object$betas)), 
             std_err = get_std_errs
             )
         betas_resultstab$z_value <- betas_resultstab[,3] / betas_resultstab$std_err
@@ -93,6 +93,198 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
     class(summary_output) <- "summary.CBFM"
     return(summary_output) 
     }	
+
+
+# # This version is heavily based on and inspired a lot more by the summary.gam function...acknowledgements go to Simon Wood for his mgcv package!
+# summary2.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("digits") - 3L), ...) {
+#     num_spp <- nrow(object$betas)
+#     num_basisfns <- nrow(object$basis_effects_mat)
+#      
+#     summary_output <- list(call = object$call, 
+#                            betas = round(object$betas, digits), 
+#                            basis_effects_mat = round(object$basis_effects_mat, digits))
+#     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
+#         summary_output$zeroinfl_prob_intercept <- round(object$zeroinfl_prob_intercept, digits)
+#      
+#     if(object$stderrors) {
+#         ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
+#         get_std_errs <- sqrt(diag(object$covar_components$topleft))
+#         
+#         # Probabilities of zero-inflation 
+#         if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+#             sel_zeroinfl <- seq(1, length = nrow(summary_output$betas), by = ncol(summary_output$betas)+1)
+#             zeroinfl_prob_resultstab <- data.frame(
+#                 estimate = object$zeroinfl_prob_intercept, 
+#                 std_err = get_std_errs[sel_zeroinfl]
+#                 )
+#             zeroinfl_prob_resultstab$z_value <- zeroinfl_prob_resultstab$estimate / zeroinfl_prob_resultstab$std_err
+#             zeroinfl_prob_resultstab$p_value <- 2*pnorm(abs(zeroinfl_prob_resultstab$z_value), lower.tail = FALSE)
+#             zeroinfl_prob_resultstab$lower <- zeroinfl_prob_resultstab$estimate - ci_alpha * zeroinfl_prob_resultstab$std_err
+#             zeroinfl_prob_resultstab$upper = zeroinfl_prob_resultstab$estimate + ci_alpha * zeroinfl_prob_resultstab$std_err
+#             zeroinfl_prob_resultstab <- round(zeroinfl_prob_resultstab, digits)
+#             colnames(zeroinfl_prob_resultstab) <- c("Estimate", "Std. Error", "z value", "Pr(>|z|)", "Lower CI", "Upper CI")
+#             
+#             summary_output$zeroinf_prob__intercept_resultstab <- zeroinfl_prob_resultstab
+#             get_std_errs <- get_std_errs[-sel_zeroinfl]
+#             }
+#         
+#         
+#          ## A local pseudo-inverse function -- straight from summary.gam
+#          pinv <- function(V, M, rank.tol = 1e-6) {
+#              D <- eigen(V,symmetric=TRUE)
+#              M1 <- length(D$values[D$values > rank.tol * D$values[1]])
+#              if(M>M1) 
+#                  M<-M1 # avoid problems with zero eigen-values
+#              if(M+1 <= length(D$values)) 
+#                  D$values[(M+1):length(D$values)]<-1
+#              D$values<- 1/D$values
+#              if(M+1 <= length(D$values)) D$values[(M+1):length(D$values)]<-0
+#              res <- D$vectors %*% tcrossprod(D$values)  ##D$u%*%diag(D$d)%*%D$v
+#              attr(res,"rank") <- M
+#              res
+#             }
+#           
+#         get_std_errs <- matrix(get_std_errs, nrow = num_spp, byrow = TRUE)
+#         tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+#         spp_results_fn <- function(j) {
+#             nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+#             
+#             # Individual parametric coefficient p-values...        
+#             if(sum(nullfit$nsdf) > 0) {
+#                 pstart <- 1
+#                 ind <- 1:nullfit$nsdf
+#                 p.coeff <- object$betas[j, ind]
+#                 p.se <- get_std_errs[j, ind]
+#                 p.t <- p.coeff / p.se
+#                 p_table <- cbind(p.coeff, p.se, p.t, 2*pnorm(abs(p.t),lower.tail = FALSE), 
+#                                  p.coeff - ci_alpha * p.se, p.coeff + ci_alpha * p.se)   
+#                 dimnames(p_table) <- list(names(p.coeff), c("Estimate", "Std. Error", "z value", "Pr(>|z|)", "Lower CI", "Upper CI"))
+#                 p_table <- as.data.frame(p_table)
+#                 }    
+#             if(sum(nullfit$nsdf) == 0) {
+#                 p_table <- NULL
+#                 }    
+#             
+#             
+#             # Parametric terms, with factors treated whole... 
+#             pterms <- if(is.list(nullfit$pterms)) nullfit$pterms else list(object$pterms)
+#             if(!is.list(nullfit$assign)) object$assign <- list(object$assign)
+#             npt <- length(unlist(lapply(pterms, attr, "term.labels")))
+#             if(npt > 0)  
+#                 pTerms.df <- pTerms.chi.sq <- pTerms.pv <- array(0, npt)
+#             term.labels <- rep("",0)
+#             k <- 0 ## total term counter        
+#             
+#             for(k1 in 1:length(pterms)) {
+#                 tlj <- attr(pterms[[k1]], "term.labels") 
+#                 nt <- length(tlj)
+#                 if (k1 > 1 && nt > 0) 
+#                     tlj <- paste(tlj, k1-1, sep = ".")
+#                 term.labels <- c(term.labels, tlj)
+#                 
+#                 if(nt>0) { # individual parametric terms
+#                     np <- length(nullfit$assign[[k1]])
+#                     ind <- pstart[k1] - 1 + 1:np 
+#                     Vb <- grep(paste0("response",j,"$"), rownames(object$covar_components$topleft))
+#                     Vb <- object$covar_components$topleft[covmat_j, covmat_j, drop = FALSE]
+#                     Vb <- covmat[ind, ind, drop = FALSE] 
+#                     bp <- array(object$betas[j, ind], np)
+#     
+#                     for(i in 1:nt) { 
+#                         k <- k + 1
+#                         ind <- object$assign[[k1]] == i
+#                         b <- bp[ind]
+#                         V <- Vb[ind,ind]
+#                         ## pseudo-inverse needed in case of truncation of parametric space 
+#                         if(length(b) == 1) { 
+#                             V <- 1/V 
+#                             pTerms.df[k] <- nb <- 1      
+#                             pTerms.chi.sq[k] <- V * b * b
+#                             } 
+#                         else {
+#                             V <- pinv(V, length(b), rank.tol = 0.5*.Machine$double.eps)
+#                             pTerms.df[k] <- nb <- attr(V,"rank")      
+#                             pTerms.chi.sq[k] <- crossprod(b, V) %*% b
+#                             }
+#                         pTerms.pv[k] <- pchisq(pTerms.chi.sq[k], df = nb, lower.tail = FALSE)
+#                         } ## for (i in 1:nt)
+#                     }  ## if (nt>0)
+#                 }
+#             
+#             if(npt) {
+#                 attr(pTerms.pv,"names") <- term.labels
+#                 pTerms_table <- cbind(pTerms.df, pTerms.chi.sq, pTerms.pv)   
+#                 dimnames(pTerms_table) <- list(term.labels, c("df", "Chi.sq", "p-value"))
+#                 } 
+#             if(!npt) { 
+#                 pTerms_table <- NULL
+#                 }
+#             
+#             
+#             # Smooth terms...
+#             m <- length(nullfit$smooth) # number of smooth terms
+#             df <- edf1 <- edf <- s.pv <- chi.sq <- array(0, m)
+#             if (m > 0) { # form test statistics for each smooth
+#                 X <- nullfit$R # NEED TO CHANGE THIS! 
+#                 
+#                 ii <- 0            
+#                 for (i in 1:m) { ## loop through smooths
+#                     start <- nullfit$smooth[[i]]$first.para
+#                     stop <- nullfit$smooth[[i]]$last.para
+# 
+#                     V <- grep(paste0("response",j,"$"), rownames(object$covar_components$topleft))
+#                     V <- object$covar_components$topleft[covmat_j, covmat_j, drop = FALSE]
+#                     V <- V[start:stop, start:stop, drop = FALSE]
+#                       
+#                     p <- object$betas[j, start:stop]  # params for smooth
+#                     edf1i <- edfi <- sum(nullfit$edf[start:stop]) # edf for this smooth
+#                     # Extract alternative edf estimate for this smooth, if possible...  
+#                     if(!is.null(object$edf1)) 
+#                         edf1i <-  sum(nullfit$edf1[start:stop])
+#                     Xt <- X[,start:stop, drop = FALSE]  
+#                     fx <- if (inherits(object$smooth[[i]],"tensor.smooth")&& !is.null(object$smooth[[i]]$fx)) 
+#                         all(object$smooth[[i]]$fx) else object$smooth[[i]]$fixed
+#                     if(!fx&&object$smooth[[i]]$null.space.dim == 0 && !is.null(object$R)) { ## random effect or fully penalized term
+#                         res <- if (re.test) reTest(object,i) else NULL
+#                         } 
+#                     else { ## Inverted Nychka interval statistics
+#                         if (est.disp) rdf <- residual.df else rdf <- -1
+#                         res <- testStat(p,Xt,V,min(ncol(Xt),edf1i),type=0,res.df = rdf)
+#                     }
+#                     
+#                     if(!is.null(res)) {
+#                         ii <- ii + 1
+#                         df[ii] <- res$rank
+#                         chi.sq[ii] <- res$stat
+#                         s.pv[ii] <- res$pval 
+#                         edf1[ii] <- edf1i 
+#                         edf[ii] <- edfi 
+#                         names(chi.sq)[ii]<- object$smooth[[i]]$label
+#                         }
+#                     }
+#                 
+#                 if(ii==0) 
+#                     df <- edf1 <- edf <- s.pv <- chi.sq <- array(0, 0) 
+#                 else {
+#                     df <- df[1:ii]
+#                     chi.sq <- chi.sq[1:ii]
+#                     edf1 <- edf1[1:ii]
+#                     edf <- edf[1:ii]
+#                     s.pv <- s.pv[1:ii]
+#                     }
+#                 s_table <- cbind(edf, df, chi.sq, s.pv)      
+#                 dimnames(s_table) <- list(names(chi.sq), c("edf", "Ref.df", "Chi.sq", "p-value"))
+#                 }
+#                     
+#                     
+#             out <- list(p_table = p_table, pTerms_table = pTerms_table, s_table = s_table)
+#             return(out)
+#             }
+#         }
+#     
+#     class(summary_output) <- "summary.CBFM"
+#     return(summary_output) 
+#     }	
 
 
 ## Old stuff 
@@ -125,4 +317,3 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
         #     rm(tmpX, tmpB_space, sel_cov)
         #     }
         #   
-
