@@ -409,7 +409,8 @@
 #' 
 #' # Fit CBFM 
 #' tic <- proc.time()
-#' fitcbfm_gam <- CBFM(y = simy_train, formula_X = ~ s(temp) + s(depth) + s(chla) + s(O2), 
+#' useformula <- ~ s(temp) + s(depth) + s(chla) + s(O2)
+#' fitcbfm_gam <- CBFM(y = simy_train, formula_X = useformula, 
 #' data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc-tic
