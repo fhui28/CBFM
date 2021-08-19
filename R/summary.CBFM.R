@@ -126,6 +126,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                                  p.coeff - ci_alpha * p.se, p.coeff + ci_alpha * p.se)
                 dimnames(p_table) <- list(names(p.coeff), c("Estimate", "Std. Error", "z value", "P-value", "Lower CI", "Upper CI"))
                 p_table <- as.data.frame(p_table)
+                p_table <- round(p_table, digits)
                 }
             if(sum(nullfit$nsdf) == 0) {
                 p_table <- NULL
@@ -181,6 +182,8 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                 attr(pTerms.pv,"names") <- term.labels
                 pTerms_table <- cbind(pTerms.df, pTerms.chi.sq, pTerms.pv)
                 dimnames(pTerms_table) <- list(term.labels, c("DF", "Chi-squared", "P-value"))
+                pTerms_table <- as.data.frame(pTerms_table)
+                pTerms_table <- round(pTerms_table, digits)
                 }
             if(!npt) {
                 pTerms_table <- NULL
@@ -235,9 +238,12 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                     edf1 <- edf1[1:ii]
                     edf <- edf[1:ii]
                     s.pv <- s.pv[1:ii]
+                    
+                    s_table <- cbind(edf, df, chi.sq, s.pv)
+                    dimnames(s_table) <- list(names(chi.sq), c("EDF", "Rank", "Chi-squared", "P-value"))
+                    s_table <- as.data.frame(s_table)
+                    s_table <- round(s_table, digits)
                     }
-                s_table <- cbind(edf, df, chi.sq, s.pv)
-                dimnames(s_table) <- list(names(chi.sq), c("EDF", "Rank", "Chi-squared", "P-value"))
                 }
 
             out <- list(parametric_coefs = p_table, anova_terms = pTerms_table, smooth_terms = s_table)
