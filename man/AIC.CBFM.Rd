@@ -24,7 +24,7 @@ Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted
 \details{
 While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of 2, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where \code{k = log(nobs(object))}.
 
-The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized PQL value of the \code{CBFM} object at convergence and \eqn{df} is the degrees of freedom, where the latter only involves the number of regression coefficients in the model plus any nusiance parameters. Please \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details.
+The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value of the \code{CBFM} object at convergence and \eqn{df} is the (estimated) degrees of freedom; please \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details.
 }
 \examples{
 \donttest{

@@ -23,7 +23,7 @@ Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002)
 \details{
 The corrected Akaike Information Criterion (AICc) is a correction of AIC for small sample sizes. For a CBFM, and adapting the idea from \code{\link[gllvm:AICc]{gllvm::AICc()}}, it takes the form
 \deqn{-2 \times \ell + k \times df + \frac{2 \times df \times (df+1)}{Nm - df - 1},}
-where \eqn{\ell} is the maximized PQL value of the \code{CBFM} object at convergence \eqn{df} is the degrees of freedom (involving only the number of regression coefficients in the model plus any nusiance parameters; please see \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details), \eqn{N} is the number of observational units, and \eqn{m} is the number of species.
+where \eqn{\ell} is the maximized log-likelihood value of the \code{CBFM} object at convergence \eqn{df} is the (estimated) degrees of freedom (please see \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details), \eqn{N} is the number of observational units, and \eqn{m} is the number of species.
 
 Basically, AICc is essentially AIC with an extra penalty term for the number of parameters in the model. Note that as the number of observational units increase, this extra penalty term converges to zero, and thus AICc converges to AIC.
 }

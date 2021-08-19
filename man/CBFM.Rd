@@ -109,7 +109,11 @@ An object of class "CBFM" which includes the following components, not necessari
 \item{num_B_time: }{The number of temporal basis functions supplied i.e., \code{ncol(B_time)}.}
 \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.}
 \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
-\item{logLik: }{The value of the PQL likelihood upon convergence.}
+\item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
+\item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
+\item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does \emph{not} incldue the quadratic term of the PQL.}
+\item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does \emph{not} incldue the quadratic term of the PQL}
+\item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see \code{\link[=varpart]{varpart()}} for more capacity to perform variance partitioning in a CBFM.}
 \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -132,7 +136,7 @@ An object of class "CBFM" which includes the following components, not necessari
 \item \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 }
 
-Please use the \code{\link[=summary]{summary()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
+Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

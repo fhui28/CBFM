@@ -162,7 +162,11 @@
 #' \item{num_B_time: }{The number of temporal basis functions supplied i.e., \code{ncol(B_time)}.} 
 #' \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.} 
 #' \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
-#' \item{logLik: }{The value of the PQL likelihood upon convergence.}
+#' \item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
+#' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
+#' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* incldue the quadratic term of the PQL.}
+#' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* incldue the quadratic term of the PQL}
+#' \item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -183,7 +187,7 @@
 #' 2) \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}; 
 #' 3) \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 #' 
-#' Please use the [summary()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
+#' Please use the [summary.CBFM()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 #' 
 #'
 #' @details # Warning
@@ -1479,7 +1483,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(control$trace > 0)
                message("Calculating starting values...")
           
-          initfit_fn <- function(j) {
+          initfit_fn <- function(j, formula_X) {
                tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
                
                if(family$family %in% c("gaussian","poisson","Gamma")) {
@@ -1524,9 +1528,9 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                
                return(fit0)
                }
-          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j)              
+          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = formula_X)              
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
-          rm(all_start_fits, initfit_fn)
+          rm(all_start_fits)
           gc()
           }
      if(is.null(start_params$basis_effects_mat))
@@ -2036,17 +2040,22 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
         cw_params, new_params, diff, counter)
      gc()
      
+     # Calculate deviance, null deviance etc...please note deviance calculation excludes the quadratic term in the PQL
+     nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = ~ 1)
+     nulldeviance <- sum(sapply(nulldeviance, function(x) x$deviance))
+     rm(initfit_fn)
+     
      new_logLik <- new_fit_CBFM_ptest$logLik
      if(which_B_used[1])
-          new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
+          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(
                basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
                Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
      if(which_B_used[2])
-          new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
+          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(
                basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
                Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
      if(which_B_used[3])
-          new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
+          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(
                basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE],
                Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
      
@@ -2067,6 +2076,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$num_B_spacetime <- num_spacetimebasisfns
      out_CBFM$num_B <- num_basisfns
      out_CBFM$logLik <- new_logLik
+     out_CBFM$pql_logLik <- new_logLik_pql
+     out_CBFM$deviance <- -2*out_CBFM$logLik
+     out_CBFM$null_deviance <- nulldeviance
+     out_CBFM$deviance_explained <- (out_CBFM$null_deviance - out_CBFM$deviance)/out_CBFM$null_deviance
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam

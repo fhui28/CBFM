@@ -20,9 +20,11 @@ Returns an object of class "logLik".  This is a number with at least one attribu
 Extracts the log-likelihood from a fitted \code{CBFM} object.
 }
 \details{
-In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized PQL value of the \code{CBFM} object at convergence. Note that accordingly, the degrees of freedom calculation is based on treating the regression coefficients related to the basis functions as fixed effects, meaning the calculation only involves the number of regression coefficients in the model plus any nusiance parameters (see Hui et al., 2017, Hui, 2021). The community-level covariance matrices are not involved in the calculation of the degrees of freedom.
+In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value (\emph{excluding} the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence.
 
-Currently the idea of \emph{effective} degrees of freedom have not yet been implemented in this package.
+The degrees of freedom calculated as part of this function is based on: 1) using the estimated degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters; 2) treating the regression coefficients related to the basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021). The community-level covariance matrices are not involved in the calculation of the degrees of freedom.
+
+The idea of \emph{estimated} degrees of freedom relating the basis function component of the CBFM is currently not available.
 }
 \examples{
 \donttest{
