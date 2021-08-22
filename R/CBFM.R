@@ -191,12 +191,13 @@
 #' 
 #'
 #' @details # Warning
-#' CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are **not** spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in [gllvm::gllvm()]. 
+#' CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are **not** spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in [gllvm::gllvm()] and [Hmsc::sampleMcmc()].
 #' 
 #' Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above.
 #' 
-#' Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable. 
+#' Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; **estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.**
 #'
+#' Missing values are currently not handled in any manner or form in this package (sorry!). If you do have any missing values, then the standard course of action (and which is what functions such as [stats::lm()] and [mgcv::gam()] do as a default; see also \code{options("na.action")}) is to apply [stats::na.omit()] and remove all observational units from your data with one or more missing values. This can of course also be done manually by the practitioner.  
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #'
