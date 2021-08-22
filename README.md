@@ -33,7 +33,12 @@ For general introductions to spatial and/or temporal modeling using basis functi
 
 # If you find any bugs and issues...
 
-Please make use of the Github issues and post it up there. Thanks heaps!
+If you find something that looks like a bug/issue, please let us know report it, so that we can resolve it and continue to improve this project (interest and time pending). To report a bug/issue, please make use of the Github issues and post it up there. As much as possible, please include in the issue:
+1. A description of the bug/issue.
+2. Paste-able code along with some comments that reproduces the problem. If you also have an idea of how to fix the problem (Francis tends to make a lot of mistakes in my code, so some may be easy amendments!), then even more awesome!
+3. Required data files etc...
 
-Also, note this is **a place to post any bugs/issues/unusual behavior in relation to the package**. Please do not post any feature requests or general statistical modeling questions on Github issues. They will very likely be ignored and/or deleted without prior consent. Much appreciated.
+Thanks heaps!
+
+Finally, please note Github issues is a place to post any bugs/issues/unusual behavior in relation to the package. **Do not post any feature requests or general statistical modeling questions**. They will very likely be ignored and/or deleted without prior consent. Much appreciated.
 
