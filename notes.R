@@ -1,6 +1,8 @@
+## UP TO HERE gam.mh as of Aug 22 2021
+
 ## GENERAL APPROACH TO MODIFYING PACKAGE
 ## 1. Do all changes
-## 2. Delete all Rd files in man (but not figures!) and the NAMESPACE file
+## 2. Delete all Rd files in man (but not figures!), the NAMESPACE file, and any compiled C++ files
 ## 3. Check package (Ctrl+Shift+E)
 ## 4. Build (optional)
 ## 5. Push to github

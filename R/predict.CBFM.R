@@ -19,7 +19,7 @@
 #' @param ... Not used.
 #' 
 #' @details 
-#' The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained on the associated large sample normality result of the estimated parameters. Both of these are similar to [mgcv::predict.gam()].
+#' The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior to, the estimated parameters. This construction is similar to [mgcv::predict.gam()].
 #' 
 #' The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}. 
 #' 
@@ -133,15 +133,18 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                 if(!need_sim) {
                         stderr1_fun <- function(j) {
                                 out1 <- object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE]
-                                return(diag(new_X %*% tcrossprod(out1, new_X)))
+                                #return(diag(new_X %*% tcrossprod(out1, new_X)))
+                                return(rowSums((new_X %*% out1) * new_X))
                                 }
                         stderr2_fun <- function(j, num_X, num_basisfns) {
                                 out1 <- .extractcovarblocks_topright(j = j, Q = object$covar_components$topright, num_X = num_X, num_basisfns = num_basisfns)
-                                return(diag(new_X %*% tcrossprod(out1, new_B)))
+                                #return(diag(new_X %*% tcrossprod(out1, new_B)))
+                                return(rowSums((new_X %*% out1) * new_B))
                                 }
                         stderr3_fun <- function(j, num_basisfns) {
                                 out1 <- .extractcovarblocks_bottomright(j = j, Q = object$covar_components$bottomright, num_basisfns = num_basisfns)
-                                return(diag(new_B %*% tcrossprod(out1, new_B)))
+                                #return(diag(new_B %*% tcrossprod(out1, new_B)))
+                                return(rowSums((new_B %*% out1) * new_B))
                                 }
 
                         stderr <- foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr1_fun(j = j)

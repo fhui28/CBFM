@@ -56,7 +56,7 @@ Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returne
 Takes a fitted \code{CBFM} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian estimated covariance matrix of the parameter estimates.
 }
 \details{
-The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained on the associated large sample normality result of the estimated parameters. Both of these are similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
+The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior to, the estimated parameters. This construction is similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
 
 The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
 }

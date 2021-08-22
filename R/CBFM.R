@@ -69,7 +69,7 @@
 #' In using a basis function approach, CBFMs can thus be considered both as a type of generalized additive model (GAM, Guisan et al., 2002; Wood, 2017) and a generalized linear mixed model (GLMM, Bolker et al., 2009; Brooks et al., 2017). This in turn means CBFMs can leverage from the plethora of techniques that have been already developed for such methods, with one notable benefit being that computationally, CBFMs tend to more efficient and scale better than many existing implementations of LVMs. 
 #' 
 #'
-#' ## Some more mathematical details
+#' ## Some more mathematics
 #' 
 #' Turning to more mathematical details, for the purposes of the package the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
 #' 
@@ -91,11 +91,15 @@
 #'
 #' where \eqn{b_i = b_{i,spacetime}} and \eqn{a_j = a_{j,spacetime}}. More details and recommendations on how to construct this basis functions (including the tensor-product mentioned above) are provided later on. 
 #' 
-#' It is up to the practitioner as to what 'flavor' of CBFM that wish to fit, depending on interpretation and question of interests. For instance, with spatio-temporal multivariate abundance data, one may want the separate sets of spatial and temporal basis functions to be included in an additive manner (as seen above, which in analogous to an LVM where separate spatial LVs and temporal LVMs are added together), or have a single set of spatio-temporal basis functions formed from a tensor-product say (also as seen above, which in analogous to an LVM with a set of spatio-temporal LVs), or have a combination of the two where (say) the basis functions included in \code{B_space} and \code{B_time} are accounting for correlations on a course scale while the basis functions included in \code{B_spacetime} are accounting for resoltions on a fine scale. We refer the interested reader to Thorson et al., (2016) and Thorson (2019) for examples of similar kinds of constructs and flavors within the LVM framework.      
-#'    
-#' Having said that, it is in principle possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular dataset, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this is also strongly dependent more on the type of basis functions used. 
-#' 
 #' **Note:** For zero-inflated distributions, it is the mean of the non-zero inflated component that is modeled and *not* the mean of the entire distribution.
+#' 
+#' It is up to the practitioner as to what 'flavor' of CBFM that wish to fit, depending on interpretation and question of interests. For instance, with spatio-temporal multivariate abundance data, one may want the separate sets of spatial and temporal basis functions to be included in an additive manner (as seen above, which in analogous to an LVM where separate spatial LVs and temporal LVMs are added together), or have a single set of spatio-temporal basis functions formed from a tensor-product say (also as seen above, which in analogous to an LVM with a set of spatio-temporal LVs), or have a combination of the two where (say) the basis functions included in \code{B_space} and \code{B_time} are accounting for correlations on a course scale while the basis functions included in \code{B_spacetime} are accounting for resoltions on a fine scale. We refer the interested reader to Thorson et al., (2016) and Thorson (2019) for examples of similar kinds of constructs and flavors within the LVM framework. 
+#' 
+#' We also point out that this package only implements one possible version of a wider class of CBFMs; other potentially superior versions e.g., spatial basis functions with temporally varying corresponding regressions coefficients, are possible under the CBFM framework, but are far outside the scope of this package (sorry!).      
+#'    
+#' in principle, it is also possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular data set, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this choice is also strongly dependent more on the type of basis functions used. We also refer the reader to the help file [mgcv::choose.k()], and echo a sentiment written there (noting things are potentially even more tricky with spatial and/or temporal basis functions): 
+#' 
+#' *"So, exact choice of \eqn{k} (the number of basis functions in our situation) is not generally critical: it should be chosen to be large enough that you are reasonably sure of having enough degrees of freedom to represent the underlying 'truth' reasonably well, but small enough to maintain reasonable computational efficiency. Clearly 'large' and 'small' are dependent on the particular problem being addressed."* 
 #' 
 #' In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. Specifically, in this package we assume follow a multivariate normal distribution as follows:
 #'   
@@ -130,9 +134,9 @@
 #' 
 #' ## Constructing basis functions
 #' 
-#' The CBFM approach relies on the inclusion of the \emph{pre-specified} spatial, temporal, and/or spatio-temporal basis functions to account for spatio-temporal correlations within and between species (see Hefley et al., 2017, for a general overview of using basis functions to model autocorrelation in ecological data). Currently, the package does not provide default arguments to use for this, and this is deliberately the case as we wish to compel the practitioner to "work" and therefore think a bit harder on designing the right basis functions for use when CBFMs to their particular analysis.
+#' The CBFM approach relies on the inclusion of the \emph{pre-specified} spatial, temporal, and/or spatio-temporal basis functions to account for spatio-temporal correlations within and between species (see Hefley et al., 2017, for a general overview of using basis functions to model autocorrelation in ecological data). Currently, the package does not provide default arguments to use for this, and this is deliberately the case as we wish to compel the practitioner to work and think a bit harder on designing the right basis functions for use when CBFMs to their particular analysis.
 #' 
-#' At the same time, it would be remiss to at least provide some brief recommendations based on previous experience, and we do so below. Please also see the examples later on for some more concrete applications.
+#' At the same time, it would be remiss not to at least provide some brief recommendations based on previous experience, and we do so below. Please also see the examples later on for some more concrete applications.
 #' \describe{
 #' \item{\code{B_space}: }{We have found that the multi-resolution thin-plate spline basis functions (Tzeng and Huang, 2018), as implemented in [autoFRK::mrts()], work fairly well here as spatial basis functions. They are simple to use and require the user to only supply the number of basis functions, which itself is tied to the resolution at which the practitioner wants to model their spatial correlations. For spatial multivariate abundance data we have usually found that 50 or less spatial basis functions of such type are required.
 #' 

@@ -18,6 +18,7 @@ CBFM(
   dofit = TRUE,
   stderrors = TRUE,
   select = FALSE,
+  gamma = 1,
   start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL,
     powerparam = NULL, zeroinfl_prob = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
@@ -54,7 +55,9 @@ CBFM(
 
 \item{stderrors}{Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed.}
 
-\item{select}{For cases where \code{formula_X} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note also this argument has not effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
+\item{select}{For cases where \code{formula_X} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
+
+\item{gamma}{For cases where \code{formula_X} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
 
 \item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
 \itemize{
@@ -147,7 +150,7 @@ Fits CBFMs to spatio-temporal multivariate abundance data, where the basis funct
 Community-level basis function models (CBFMs) are a class of spatio-temporal joint species distribution models for multivariate abundance data, which builds on the ideas of fixed rank kriging (FRK, Cressie and Johannesson, 2008; Zammit-Mangion and Cressie, 2017) and multivariate spatio-temporoal mixed models (Bradley et al., 2018) and adapts them specifically for multivariate abundance data in community ecology. CBFMs provide an alternative and not necessarily superior approach to the increasingly popular latent variable models (LVMs) approach for joint species distribution modeling, as available in a number of packages such as \code{\link[Hmsc:Hmsc-package]{Hmsc::Hmsc-package()}} (Tikhonov et al., 2020), \code{\link[gllvm:gllvm]{gllvm::gllvm()}} (Niku et al., 2019), and \code{boral} (Hui, 2016); see also Warton et al., (2015a,b), Thorson et al. (2016) and Ovaskainen and Abrego (2020) among others for introductions to the use of LVMs in community ecology.  The key difference between LVMs and CBFMs is that rather than using a small number of latent variables which are assumed to be random across observational units to induce spatio-temporal correlations within and between species, CBFMs use a larger number of spatially, temporal, and/or spatio-temporal basis functions that are specified \emph{a-priori} and remain fixed in the model. The randomness instead comes from species-specific regression coefficients related to these basis functions, which in turn induce spatio-temporal correlations within and between species.
 
 In using a basis function approach, CBFMs can thus be considered both as a type of generalized additive model (GAM, Guisan et al., 2002; Wood, 2017) and a generalized linear mixed model (GLMM, Bolker et al., 2009; Brooks et al., 2017). This in turn means CBFMs can leverage from the plethora of techniques that have been already developed for such methods, with one notable benefit being that computationally, CBFMs tend to more efficient and scale better than many existing implementations of LVMs.
-\subsection{Some more mathematical details}{
+\subsection{Some more mathematics}{
 
 Turning to more mathematical details, for the purposes of the package the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
 
@@ -169,11 +172,15 @@ As another example, suppose we wish to include spatio-temporal basis functions (
 
 where \eqn{b_i = b_{i,spacetime}} and \eqn{a_j = a_{j,spacetime}}. More details and recommendations on how to construct this basis functions (including the tensor-product mentioned above) are provided later on.
 
+\strong{Note:} For zero-inflated distributions, it is the mean of the non-zero inflated component that is modeled and \emph{not} the mean of the entire distribution.
+
 It is up to the practitioner as to what 'flavor' of CBFM that wish to fit, depending on interpretation and question of interests. For instance, with spatio-temporal multivariate abundance data, one may want the separate sets of spatial and temporal basis functions to be included in an additive manner (as seen above, which in analogous to an LVM where separate spatial LVs and temporal LVMs are added together), or have a single set of spatio-temporal basis functions formed from a tensor-product say (also as seen above, which in analogous to an LVM with a set of spatio-temporal LVs), or have a combination of the two where (say) the basis functions included in \code{B_space} and \code{B_time} are accounting for correlations on a course scale while the basis functions included in \code{B_spacetime} are accounting for resoltions on a fine scale. We refer the interested reader to Thorson et al., (2016) and Thorson (2019) for examples of similar kinds of constructs and flavors within the LVM framework.
 
-Having said that, it is in principle possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular dataset, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this is also strongly dependent more on the type of basis functions used.
+We also point out that this package only implements one possible version of a wider class of CBFMs; other potentially superior versions e.g., spatial basis functions with temporally varying corresponding regressions coefficients, are possible under the CBFM framework, but are far outside the scope of this package (sorry!).
 
-\strong{Note:} For zero-inflated distributions, it is the mean of the non-zero inflated component that is modeled and \emph{not} the mean of the entire distribution.
+in principle, it is also possible to employ a more data-driven approach such as cross-validation to choose the 'flavor' of CBFM for a particular data set, although this is not currently not explicitly implemented in the package. The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this choice is also strongly dependent more on the type of basis functions used. We also refer the reader to the help file \code{\link[mgcv:choose.k]{mgcv::choose.k()}}, and echo a sentiment written there (noting things are potentially even more tricky with spatial and/or temporal basis functions):
+
+\emph{"So, exact choice of \eqn{k} (the number of basis functions in our situation) is not generally critical: it should be chosen to be large enough that you are reasonably sure of having enough degrees of freedom to represent the underlying 'truth' reasonably well, but small enough to maintain reasonable computational efficiency. Clearly 'large' and 'small' are dependent on the particular problem being addressed."}
 
 In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. Specifically, in this package we assume follow a multivariate normal distribution as follows:
 
@@ -208,9 +215,9 @@ Currently the following response distributions are permitted (in alphabetal orde
 
 \subsection{Constructing basis functions}{
 
-The CBFM approach relies on the inclusion of the \emph{pre-specified} spatial, temporal, and/or spatio-temporal basis functions to account for spatio-temporal correlations within and between species (see Hefley et al., 2017, for a general overview of using basis functions to model autocorrelation in ecological data). Currently, the package does not provide default arguments to use for this, and this is deliberately the case as we wish to compel the practitioner to "work" and therefore think a bit harder on designing the right basis functions for use when CBFMs to their particular analysis.
+The CBFM approach relies on the inclusion of the \emph{pre-specified} spatial, temporal, and/or spatio-temporal basis functions to account for spatio-temporal correlations within and between species (see Hefley et al., 2017, for a general overview of using basis functions to model autocorrelation in ecological data). Currently, the package does not provide default arguments to use for this, and this is deliberately the case as we wish to compel the practitioner to work and think a bit harder on designing the right basis functions for use when CBFMs to their particular analysis.
 
-At the same time, it would be remiss to at least provide some brief recommendations based on previous experience, and we do so below. Please also see the examples later on for some more concrete applications.
+At the same time, it would be remiss not to at least provide some brief recommendations based on previous experience, and we do so below. Please also see the examples later on for some more concrete applications.
 \describe{
 \item{\code{B_space}: }{We have found that the multi-resolution thin-plate spline basis functions (Tzeng and Huang, 2018), as implemented in \code{\link[autoFRK:mrts]{autoFRK::mrts()}}, work fairly well here as spatial basis functions. They are simple to use and require the user to only supply the number of basis functions, which itself is tied to the resolution at which the practitioner wants to model their spatial correlations. For spatial multivariate abundance data we have usually found that 50 or less spatial basis functions of such type are required.
 
@@ -232,11 +239,13 @@ Also, the current estimation approach does not provide uncertainty quantificatio
 }
 }
 \section{Warning}{
-CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}}.
+CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}} and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
 
 Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above.
 
-Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability: estimates of \eqn{\Sigma} and \eqn{G} may not be overly reliable.
+Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; \strong{estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.}
+
+Missing values are currently not handled in any manner or form in this package (sorry!). If you do have any missing values, then the standard course of action (and which is what functions such as \code{\link[stats:lm]{stats::lm()}} and \code{\link[mgcv:gam]{mgcv::gam()}} do as a default; see also \code{options("na.action")}) is to apply \code{\link[stats:na.fail]{stats::na.omit()}} and remove all observational units from your data with one or more missing values. This can of course also be done manually by the practitioner.
 }
 
 \examples{
