@@ -1,15 +1,15 @@
-#' @title Extract model (or design) matrices from a CBFM fit
+#' @title Extract model matrices (otherwise known as design matrices) from a CBFM fit
 #' 
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used.  
+#' Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used. 
 #' 
 #' @param object An object of class "CBFM".
 #' @param ... Not used.
 #' 
 #' @details 
-#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix.
+#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula_X}, and **not** the basis functions.  
 #' 
 #' @return A model matrix.
 #' 
