@@ -2,7 +2,7 @@
 % Please edit documentation in R/model.matrix.CBFM.R
 \name{model.matrix.CBFM}
 \alias{model.matrix.CBFM}
-\title{Extract model (or design) matrices from a CBFM fit}
+\title{Extract model matrices (otherwise known as design matrices) from a CBFM fit}
 \usage{
 \method{model.matrix}{CBFM}(object, ...)
 }
@@ -20,7 +20,7 @@ A model matrix.
 Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used.
 }
 \details{
-Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} works, it calls \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix.
+Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} works, it calls \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula_X}, and \strong{not} the basis functions.
 }
 \examples{
 \donttest{
