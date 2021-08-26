@@ -167,6 +167,7 @@
 #' \item{num_B_time: }{The number of temporal basis functions supplied i.e., \code{ncol(B_time)}.} 
 #' \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.} 
 #' \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
+#' \item{converged: }{Indicates whether or not the PQL estimation algorithm converged. Note results may still be outputed even if this is \code{FALSE}.}
 #' \item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
 #' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
 #' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* incldue the quadratic term of the PQL.}
@@ -1591,6 +1592,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      tic <- proc.time()
      counter <- 0
      diff <- 10
+     converged <- FALSE
      if(is.null(offset)) { ## Only make offset here, after initial fitting done
           offset <- Matrix(0, nrow = nrow(y), ncol = ncol(y), sparse = TRUE)
           }
@@ -1981,6 +1983,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      ##-------------------------
      ## Do final fit -- just of coefficients and dispersion/power parameters only. 
      ##-------------------------
+     if(diff < control$tol)
+          converged <- TRUE
      tidbits_data <- make_tidibits_data()
      inner_err <- Inf
      cw_inner_logL <- -Inf
@@ -2085,6 +2089,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$num_B_time <- num_timebasisfns
      out_CBFM$num_B_spacetime <- num_spacetimebasisfns
      out_CBFM$num_B <- num_basisfns
+     out_CBFM$converged <- converged
      out_CBFM$logLik <- new_logLik
      out_CBFM$pql_logLik <- new_logLik_pql
      out_CBFM$deviance <- -2*out_CBFM$logLik
@@ -2098,7 +2103,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$linear_predictor <- new_fit_CBFM_ptest$linear_predictor
      out_CBFM$edf <- new_fit_CBFM_ptest$edf
      out_CBFM$edf1 <- new_fit_CBFM_ptest$edf1
-     rm(new_fit_CBFM_ptest, getweights)
+     rm(new_fit_CBFM_ptest, getweights, converged)
 
      # ## Get restricted CBFM estimates of the coefficients (really more for exploration at this point in time)
      #OLSmatrix_transpose <- X %*% solve(crossprod(X))
