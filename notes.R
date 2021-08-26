@@ -1,4 +1,4 @@
-## UP TO HERE gam.mh as of Aug 22 2021
+## UP TO HERE influence.gam. Could also consider cooks distance while you are at this (but hat values are bit a pain to compute atm) as of Aug 26 2021
 
 ## GENERAL APPROACH TO MODIFYING PACKAGE
 ## 1. Do all changes

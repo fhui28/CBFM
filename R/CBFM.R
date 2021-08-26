@@ -2272,7 +2272,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           rm(all_AinvandB, AinvBDminusCAinvB_inv, AinvandB_fn, DminusCAinvB_inv)
                     
                     
-          # ## All matrices are dense. But to save memory and because only certain components of the matrices are needed later on, extract relevant principle submatrices only
+          # ## All matrices are dense. But to save memory and because only certain components of the matrices are needed later on, extract relevant principle submatrices only. This is now abandoned
           #out_CBFM$covar_components$topright <- foreach(j = 1:num_spp) %dopar% .extractcovarblocks_topright(j = j, Q = out_CBFM$covar_components$topright)               
           #out_CBFM$covar_components$bottomright <- foreach(j = 1:num_spp) %dopar% .extractcovarblocks_bottomright(j = j, Q = out_CBFM$covar_components$bottomright)
                
