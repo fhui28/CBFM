@@ -24,7 +24,9 @@ Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted
 \details{
 While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of 2, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where \code{k = log(nobs(object))}.
 
-The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value of the \code{CBFM} object at convergence and \eqn{df} is the (estimated) degrees of freedom; please \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details.
+The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (\emph{excluding} the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence and \eqn{df} is the (estimated) degrees of freedom; please \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details.
+
+As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the \code{\link[=CBFM]{CBFM()}} help file as well as \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} for more information.
 }
 \examples{
 \donttest{
