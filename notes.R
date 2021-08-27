@@ -1,4 +1,4 @@
-## UP TO HERE influence.gam. Could also consider cooks distance while you are at this (but hat values are bit a pain to compute atm) as of Aug 26 2021
+## UP TO HERE influence.CBFM done as of Aug 27 2021
 
 ## GENERAL APPROACH TO MODIFYING PACKAGE
 ## 1. Do all changes
@@ -26,6 +26,7 @@ B_time = NULL
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
+gamma = 1
 trial_size = 1
 dofit = TRUE
 stderrors = TRUE
