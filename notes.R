@@ -38,6 +38,7 @@ TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compi
 control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
 Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
 G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
+k_check_control = list(subsample = 5000, n.rep = 400)
 
     
     
