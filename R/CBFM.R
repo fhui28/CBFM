@@ -1413,13 +1413,13 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           which_B_used[1] <- 1
           num_spacebasisfns <- ncol(B_space)
           if(is.null(colnames(B_space)))
-               colnames(B_space) <- paste0("Bspace_",1:num_spacebasisfns)
+               colnames(B_space) <- paste0("B_space_",1:num_spacebasisfns)
           }
      if(!is.null(B_time)) {
           which_B_used[2] <- 1
           num_timebasisfns <- ncol(B_time)
           if(is.null(colnames(B_time)))
-               colnames(B_time) <- paste0("Btime_",1:num_timebasisfns)
+               colnames(B_time) <- paste0("B_time_",1:num_timebasisfns)
           }
      if(!is.null(B_spacetime)) {
           which_B_used[3] <- 1

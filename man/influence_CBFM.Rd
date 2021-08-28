@@ -16,19 +16,22 @@ A list containing two elements:
 \describe{
 \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
 \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
+\item{B_edf: }{A matrix of estimated/effective degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of rows of this matrix should be the same as \code{object$y}, while it always has three columns. Values equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
 }
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Takes a fitted \code{CBFM} object and calculates both the hat values i.e., diagonal elements of the influence/hat matrix, and an approximate Cook's distance.
+Takes a fitted \code{CBFM} object and calculates hat values i.e., diagonal elements of the influence/hat matrix, an approximate Cook's distance, and estimated or effective degrees of freedom for the species-specific regression coefficients corresponding to spatial and/or temporal basis functions included in the model.
 }
 \details{
-This is a pretty simple function that calculates the so-called "hat values" and an approximate Cook's distance from a fitted CBFM. Classically, the former is used to identify potentially high-leverage observations, while the latter is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to \code{\link[stats:influence.measures]{stats::influence.measures()}} for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see \code{\link[mgcv:influence.gam]{mgcv::influence.gam()}}, then analogous diagnostics can be produced for a CBFM.
+This is a pretty simple function that calculates the so-called "hat values", an approximate Cook's distance, and some estimated or effective degrees of freedom from a fitted CBFM. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to \code{\link[stats:influence.measures]{stats::influence.measures()}} for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see \code{\link[mgcv:influence.gam]{mgcv::influence.gam()}}, then analogous diagnostics can be produced for a CBFM.
 
-Note hat values and Cook's distance are obtained on a \emph{per-species basis}. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates.
+Regarding the estimated or effective degrees of freedom (EDF) for the basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. These degrees of freedom values are analogous to what are available in \code{object$edf/object$edf1}, which are the EDFs for each model parameter in \code{formula_X}; see \code{\link[=CBFM]{CBFM()}} for more information. Note however that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be \emph{much} smaller than the corresponding number of basis functions included in the model. On their own, the EDFs are not really of much use at the moment, especially since they are at the moment \strong{not} used in calculating overall degrees of freedom e.g., \code{\link[=logLik.CBFM]{logLik.CBFM()}} or in information criteria e.g., \code{\link[=AIC.CBFM]{AIC.CBFM()}} and \code{\link[=AICc.CBFM]{AICc.CBFM()}}. This might change at some point down the road though...
 
-** We leave it up to the practitioner to decide how to use the regression diagnostics, if at all.** In a GAM let alone a CBFM for spatio-temporal multivariate abundance data these diagnostics may only be approximate, and so providing rules-of-thumb related to their usage is challenging. Besides, we echo the sentiment provided in Chapter 4.4 of Fox et al., (2019) that cutoffs and rules-of-thumb should not be given too much weight, with more attention placed on graphical displays and assessing \emph{relative infuence} of observations.
+All measures are obtained on a \emph{per-species basis}. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates.
+
+** We leave it up to the practitioner to decide how to use the regression diagnostics, if at all.** In a GAM let alone a CBFM for spatio-temporal multivariate abundance data these diagnostics may only be approximate, and so providing rules-of-thumb related to their usage is challenging. Besides, we echo the sentiment provided in Chapter 4.4 of Fox et al., (2019) that cutoffs and rules-of-thumb should not be given too much weight, with more attention placed on graphical displays and assessing \emph{relative influence} of observations.
 }
 \examples{
 \donttest{
@@ -90,7 +93,7 @@ useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
-influence(fitcbfm)
+influence_CBFM(fitcbfm)
 }
 
 }

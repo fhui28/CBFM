@@ -3,23 +3,26 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #'
-#' Takes a fitted \code{CBFM} object and calculates both the hat values i.e., diagonal elements of the influence/hat matrix, and an approximate Cook's distance.  
+#' Takes a fitted \code{CBFM} object and calculates hat values i.e., diagonal elements of the influence/hat matrix, an approximate Cook's distance, and estimated or effective degrees of freedom for the species-specific regression coefficients corresponding to spatial and/or temporal basis functions included in the model.
 #'
 #' @param object An object of class "CBFM".
 #' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #'
 #' @details 
-#' This is a pretty simple function that calculates the so-called "hat values" and an approximate Cook's distance from a fitted CBFM. Classically, the former is used to identify potentially high-leverage observations, while the latter is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM. 
+#' This is a pretty simple function that calculates the so-called "hat values", an approximate Cook's distance, and some estimated or effective degrees of freedom from a fitted CBFM. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM. 
 #' 
-#' Note hat values and Cook's distance are obtained on a *per-species basis*. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates. 
+#' Regarding the estimated or effective degrees of freedom (EDF) for the basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. These degrees of freedom values are analogous to what are available in \code{object$edf/object$edf1}, which are the EDFs for each model parameter in \code{formula_X}; see [CBFM()] for more information. Note however that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. On their own, the EDFs are not really of much use at the moment, especially since they are at the moment **not** used in calculating overall degrees of freedom e.g., [logLik.CBFM()] or in information criteria e.g., [AIC.CBFM()] and [AICc.CBFM()]. This might change at some point down the road though... 
 #' 
-#' ** We leave it up to the practitioner to decide how to use the regression diagnostics, if at all.** In a GAM let alone a CBFM for spatio-temporal multivariate abundance data these diagnostics may only be approximate, and so providing rules-of-thumb related to their usage is challenging. Besides, we echo the sentiment provided in Chapter 4.4 of Fox et al., (2019) that cutoffs and rules-of-thumb should not be given too much weight, with more attention placed on graphical displays and assessing *relative infuence* of observations.   
+#' All measures are obtained on a *per-species basis*. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates. 
+#' 
+#' ** We leave it up to the practitioner to decide how to use the regression diagnostics, if at all.** In a GAM let alone a CBFM for spatio-temporal multivariate abundance data these diagnostics may only be approximate, and so providing rules-of-thumb related to their usage is challenging. Besides, we echo the sentiment provided in Chapter 4.4 of Fox et al., (2019) that cutoffs and rules-of-thumb should not be given too much weight, with more attention placed on graphical displays and assessing *relative influence* of observations.   
 #'  
 #'  
 #' @return A list containing two elements:
 #' \describe{
 #' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
 #' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
+#' \item{B_edf: }{A matrix of estimated/effective degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of rows of this matrix should be the same as \code{object$y}, while it always has three columns. Values equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
 #' }
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -89,7 +92,7 @@
 #' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
-#' influence(fitcbfm)
+#' influence_CBFM(fitcbfm)
 #' }
 #'
 #' @export
@@ -98,19 +101,19 @@
 #' @importFrom doParallel registerDoParallel
 #' @md
 
-# Interesting note that in simulations, most of the time, the results from this are not too far from (but very slightly more conservative than) just ad-hoc applying summary.gam to the last iteration of the PQL estimation algorithm in CBFM! 
 influence_CBFM <- function(object, ncores = NULL) {
   if(!inherits(object, "CBFM")) 
     stop("`object' is not of class \"CBFM\"")
+  if(!object$stderrors)
+    stop("Standard errors must have been produced from `object' for influence measures to work.")
   
   if(is.null(ncores))
     registerDoParallel(cores = detectCores()-1)
   if(!is.null(ncores))
     registerDoParallel(cores = ncores)
 
-  if(!object$stderrors)
-    stop("Standard errors must have been produced from `object' for influence measures to work. Sorry!")
 
+  
   # (X^T W X + S)^{-1}== Bayesian posterior covariance matrix
   bigV <- cbind(object$covar_components$topleft, object$covar_components$topright)
   bigV <- rbind(bigV, cbind(t(object$covar_components$topright), object$covar_components$bottomright))
@@ -161,7 +164,7 @@ influence_CBFM <- function(object, ncores = NULL) {
   bigsqrtWXB <- cbind(bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtX)), bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtB))) 
   
   
-  # hat values -- This is a big bottleneck!
+  # hat values 
   gethatvals_j <- function(j) {
     sel_units <- (j*num_units - num_units + 1):(j*num_units)
     hatvals_j <- rowSums((bigsqrtWXB[sel_units,] %*% bigV) * bigsqrtWXB[sel_units,]) 
@@ -171,8 +174,39 @@ influence_CBFM <- function(object, ncores = NULL) {
   #hatvals <- rowSums((bigsqrtWXB %*% bigV) * bigsqrtWXB)
   #hatvals <- matrix(hatvals, nrow = num_units, ncol = num_spp)
   hatvals <- foreach(j = 1:num_spp, .combine = cbind) %dopar% gethatvals_j(j = j)
-  rm(bigsqrtWXB, bigV, weights_mat)    
-
+  
+  
+  # Effective degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
+  # In fact, in additional simulations we found that the EDFs calculated for the terms in formula_X are typically very very close to those from edf and the last update using GAM in the PQL estimation algorithm. 
+  edfs <- diag(bigV %*% crossprod(bigsqrtWXB))
+  names(edfs) <- colnames(bigV)
+  if(object$num_B == 0)
+    edfs_out <- NULL
+  if(object$num_B > 0) {
+    edfs_out <- matrix(NA, nrow = num_spp, ncol = 3)
+    rownames(edfs_out) <- colnames(object$y)
+    colnames(edfs_out) <- c("B_space", "B_time", "B_spacetime")
+    
+    for(j in 1:num_spp) { 
+      sub_edfs <- edfs[grep(paste0("response",j,"$"), names(edfs))]
+      sub_edfs <- sub_edfs[-(1:(nrow(object$covar_components$topleft)/num_spp))] 
+      
+      if(object$which_B_used[1]) {
+        edfs_out[j,1] <- sum(sub_edfs[1:object$num_B_space])
+        sub_edfs <- sub_edfs[-(1:object$num_B_space)] 
+        }
+      if(object$which_B_used[2]) {
+        edfs_out[j,2] <- sum(sub_edfs[1:object$num_B_time])
+        sub_edfs <- sub_edfs[-(1:object$num_B_time)] 
+        }
+      if(object$which_B_used[3]) {
+        edfs_out[j,3] <- sum(sub_edfs[1:object$num_B_spacetime])
+        sub_edfs <- sub_edfs[-(1:object$num_B_spacetime)] 
+        }
+      }
+    }
+  rm(bigsqrtWXB, bigV, weights_mat, edfs)    
+  
   
   # Cook's distance
   res <- residuals.CBFM(object, type = "pearson")
@@ -182,6 +216,7 @@ influence_CBFM <- function(object, ncores = NULL) {
   rownames(hatvals) <- rownames(cookD) <- rownames(object$y)
   colnames(hatvals) <- colnames(cookD) <- colnames(object$y)
   
-  return(list(hat = hatvals, cooks = cookD))
+
+  return(list(hat = hatvals, cooks = cookD, B_edf = edfs_out))
   }
 
