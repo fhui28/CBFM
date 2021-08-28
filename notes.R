@@ -1,4 +1,5 @@
-## UP TO HERE influence.CBFM done as of Aug 27 2021
+## UP TO HERE logLik.gam and maybe add spigel about conditional log-likelihoods? done as of Aug 28 2021. 
+## See also github issues
 
 ## GENERAL APPROACH TO MODIFYING PACKAGE
 ## 1. Do all changes
@@ -18,6 +19,7 @@ LinkingTo:
 
 ##--------------------------------------
 y = simy_train
+useformula <- ~ s(temp) + s(depth) + chla + s(O2)
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions

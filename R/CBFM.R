@@ -1,7 +1,7 @@
 ##----------------------
 ## Community-level Basis Function Model (CBFM): Estimation done using PQL, plus maximum Laplace approximated (restricted) log-likelihood estimation for the covariance matrices
 
-## See Github issues for TODO list
+## See Github issues but also notes for TODO and UP TO HERE list
 ##----------------------
 
 #' @title Community-level basis function models (CBFMs)
@@ -49,7 +49,7 @@
 #' \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the community-level covariance matrices. The ranks should be at least equal to 2, and not larger than the number of species. Please see details below for more information.} 
 #' \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.} 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
-#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.} 
+#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 #' }
 #' @param G_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
@@ -58,9 +58,15 @@
 #' \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.} 
 #' \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.} 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
-#' \item{method: }{The method by which to update the correlation matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.} 
+#' \item{method: }{The method by which to update the correlation matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 #' }
+#' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula_X}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
+#' \itemize{
+#' \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.} 
+#' \item{n.rep: }{How many re-shuffles of the residuals should be done in order to a P-value for testing. } 
+#' }
+#'
 #'
 #' @details 
 #'
@@ -77,7 +83,7 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. 
 #' 
-#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we must warn the practitioner that **some of the smoothers that \code{mgcv} e.g., [mgcv::factor.smooth.interaction()] and [mgcv::linear.functional.terms()] has available have not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
+#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]. When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we must warn the practitioner that **some of the smoothers that \code{mgcv} e.g., [mgcv::factor.smooth.interaction()] and [mgcv::linear.functional.terms()] has available have not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
 #' 
 #' Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions which are included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
 #' 
@@ -97,7 +103,7 @@
 #' 
 #' We also point out that this package only implements one possible version of a wider class of CBFMs; other potentially superior versions e.g., spatial basis functions with temporally varying corresponding regressions coefficients, are possible under the CBFM framework, but are far outside the scope of this package (sorry!).      
 #'    
-#' In principle, it is also possible to employ a more data-driven approach such as cross-validation or information criteria to choose the 'flavor' of CBFM for a particular data set, although this is not currently not explicitly implemented in the package (sorry again!). The same discourse also applies to choosing the number of basis functions to include (similar to choosing the number of latent variables in a LVM), although this choice is also heavily dependent on the type of basis functions used. We also refer the reader to [mgcv::choose.k()] as some of the advice provided there may be applicable to CBFMs e.g., using residual analysis to informally check whether increasing the number of basis functions would help. Furthermore, we echo a sentiment written there (while acknowledging things are more tricky with spatial and/or temporal basis functions): 
+#' In principle, it is also possible to employ a more data-driven approach such as cross-validation or information criteria to choose the 'flavor' of CBFM for a particular data set, although this is not currently not explicitly implemented in the package (sorry again!). The same discourse also applies to choosing the number of basis functions to include in the arguments \code{B_space/B_time/B_spacetime}, similar to choosing the number of latent variables in a LVM, although this choice is also heavily dependent on the type of basis functions used. We refer the reader to [mgcv::choose.k()] as some of the advice provided there may be applicable to CBFMs e.g., using residual analysis to informally check whether an increase the number of spatial and/or temporal basis functions is required. Furthermore, we echo a sentiment written there (while acknowledging things are more tricky with spatial and/or temporal basis functions, as well as for discrete responses!): 
 #' 
 #' *"So, exact choice of \eqn{k} (the number of basis functions in our situation) is not generally critical: it should be chosen to be large enough that you are reasonably sure of having enough degrees of freedom to represent the underlying 'truth' reasonably well, but small enough to maintain reasonable computational efficiency. Clearly 'large' and 'small' are dependent on the particular problem being addressed."* 
 #' 
@@ -174,13 +180,14 @@
 #' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* incldue the quadratic term of the PQL.}
 #' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* incldue the quadratic term of the PQL}
 #' \item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
+#' \item{edf/edf1: }{Estimated degrees of freedom for each model parameter in \code{formula_X}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+#' \item{all_k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
 #' \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
 #' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
 #' \item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. }
-#' \item{edf/edf1: }{Estimated degrees of freedom for each model parameter in \code{formula_X}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
 #' \item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.}
 #' \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 #' \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
@@ -1362,7 +1369,7 @@
 #'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
-#' @importFrom mgcv betar gam ldTweedie logLik.gam model.matrix.gam nb rTweedie Tweedie tw
+#' @importFrom mgcv betar gam k.check ldTweedie logLik.gam model.matrix.gam nb rTweedie Tweedie tw
 #' @importFrom numDeriv grad
 #' @importFrom parallel detectCores
 #' @importFrom TMB MakeADFun
@@ -1375,7 +1382,9 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
      control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 0, ridge = 0), 
      Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0), 
-     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)) {
+     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0),
+     k_check_control = list(subsample = 5000, n.rep = 400)
+     ) {
           
      ##----------------
      ## Opening checks and all that jazz
@@ -2049,9 +2058,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                break;
           }
      all_S <- sapply(all_update_coefs, function(x) x$S)
+     all_k_check <- foreach(j = 1:num_spp) %dopar% k.check(all_update_coefs[[j]]$fit, subsample = k_check_control$subsample, n.rep = k_check_control$n.rep)
+     names(all_k_check) <- colnames(y)
      rm(all_update_coefs, tidbits_data, inner_err, cw_inner_logL, cw_logLik, 
         cw_params, new_params, diff, counter)
      gc()
+     
      
      # Calculate deviance, null deviance etc...please note deviance calculation excludes the quadratic term in the PQL
      nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = ~ 1)
@@ -2096,15 +2108,16 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$deviance <- -2*out_CBFM$logLik
      out_CBFM$null_deviance <- nulldeviance
      out_CBFM$deviance_explained <- (out_CBFM$null_deviance - out_CBFM$deviance)/out_CBFM$null_deviance
+     out_CBFM$edf <- new_fit_CBFM_ptest$edf
+     out_CBFM$edf1 <- new_fit_CBFM_ptest$edf1
+     out_CBFM$all_k_check <- all_k_check
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
      out_CBFM$powerparam <- new_fit_CBFM_ptest$powerparam
      out_CBFM$zeroinfl_prob_intercept <- new_fit_CBFM_ptest$zeroinfl_prob_intercept
      out_CBFM$linear_predictor <- new_fit_CBFM_ptest$linear_predictor
-     out_CBFM$edf <- new_fit_CBFM_ptest$edf
-     out_CBFM$edf1 <- new_fit_CBFM_ptest$edf1
-     rm(new_fit_CBFM_ptest, getweights, converged)
+     rm(new_fit_CBFM_ptest, getweights, converged, all_k_check)
 
      # ## Get restricted CBFM estimates of the coefficients (really more for exploration at this point in time)
      #OLSmatrix_transpose <- X %*% solve(crossprod(X))
