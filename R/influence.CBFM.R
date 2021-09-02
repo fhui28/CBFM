@@ -22,7 +22,7 @@
 #' \describe{
 #' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
 #' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
-#' \item{B_edf: }{A matrix of estimated/effective degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of rows of this matrix should be the same as \code{object$y}, while it always has three columns. Values equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
+#' \item{B_edf: }{A matrix of estimated/effective degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of columns of this matrix should be the same as \code{object$y}, while it always has three rows. Any elements in the matrix equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
 #' }
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -112,8 +112,9 @@ influence_CBFM <- function(object, ncores = NULL) {
   if(!is.null(ncores))
     registerDoParallel(cores = ncores)
 
-
-  
+  ##------------------
+  ## Calculate building block quantities
+  ##------------------
   # (X^T W X + S)^{-1}== Bayesian posterior covariance matrix
   bigV <- cbind(object$covar_components$topleft, object$covar_components$topright)
   bigV <- rbind(bigV, cbind(t(object$covar_components$topright), object$covar_components$bottomright))
@@ -163,7 +164,9 @@ influence_CBFM <- function(object, ncores = NULL) {
   
   bigsqrtWXB <- cbind(bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtX)), bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtB))) 
   
-  
+  ##------------------
+  ## Now the measures...
+  ##------------------
   # hat values 
   gethatvals_j <- function(j) {
     sel_units <- (j*num_units - num_units + 1):(j*num_units)
@@ -205,10 +208,16 @@ influence_CBFM <- function(object, ncores = NULL) {
         }
       }
     }
-  rm(bigsqrtWXB, bigV, weights_mat, edfs)    
   
+  # Experimentation. But most of the time frequentist either has smaller standard errors, so not used
+  #freq_cov_stderrs <- sqrt(rowSums((bigV %*% crossprod(bigsqrtWXB)) * bigV))
+  #freq_cov_stderrs <- matrix(freq_cov_stderrs[1:(num_spp*ncol(model.matrix(object)))], ncol = num_spp)
+  #bayes_cov_stderrs <- matrix(sqrt(diag(object$covar_components$topleft)), ncol = num_spp)
+  #matplot(bayes_cov_stderrs, freq_cov_stderrs)
+  #abline(0,1)
   
   # Cook's distance
+  rm(bigsqrtWXB, bigV, weights_mat, edfs)    
   res <- residuals.CBFM(object, type = "pearson")
   final_dfs <- colSums(object$edf) + nrow(object$basis_effects_mat)
   cookD <- (res / (1 - hatvals))^2 * hatvals / matrix(final_dfs, nrow = num_units, ncol = num_spp, byrow = TRUE)
@@ -217,6 +226,6 @@ influence_CBFM <- function(object, ncores = NULL) {
   colnames(hatvals) <- colnames(cookD) <- colnames(object$y)
   
 
-  return(list(hat = hatvals, cooks = cookD, B_edf = edfs_out))
+  return(list(hat = hatvals, cooks = cookD, B_edf = t(edfs_out)))
   }
 
