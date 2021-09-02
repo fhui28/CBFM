@@ -1740,8 +1740,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          
                     CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                     
-                    new_fit_CBFM <- nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr, 
-                         lower = tidbits_constraints$lower, upper = tidbits_constraints$upper)
+                    new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
+                         lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
+                    if(inherits(new_fit_CBFM, "try-error")) {
+                         new_fit_CBFM <- list(par = tidbits_parameters$basis_effects)
+                         }
                     #new_fit_CBFM <- optim(par = CBFM_objs$par, fn = CBFM_objs$fn, gr = CBFM_objs$gr, method = "BFGS")
                     
                     return(new_fit_CBFM)
@@ -1750,7 +1753,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     
                all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
                for(j in 1:num_spp) {
-                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par[grep("basis_effects", names(all_update_coefs[[j]]$par))]
+                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par+1e-5 #[grep("basis_effects", names(all_update_coefs[[j]]$par))]
                     }
                rm(all_update_coefs, update_basiscoefsspp_fn)
 
@@ -1871,7 +1874,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                #print(new_fit_CBFM_ptest$logLik)
                rm(all_update_coefs, update_Xcoefsspp_fn)
 
-               if(!(family$family[1] %in% c("zipoisson")))
+               if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                     break;
                }          
           
@@ -2011,7 +2014,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
           for(j in 1:num_spp) {
-               new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par[grep("basis_effects", names(all_update_coefs[[j]]$par))]
+               new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par + 1e-5 #[grep("basis_effects", names(all_update_coefs[[j]]$par))]
                }
           rm(all_update_coefs)
           
