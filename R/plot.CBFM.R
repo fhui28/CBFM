@@ -137,6 +137,8 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      mains[which_plot] <- titles[which_plot]
 
      res <- residuals(object = x, type = type, seed = seed)
+     res[res < -1e4] <- -1e4
+     res[res > 1e4] <- 1e4
      dsres <- res[, sppind]
      etamat <- x$linear_predictor[,sppind]
      xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
