@@ -201,7 +201,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                     start <- nullfit$smooth[[i]]$first.para
                     stop <- nullfit$smooth[[i]]$last.para
 
-                    V <- grep(paste0("response",j,"$"), rownames(object$covar_components$topleft))
+                    V <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                     V <- object$covar_components$topleft[V, V, drop = FALSE]
                     V <- V[start:stop, start:stop, drop = FALSE]
 

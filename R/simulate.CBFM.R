@@ -141,15 +141,16 @@ simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, condit
           trial_size = object$trial_size,
           dispparam = object$dispparam, 
           powerparam = object$powerparam, 
-          zeroinfl_prob = plogis(object$zeroinfl_prob_intercept), 
           max_resp = max_resp
           )
+     if(!is.null(object$zeroinfl_prob_intercept))
+       true_model$zeroinfl_prob <- plogis(object$zeroinfl_prob_intercept)
      if(object$which_B_used[1] == 1)
           true_model$B_space <- object$B[,1:object$num_B_space,drop=FALSE]
      if(object$which_B_used[2] == 1)
-          true_model$B_space <- object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE]
+          true_model$B_time <- object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE]
      if(object$which_B_used[3] == 1)
-          true_model$B_space <- object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE]
+          true_model$B_spacetime <- object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE]
         
      if(conditional == TRUE) {
           true_model$basis_effects_mat <- object$basis_effects_mat
