@@ -40,6 +40,7 @@
 #' \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by [mgcv::gam.control()] itself.}
 #' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default) which assess convergence based on the norm of the difference between estimated parameters from successive iterations, and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
+#' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An ad-hoc fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the subsequent PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
 #' \item{ridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates.}
@@ -156,7 +157,9 @@
 #' 
 #' ## A note on estimation and inference
 #' 
-#' As mentioned above, because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to many implementation of GAMs then, this package uses a maximized penalized quasi-likelihood or PQL approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), with baseline between-response correlation and community-level covariance matrices estimated by maximum Laplace approximated residual maximum likelihood (REML) estimation (Wood, 2011). Currently, the package itself makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016).
+#' As mentioned above, because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-response correlation and community-level covariance matrices are estimated by maximum Laplace approximated residual maximum likelihood (REML) estimation (Wood, 2011). Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this. 
+#' 
+#' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works OK, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are no easy, principled solutions for such situations (as it may reflect an underlying intriguing feature of the proposed model for the predictors, data, or it may genuinely be that the stacked species distribution model is already fitting incredibly well!). One *ad-hoc* fix is available through \code{control$initial_betas_dampen}, but it is not guaranteed to work.  
 #' 
 #' Standard errors and resulting techniques like confidence intervals are based on the approximate large sample distribution of the regression coefficients, and use the so-called Bayesian posterior covariance matrix for the coefficients, similar to (but not as sophisticated as!) what is provided  [mgcv::summary.gam()]. Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}. They can lead to standard errors that are potentially too small, so please keep this in mind. 
 #' 
@@ -1380,7 +1383,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, gamma = 1,
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 0, ridge = 0), 
+     control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, initial_beta_dampen = 1, seed = NULL, trace = 0, ridge = 0), 
      Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0), 
      G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0),
      k_check_control = list(subsample = 5000, n.rep = 400)
@@ -1506,23 +1509,23 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
                
                if(family$family %in% c("gaussian","poisson","Gamma")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = family), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = family, gamma = gamma), silent = TRUE)
                     }
                if(family$family %in% c("binomial")) {
                     tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
                     use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
                     
                     fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = "ML", 
-                         family = family), silent = TRUE)
+                         family = family, gamma = gamma), silent = TRUE)
                     }
                if(family$family %in% c("negative.binomial")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = nb()), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
                     }
                if(family$family %in% c("Beta")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = betar(link = "logit")), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = betar(link = "logit"), gamma = gamma), silent = TRUE)
                     }
                if(family$family == "tweedie") {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = Tweedie(p = 1.6, link = "log")), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = Tweedie(p = 1.6, link = "log"), gamma = gamma), silent = TRUE)
                     }
                if(family$family == "zipoisson") {
                     # Initial weights/posterior probabilities of being in zero-inflation component
@@ -1530,7 +1533,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     init_lambda <- mean(y[,j])
                     w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
                     
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson"), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson", gamma = gamma), silent = TRUE)
                     }
                if(family$family[1] == "zinegative.binomial") {
                     # Initial weights/posterior probabilities of being in zero-inflation component
@@ -1538,7 +1541,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     init_lambda <- mean(y[,j])
                     w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = init_lambda, size = 1/0.2)), 0)
                     
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = nb()), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
                     }
                      
                         
@@ -1549,6 +1552,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = formula_X)              
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
+          start_params$betas <- start_params$betas * control$initial_betas_dampen
           rm(all_start_fits)
           gc()
           }
@@ -1753,7 +1757,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     
                all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
                for(j in 1:num_spp) {
-                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par+1e-5 #[grep("basis_effects", names(all_update_coefs[[j]]$par))]
+                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par #[grep("basis_effects", names(all_update_coefs[[j]]$par))]
                     }
                rm(all_update_coefs, update_basiscoefsspp_fn)
 
@@ -1886,7 +1890,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                message("Updating between response correlaton matrices, G")
           if(which_B_used[1]) {
                new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
+                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol, 
                     Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictor),  dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
@@ -1896,7 +1900,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           if(which_B_used[2]) {
                new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
+                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+G_control$tol, 
                     Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
@@ -1906,7 +1910,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           if(which_B_used[3]) {
                new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
+                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+G_control$tol, 
                     Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
@@ -1924,7 +1928,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                message("Updating covariance matrices for basis functions, Sigma")
           if(which_B_used[1]) {
                new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
+                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+Sigma_control$tol, 
                     Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
@@ -1934,7 +1938,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           if(which_B_used[2]) {
                new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
+                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+Sigma_control$tol, 
                     Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictor),  dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
@@ -1944,7 +1948,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           if(which_B_used[3]) {
                new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
+                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+Sigma_control$tol, 
                     Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 

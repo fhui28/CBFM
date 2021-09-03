@@ -1,14 +1,3 @@
-# function() {
-#      G <- tidbits_data$G
-#      basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat
-#      Sigmainv = tidbits_data$Sigmainv
-#      y_vec = as.vector(y)
-#      linpred_vec = c(new_fit_CBFM_ptest$linear_predictor)
-#      dispparam = new_fit_CBFM_ptest$dispparam
-#      powerparam = new_fit_CBFM_ptest$powerparam 
-#      }
-
-     
 update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_vec, dispparam, powerparam, zeroinfl_prob_intercept,  
                         trial_size, family, G_control, return_correlation = TRUE) {
         
