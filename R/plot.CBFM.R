@@ -188,7 +188,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
 
      # Normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope          
      if(2 %in% which_plot) {
-          qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "theoretical quantiles")
+          qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "theoretical quantiles", ylim = yyy)
           #qqline(c(dsres), col = envelope_col[1])
           
          K <- 200
@@ -211,7 +211,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
           
      # Residuals against observational unit index          
      if(3 %in% which_plot) {
-          plot(rep(1:num_units, num_spp), dsres, xlab = "Unit index", ylab = "Residuals", col = rep(col, each = num_units), main = mains[3], ...);
+          plot(rep(1:num_units, num_spp), dsres, xlab = "Unit index", ylab = "Residuals", col = rep(col, each = num_units), main = mains[3], ..., ylim = yyy);
           abline(0, 0, col = "grey", lty = 3)
           if(smooth) 
                panel.smooth(rep(1:num_units, num_spp), dsres, col = rep(col, each = num_units), col.smooth = envelope_col[1], ...)
@@ -220,7 +220,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
           
      # Residuals against species index          
      if(4 %in% which_plot) {
-          plot(rep(1:num_spp, each = num_units), dsres, xlab = "Species index", ylab = " Residuals", col = rep(col[csum], each = num_units), main = mains[4], ...) 
+          plot(rep(1:num_spp, each = num_units), dsres, xlab = "Species index", ylab = " Residuals", col = rep(col[csum], each = num_units), main = mains[4], ylim = yyy, ...) 
           abline(0, 0, col = "grey", lty = 3)
           if(smooth) 
                panel.smooth(rep(1:num_spp, each = num_units), dsres, col = rep(col[csum], each = num_units), col.smooth = envelope_col[1], ...)
@@ -230,10 +230,11 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      # Scale-location plot
      if(5 %in% which_plot) {
           sqres <- sqrt(abs(dsres))
+          yyy <- range(sqres[dsres > -1e3 & dsres < 1e3])
           yl <- as.expression(substitute(sqrt(abs(YL)), list(YL = as.name("Residuals"))))
           
           if(is.null(gr.pars$xlim)) {
-               plot(etamat, sqres, xlab = "Linear predictors", ylab = yl, col = rep(col, each = num_units), main = mains[5], xlim = c(min(xxx), max(xxx)), ...)
+               plot(etamat, sqres, xlab = "Linear predictors", ylab = yl, col = rep(col, each = num_units), main = mains[5], xlim = c(min(xxx), max(xxx)), ylim = yyy, ...)
                } 
           else {
                plot(etamat, sqres, xlab = "Linear predictors", ylab = yl, col = rep(col, each = num_units), main = mains[5], ...)
@@ -247,17 +248,18 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
 
      
 ## Pulled straight from gllvm package. Thanks to Jenni for this function!
-.gamEnvelope <- function(x, y, line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, ...) {
+.gamEnvelope <- function(x, y, line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, subsample = 5000, ...) {
      xSort <- sort(x, index.return = TRUE)
      gam.yx <- gam(y[xSort$ix] ~ xSort$x)
      pr.y <- predict.gam(gam.yx, se.fit = TRUE)
      
-     n.obs <- length(xSort$ix)
+     n.obs <- length(xSort$ix)     
      prHi <- pr.y$fit + 1.96*pr.y$se.fit
      prLow <- pr.y$fit - 1.96*pr.y$se.fit
+     sel_x_index <- 1:n.obs
      
      if(envelopes) 
-          polygon(xSort$x[c(1:n.obs,n.obs:1)], c(prHi,prLow[n.obs:1]), col = envelope.col[2], border = NA)
+          polygon(xSort$x[c(sel_x_index,rev(sel_x_index))], c(prHi,prLow[rev(sel_x_index)]), col = envelope.col[2], border = NA)
      
      lines(xSort$x, pr.y$fit, col = envelope.col[1])
      abline(h = 0, col = 1)
