@@ -191,7 +191,7 @@ influence_CBFM <- function(object, ncores = NULL) {
     colnames(edfs_out) <- c("B_space", "B_time", "B_spacetime")
     
     for(j in 1:num_spp) { 
-      sub_edfs <- edfs[grep(paste0("response",j,"$"), names(edfs))]
+      sub_edfs <- edfs[grep(paste0(colnames(object$y)[j],"$"), names(edfs))]
       sub_edfs <- sub_edfs[-(1:(nrow(object$covar_components$topleft)/num_spp))] 
       
       if(object$which_B_used[1]) {
