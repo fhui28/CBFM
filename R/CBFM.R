@@ -2074,7 +2074,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      
      # Calculate deviance, null deviance etc...please note deviance calculation excludes the quadratic term in the PQL
      nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = ~ 1)
-     nulldeviance <- sum(sapply(nulldeviance, function(x) x$deviance))
+     nulldeviance <- sum(sapply(nulldeviance, function(x) -2*logLik(x)))
      rm(initfit_fn)
      
      new_logLik <- new_fit_CBFM_ptest$logLik
