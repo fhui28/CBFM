@@ -137,11 +137,16 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      mains[which_plot] <- titles[which_plot]
 
      res <- residuals(object = x, type = type, seed = seed)
-     res[res < -1e4] <- -1e4
-     res[res > 1e4] <- 1e4
+     if(any(res < -1e3))
+          warning("Some extremely large negative residuals will be left out of the plotting.")
+     if(any(res > 1e3))
+          warning("Some extremely large positive residuals will be left out of the plotting.")
+     res[res < -1e3] <- -1e3
+     res[res > 1e3] <- 1e3
      dsres <- res[, sppind]
      etamat <- x$linear_predictor[,sppind]
      xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
+     yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]))     
      
 
      # Form colors for species - done by prevalence
@@ -166,7 +171,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      if(1 %in% which_plot) {
           if(is.null(gr.pars$xlim)) {
                plot(etamat, dsres, xlab = "Linear predictors", ylab = "Residuals", type = "n", col = rep(col, each = num_units), 
-                    main = mains[1], xlim = c(min(xxx), max(xxx)))
+                    main = mains[1], xlim = c(min(xxx), max(xxx)), ylim = yyy)
                abline(0, 0, col = "grey", lty = 3)
                } 
           else {
