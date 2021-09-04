@@ -152,7 +152,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                 if(nt>0) { # individual parametric terms
                     np <- length(nullfit$assign[[k1]])
                     ind <- pstart[k1] - 1 + 1:np
-                    Vb <- grep(paste0("response",j,"$"), rownames(object$covar_components$topleft))
+                    Vb <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                     Vb <- object$covar_components$topleft[Vb, Vb, drop = FALSE]
                     Vb <- Vb[ind, ind, drop = FALSE]
                     bp <- array(object$betas[j, ind], np)
