@@ -151,6 +151,7 @@ An object of class "CBFM" which includes the following components, not necessari
 }
 
 Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
+\item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of \code{\link[base:proc.time]{base::proc.time()}}.}
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
