@@ -143,7 +143,7 @@ ordinate.CBFM <- function(object, num_comp = 2, new_B_space = NULL, new_B_time =
      do_svd <- svd(linpred_basisfunctions)
      
      new_lvs <- do_svd$u[, 1:num_comp,drop=FALSE] %*% diag(x = do_svd$d[1:num_comp]^alpha, nrow = num_comp)
-     rownames(new_lvs) <- rownames(object$y)
+     #rownames(new_lvs) <- rownames(object$y)
      new_Loadings <- do_svd$v[, 1:num_comp,drop=FALSE] %*% diag(x = do_svd$d[1:num_comp]^alpha, nrow = num_comp)
      rownames(new_Loadings) <- colnames(object$y)
      colnames(new_lvs) <- colnames(new_Loadings) <- paste0("Axis", 1:num_comp)
