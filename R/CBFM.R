@@ -2018,7 +2018,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
           for(j in 1:num_spp) {
-               new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par + 1e-5 #[grep("basis_effects", names(all_update_coefs[[j]]$par))]
+               new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par#[grep("basis_effects", names(all_update_coefs[[j]]$par))]
                }
           rm(all_update_coefs)
           
