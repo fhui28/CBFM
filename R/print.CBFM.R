@@ -28,7 +28,7 @@ print.CBFM <- function(x, ...) {
      message("Number of columns in model matrix induced by formula_X: ", ncol(x$betas))
      message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
-     B_names <- c("B_space", "B_time", "B_spacetime")
+     B_names <- c("B_space ", "B_time ", "B_spacetime ")
      message("Basis functions included: ", B_names[x$which_B_used==1])
      message("Total number of basis functions: ", x$num_B)
      

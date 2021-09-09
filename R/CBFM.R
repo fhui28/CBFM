@@ -1501,56 +1501,56 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      ## Obtain starting values -- Note that no selection is attempted here  
      ##----------------
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
+     initfit_fn <- function(j, formula_X) {
+          tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+          
+          if(family$family %in% c("gaussian","poisson","Gamma")) {
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = family, gamma = gamma), silent = TRUE)
+               }
+          if(family$family %in% c("binomial")) {
+               tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
+               use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
+               
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = "ML", 
+                    family = family, gamma = gamma), silent = TRUE)
+               }
+          if(family$family %in% c("negative.binomial")) {
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+               }
+          if(family$family %in% c("Beta")) {
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = betar(link = "logit"), gamma = gamma), silent = TRUE)
+               }
+          if(family$family == "tweedie") {
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = Tweedie(p = 1.6, link = "log"), gamma = gamma), silent = TRUE)
+               }
+          if(family$family == "zipoisson") {
+               # Initial weights/posterior probabilities of being in zero-inflation component
+               init_pi <- mean(y[,j] == 0)
+               init_lambda <- mean(y[,j])
+               w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
+               
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson", gamma = gamma), silent = TRUE)
+               }
+          if(family$family[1] == "zinegative.binomial") {
+               # Initial weights/posterior probabilities of being in zero-inflation component
+               init_pi <- mean(y[,j] == 0)
+               init_lambda <- mean(y[,j])
+               w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = init_lambda, size = 1/0.2)), 0)
+               
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+               }
+                
+                   
+          if(inherits(fit0, "try-error"))
+               fit0 <- list(coefficients = runif(ncol(X)), residuals = rnorm(nrow(X)), dispparam = 1, logLik = -Inf)
+          
+          return(fit0)
+          }
      
      if(is.null(start_params$betas)) { 
           if(control$trace > 0)
                message("Calculating starting values...")
           
-          initfit_fn <- function(j, formula_X) {
-               tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-               
-               if(family$family %in% c("gaussian","poisson","Gamma")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = family, gamma = gamma), silent = TRUE)
-                    }
-               if(family$family %in% c("binomial")) {
-                    tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
-                    use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
-                    
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = "ML", 
-                         family = family, gamma = gamma), silent = TRUE)
-                    }
-               if(family$family %in% c("negative.binomial")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
-                    }
-               if(family$family %in% c("Beta")) {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = betar(link = "logit"), gamma = gamma), silent = TRUE)
-                    }
-               if(family$family == "tweedie") {
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = Tweedie(p = 1.6, link = "log"), gamma = gamma), silent = TRUE)
-                    }
-               if(family$family == "zipoisson") {
-                    # Initial weights/posterior probabilities of being in zero-inflation component
-                    init_pi <- mean(y[,j] == 0)
-                    init_lambda <- mean(y[,j])
-                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
-                    
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson", gamma = gamma), silent = TRUE)
-                    }
-               if(family$family[1] == "zinegative.binomial") {
-                    # Initial weights/posterior probabilities of being in zero-inflation component
-                    init_pi <- mean(y[,j] == 0)
-                    init_lambda <- mean(y[,j])
-                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = init_lambda, size = 1/0.2)), 0)
-                    
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
-                    }
-                     
-                        
-               if(inherits(fit0, "try-error"))
-                    fit0 <- list(coefficients = runif(ncol(X)), residuals = rnorm(nrow(X)), dispparam = 1, logLik = -Inf)
-               
-               return(fit0)
-               }
           all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = formula_X)              
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
           start_params$betas <- start_params$betas * control$initial_betas_dampen
