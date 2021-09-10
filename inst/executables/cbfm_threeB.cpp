@@ -110,9 +110,16 @@ Type objective_function<Type>::operator() () {
                }
           }
      if(family == 4) { //negative binomial
+          Type predvalue = Type(0.0);
+
           for(int i=0; i<num_units; i++) { 
-               nll -= dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
-               }
+            //nll -= dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+            predvalue = 1/(1+dispparam(0)*exp(eta(i)));
+            if(predvalue > 0.9999)
+                predvalue = 0.9999;
+            nll -= dnbinom(y(i), 1/dispparam(0), predvalue, true);
+            //lik_val(i) = dnbinom(y(i), 1/dispparam(0), predvalue, true);
+            }
           }
      if(family == 5) { //normal
           for(int i=0; i<num_units; i++) { 

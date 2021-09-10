@@ -40,8 +40,6 @@ Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 
 G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
-    
-    
 Ginv = new_LoadingnuggetG_space$covinv
 basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
 Sigmainv = new_LoadingnuggetSigma_space$covinv
@@ -55,41 +53,28 @@ return_correlation = TRUE
 
 
 
-object = fitcbfm
-newdata = NULL 
-manualX = NULL
-new_B_space = NULL
-new_B_time = NULL
-new_B_spacetime = NULL
-type = "response"
-se_fit = TRUE
-coverage = 0.95
+
+#------------------------
+y = Y[sel_training_units,]
+data = X[sel_training_units,]
+formula_X = ~ TOW_EFFECT + s(DEPTH) + s(SURFTEMP) + s(BOTTEMP) + s(STRESS_Q95_YR)
+B_space =  train_sp_basisfunctions
+B_time = train_time_basisfunctions
+B_spacetime = NULL
+offset = NULL
 ncores = NULL
+gamma = 1
+trial_size = 1
+dofit = TRUE
+stderrors = TRUE
+select = FALSE
+family = nb2()
+control = list(trace = 1, initial_betas_dampen = 1)
+start_params = list(betas = t(sapply(stackedgams_spacetime, coef)[1:38,]))
+G_control = list(rank = c(5,5), method = "LA")
+Sigma_control = list(rank = c(5,2), method = "LA")
+#TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/inst/executables", 
+                       compile = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/inst/executables")
 
-
-##------------------------------------
-spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5)
-spp_dispersion <- runif(num_spp, 0, 1)
-spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
-                         betas = cbind(spp_intercepts+2, spp_slopes), basis_effects_mat = spp_basis_coefs, 
-                         B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
-# 
-# fitstacked <- NULL 
-# for(j in 1:num_spp) { 
-#      fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, dist = "negbin", data = data.frame(resp = simy$y[,j], dat))
-# }
-# 
-# par(mfrow =c(1,2))
-# plot(sapply(fitstacked, function(x) x$coefficients$zero) %>% plogis, spp_zeroinfl_prob); abline(0,1)
-# plot(sapply(fitstacked, function(x) 1/x$theta), spp_dispersion); abline(0,1)
-# 
-
-
-fitcbfm <- CBFM(y = simy$y, formula_X = useformula, data = dat, 
-     B_space = basisfunctions, family = zinb2(), control = list(trace = 1), stderrors = FALSE)
-
-
-plot(fitcbfm$dispparam, spp_dispersion); abline(0,1)
-plot(fitcbfm$zeroinfl_prob_intercept %>% plogis, spp_zeroinfl_prob); abline(0,1)
 
