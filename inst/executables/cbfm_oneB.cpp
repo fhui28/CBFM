@@ -79,8 +79,8 @@ Type objective_function<Type>::operator() () {
           for(int i=0; i<num_units; i++) { 
             //nll -= dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
             predvalue = 1/(1+dispparam(0)*exp(eta(i)));
-            if(predvalue > 0.9999)
-                predvalue = 0.9999;
+            if(predvalue > 0.999999)
+                predvalue = 0.999999;
             nll -= dnbinom(y(i), 1/dispparam(0), predvalue, true);
             //lik_val(i) = dnbinom(y(i), 1/dispparam(0), predvalue, true);
             }
