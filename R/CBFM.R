@@ -1384,7 +1384,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, gamma = 1,
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, initial_beta_dampen = 1, seed = NULL, trace = 0, ridge = 0), 
+     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", tol = 1e-4, initial_beta_dampen = 1, seed = NULL, trace = 0, ridge = 0), 
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0), 
      G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0),
      k_check_control = list(subsample = 5000, n.rep = 400)

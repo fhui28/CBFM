@@ -183,9 +183,9 @@
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$optim_lower))
-          control$optim_lower <- -5
+          control$optim_lower <- -10
      if(is.null(control$optim_upper))
-          control$optim_upper <- 5
+          control$optim_upper <- 10
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$initial_betas_dampen))
