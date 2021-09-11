@@ -197,7 +197,7 @@
      if(is.null(control$trace))
           control$trace <- 0
 
-     control$convergence_type <- match.arg(control$convergence_type, choices = c("parameters","logLik"))
+     control$convergence_type <- match.arg(control$convergence_type, choices = c("parameters","linear_predictor", "logLik"))
      return(control)
      }
      

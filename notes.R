@@ -59,7 +59,7 @@ y = Y[sel_training_units,]
 data = X[sel_training_units,]
 formula_X = ~ TOW_EFFECT + s(DEPTH) + s(SURFTEMP) + s(BOTTEMP) + s(STRESS_Q95_YR)
 B_space =  train_sp_basisfunctions
-B_time = NULL
+B_time = train_time_basisfunctions
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
@@ -70,9 +70,9 @@ stderrors = TRUE
 select = FALSE
 family = nb2()
 control = list(trace = 1, initial_betas_dampen = 1)
-start_params = list(betas = t(sapply(stackedgams_space, coef)[1:38,]))
-G_control = list(rank = c(5), method = "LA")
-Sigma_control = list(rank = c(5), method = "LA")
+start_params = list(betas = t(sapply(stackedgams_spacetime, coef)[1:38,]))
+G_control = list(rank = c(5,5), method = "LA")
+Sigma_control = list(rank = c(5,2), method = "LA")
 #TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
 TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/inst/executables", 
                        compile = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/inst/executables")

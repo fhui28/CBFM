@@ -23,11 +23,11 @@ CBFM(
     powerparam = NULL, zeroinfl_prob = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
-  control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type =
+  control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type =
     "parameters", tol = 1e-04, initial_beta_dampen = 1, seed = NULL, trace = 0, ridge =
     0),
-  Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-04, method = "LA", trace = 0),
-  G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000,
+  Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0),
+  G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100,
     tol = 1e-04, method = "LA", trace = 0),
   k_check_control = list(subsample = 5000, n.rep = 400)
 )
@@ -76,7 +76,7 @@ CBFM(
 \itemize{
 \item{maxit: }{The maximum number of iterations for the outer algorithm.}
 \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by \code{\link[mgcv:gam.control]{mgcv::gam.control()}} itself.}
-\item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default) which assess convergence based on the norm of the difference between estimated parameters from successive iterations, and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
+\item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "linear_predictor" which assesses convergence based on the mean squared error of the difference between estimated linear predictors from successive iterations  and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
 \item{tol: }{The tolerance value to use when assessing convergence.}
 \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An ad-hoc fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the subsequent PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
 \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
