@@ -53,15 +53,18 @@ Type objective_function<Type>::operator() () {
      // Data likelihood     
      vector<Type> eta = Xbeta + B * basis_effects + offset;
      // eta(i,j) += x(i,k1)*traits(j,k1)*fourthcorner_coef(k1,k1); 
-     Type predvalue = Type(0.0);
+    vector<Type> lik_val(num_units);
 
+    
      if(family == 1) { //beta
           for(int i=0; i<num_units; i++) { 
                nll -= dbeta(y(i), dispparam(0)*invlogit(eta(i)), dispparam(0)*(1-invlogit(eta(i))), true);
                }
           }
      if(family == 2) { //binomial (logit link)          
-          for(int i=0; i<num_units; i++) { 
+      Type predvalue = Type(0.0);
+          
+      for(int i=0; i<num_units; i++) { 
                predvalue = dbinom(y(i), Type(trial_size(i)), invlogit(eta(i)), true);
                if(predvalue < -10000) 
                     predvalue = -10000;
@@ -74,15 +77,12 @@ Type objective_function<Type>::operator() () {
                }
           }
      if(family == 4) { //negative binomial
-          Type predvalue = Type(0.0);
-
           for(int i=0; i<num_units; i++) { 
-            //nll -= dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
-            predvalue = 1/(1+dispparam(0)*exp(eta(i)));
-            if(predvalue > 0.999999)
-                predvalue = 0.999999;
-            nll -= dnbinom(y(i), 1/dispparam(0), predvalue, true);
-            //lik_val(i) = dnbinom(y(i), 1/dispparam(0), predvalue, true);
+            lik_val(i) = dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+            //if(lik_val(i) != lik_val(i)) // Simple Nan check. If x!=x then x is nan 
+            //  lik_val(i) = Type(0.0);
+              
+            nll -= lik_val(i);
             }
           }
      if(family == 5) { //normal
