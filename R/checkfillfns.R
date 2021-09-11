@@ -181,7 +181,7 @@
           
 .fill_control <- function(control) {
      if(is.null(control$maxit))
-          control$maxit <- 1000
+          control$maxit <- 100
      if(is.null(control$optim_lower))
           control$optim_lower <- -5
      if(is.null(control$optim_upper))
@@ -210,7 +210,7 @@
      if(is.null(control$nugget_profile))          
           control$nugget_profile = seq(0.05, 0.95, by = 0.05)
      if(is.null(control$maxit))
-          control$maxit <- 1000
+          control$maxit <- 100
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$method))
@@ -234,7 +234,7 @@
           stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2.")
           }
      if(is.null(control$maxit))
-          control$maxit <- 1000
+          control$maxit <- 100
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$method))
