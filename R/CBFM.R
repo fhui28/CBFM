@@ -38,7 +38,7 @@
 #' \itemize{
 #' \item{maxit: }{The maximum number of iterations for the outer algorithm.} 
 #' \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by [mgcv::gam.control()] itself.}
-#' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default) which assess convergence based on the norm of the difference between estimated parameters from successive iterations, and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
+#' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "linear_predictor" which assesses convergence based on the mean squared error of the difference between estimated linear predictors from successive iterations  and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
 #' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An ad-hoc fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the subsequent PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
@@ -1674,6 +1674,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                cw_params <- as.vector(unlist(new_fit_CBFM_ptest))
                cw_params <- cw_params[-length(cw_params)] # Get rid of the logLik term
                cw_logLik <- new_fit_CBFM_ptest$logLik
+               cw_linpred <- Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
                rm(start_params)
                }
           if(counter > 0) {          
@@ -1685,7 +1686,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           cw_inner_logL <- -Inf
           if(control$trace > 0)
                message("Updating all coefficients and dispersion/power parameters (also running inner EM algorithm if appropriate)...")         
-          while(inner_err > 0.25) {
+          while(inner_err > 0.01) {
                ##-------------------------
                ## Updating zero-inflation probabilities for distributions that need it. Note it is parameterized in terms of an intercept on the logit scale
                ## Also E-step before that if need be
@@ -1747,9 +1748,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     
                     new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
                          lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
-                    # Remove gradient and try evaluating again. This can still be problematic but better than nothing? 
+                    # Dampen Xbeta component and run it again...it is kind of adhoc but has been shown to be helpful espcially with GAM fits to overdispersed counts 
                     if(inherits(new_fit_CBFM, "try-error")) {
-                         new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn,  
+                         tidbits_data$Xbeta <- tidbits_data$Xbeta/4 
+                         CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
+                         new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
                               lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
                          }
                     if(inherits(new_fit_CBFM, "try-error")) {
@@ -1879,7 +1882,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     rm(cw_logL)
                     }
                
-               inner_err <- new_fit_CBFM_ptest$logLik - cw_inner_logL
+               inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
                cw_inner_logL <- new_fit_CBFM_ptest$logLik
                #print(new_fit_CBFM_ptest$logLik)
                rm(all_update_coefs, update_Xcoefsspp_fn)
@@ -1984,19 +1987,25 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
                     Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
 
+          
           if(control$convergence_type == "parameters")
+               diff <- mean((new_params - cw_params)^2) 
+          if(control$convergence_type == "linear_predictor")
                diff <- mean((new_params - cw_params)^2) 
           if(control$convergence_type == "logLik")
                diff <- abs(new_logLik/cw_logLik-1) 
           if(control$trace > 0) {
                if(control$convergence_type == "parameters")
                     message("Iteration: ", counter, "\t Difference in parameter estimates: ", round(diff,5))
+               if(control$convergence_type == "linear_predictor")
+                    message("Iteration: ", counter, "\t MSE of linear predictors: ", round(mean((new_fit_CBFM_ptest$linear_predictor - cw_linpred)^2),5))
                if(control$convergence_type == "logLik")
                     message("Iteration: ", counter, "\t Ratio in PQL log-likelihoods: ", round(diff,5))
                }
                
           cw_params <- new_params
           cw_logLik <- new_logLik
+          cw_linpred <- new_fit_CBFM_ptest$linear_predictor
           counter <- counter + 1
           }
      toc <- proc.time()
@@ -2011,15 +2020,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      tidbits_data <- make_tidibits_data()
      inner_err <- Inf
      cw_inner_logL <- -Inf
-     while(inner_err > 0.25) {
+     while(inner_err > 0.01) {
           getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B) # Posterior probabilities of zero-inflation
-          #if(family$family[1] == "zipoisson") {
-          #     for(j in 1:num_spp) {
-          #          cwfit <- glm(resp ~ 1, data = data.frame(resp = getweights[,j]), family = binomial())
-          #          new_fit_CBFM_ptest$zeroinfl_prob_intercept[j] <- coef(cwfit)[1]
-          #          }
-          #     }
-          #rm(cwfit,j)
           new_fit_CBFM_ptest$zeroinfl_prob_intercept <- binomial()$linkfun(colMeans(getweights + 1e-5))
      
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
@@ -2063,7 +2065,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                rm(cw_logL)
                }
           
-          inner_err <- new_fit_CBFM_ptest$logLik - cw_inner_logL
+          inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
           cw_inner_logL <- new_fit_CBFM_ptest$logLik
           #print(new_fit_CBFM_ptest$logLik)
 
