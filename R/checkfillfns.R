@@ -190,6 +190,8 @@
           control$tol <- 1e-4
      if(is.null(control$initial_betas_dampen))
           control$initial_betas_dampen <- 1
+     if(is.null(control$subsequent_betas_dampen))
+          control$initial_betas_dampen <- 0.25
      if(is.null(control$convergence_type))
           control$convergence_type <- "parameters"
      if(is.null(control$ridge))
