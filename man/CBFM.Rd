@@ -24,7 +24,7 @@ CBFM(
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
   control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type =
-    "parameters", tol = 1e-04, initial_beta_dampen = 1, subsequent_beta_dampen = 0.25,
+    "parameters", tol = 1e-04, initial_beta_dampen = 1, subsequent_betas_dampen = 0.25,
     seed = NULL, trace = 0, ridge = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0),
   G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100,

@@ -12,7 +12,9 @@
     "Residuals vs. unit index", "Residuals vs. species index", "Scale-Location plot"),
   species_colors = NULL,
   smooth = TRUE,
+  envelope = TRUE,
   envelope_col = c("blue", "lightblue"),
+  envelope_rep = 100,
   which_species = NULL,
   seed = NULL,
   ...
@@ -21,17 +23,21 @@
 \arguments{
 \item{x}{An object of class "CBFM".}
 
-\item{which_plot}{If a subset of the plots is desired, then a vector containing subset of the integers 1,2,3,4,5.}
+\item{which_plot}{If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.}
 
 \item{type}{The type of residuals to be used in constructing the plots. Currently the options available are: "response" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.}
 
 \item{titles}{Titles to appear above each plot.}
 
-\item{species_colors}{Either a scalar is supplied for a a vector with length of number of species in the spatio-temporal multivariate abundance data. If the former than all species use this color in the plots. If the latter then the vector specified the colors to use for each species. Defaults to \code{NULL}, which results in each species having a unique color based on the [grDevices::rainbow()] palette.}
+\item{species_colors}{Either a scalar is supplied or a vector with length of number of species in the spatio-temporal multivariate abundance data. If the former than all species use this color in the plots. If the latter then the vector specified the colors to use for each species. Defaults to \code{NULL}, which results in each species having a unique color based on the [grDevices::rainbow()] palette.}
 
 \item{smooth}{Should a smoother be added to each plot?}
 
-\item{envelope_col}{A vector of length 2, specifying the colors to use for the lines and shade respectively for the simulation envelopes.}
+\item{envelope}{Should approximate simulation envelopes be constructed for the normal probability plot? Default to \code{TRUE}. Note if \code{envelope = FALSE} then \code{envelope_col} and \code{envelope_K} are ignored.}
+
+\item{envelope_col}{A vector of length 2, specifying the colors to use for the lines and shade respectively for the approximate simulation envelopes.}
+
+\item{envelope_rep}{The number of simulations to use in order to build the approximate simulation envelope.}
 
 \item{which_species}{A vector indexing the species to plot, if the residual plots should be constructed for only a subset of species. Defaults to \code{NULL}, in which case all species are plotted. This may be useful if the number of species is quite large.}
 
@@ -48,7 +54,7 @@ estimated linear predictors; 2) a normal probability or quantile-quantile plot o
 \details{
 This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the \code{gllvm} package, especially Jenni Niku, for the code!
 
-As basic residual diagnostics, these plots should behave a follows: 1) the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 2) the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the simulation envelopes; 3) a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 4) a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 5) the scale-location plot should not exhibit any trend. 
+As basic residual diagnostics, these plots should behave a follows: 1) the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 2) the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 3) a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 4) a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 5) the scale-location plot should not exhibit any trend. 
 
 If the above does not occur then it may suggest one or more modeling assumptions such as the assumed response distribution, or the model used for the measured covariates, may ot sufficiently satisfied. 
 

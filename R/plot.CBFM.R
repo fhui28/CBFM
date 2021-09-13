@@ -8,11 +8,13 @@
 #' 
 #' @param x An object of class "CBFM".
 #' @param type The type of residuals to be used in constructing the plots. Currently the options available are: "response" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
-#' @param which_plot If a subset of the plots is desired, then a vector containing subset of the integers 1,2,3,4,5.
+#' @param which_plot If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.
 #' @param titles Titles to appear above each plot.
-#' @param species_colors Either a scalar is supplied for a a vector with length of number of species in the spatio-temporal multivariate abundance data. If the former than all species use this color in the plots. If the latter then the vector specified the colors to use for each species. Defaults to \code{NULL}, which results in each species having a unique color based on the [grDevices::rainbow()] palette.
+#' @param species_colors Either a scalar is supplied or a vector with length of number of species in the spatio-temporal multivariate abundance data. If the former than all species use this color in the plots. If the latter then the vector specified the colors to use for each species. Defaults to \code{NULL}, which results in each species having a unique color based on the [grDevices::rainbow()] palette.
 #' @param smooth Should a smoother be added to each plot?
-#' @param envelope_col A vector of length 2, specifying the colors to use for the lines and shade respectively for the simulation envelopes.
+#' @param envelope Should approximate simulation envelopes be constructed for the normal probability plot? Default to \code{TRUE}. Note if \code{envelope = FALSE} then \code{envelope_col} and \code{envelope_K} are ignored.
+#' @param envelope_col A vector of length 2, specifying the colors to use for the lines and shade respectively for the approximate simulation envelopes.
+#' @param envelope_rep The number of simulations to use in order to build the approximate simulation envelope.
 #' @param which_species A vector indexing the species to plot, if the residual plots should be constructed for only a subset of species. Defaults to \code{NULL}, in which case all species are plotted. This may be useful if the number of species is quite large.
 #' @param seed This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.  
 #' @param ... Additional graphical arguments.
@@ -21,7 +23,7 @@
 #' @details 
 #' This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the \code{gllvm} package, especially Jenni Niku, for the code!
 #' 
-#' As basic residual diagnostics, these plots should behave a follows: 1) the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 2) the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the simulation envelopes; 3) a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 4) a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 5) the scale-location plot should not exhibit any trend. 
+#' As basic residual diagnostics, these plots should behave a follows: 1) the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 2) the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 3) a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 4) a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 5) the scale-location plot should not exhibit any trend. 
 #' 
 #' If the above does not occur then it may suggest one or more modeling assumptions such as the assumed response distribution, or the model used for the measured covariates, may ot sufficiently satisfied. 
 #' 
@@ -115,7 +117,8 @@
 #' @importFrom stats qnorm qqnorm qqline quantile rnorm
 #' @importFrom tdigest tdigest tquantile
 
-plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Residuals vs. linear predictors", "Normal probability plot", "Residuals vs. unit index", "Residuals vs. species index","Scale-Location plot"), species_colors = NULL, smooth = TRUE, envelope_col = c("blue","lightblue"), which_species = NULL, seed = NULL, ...) {
+plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Residuals vs. linear predictors", "Normal probability plot", "Residuals vs. unit index", "Residuals vs. species index","Scale-Location plot"), species_colors = NULL, smooth = TRUE, envelope = TRUE, 
+                      envelope_col = c("blue","lightblue"), envelope_rep = 100,  which_species = NULL, seed = NULL, ...) {
      num_units <- nrow(x$y)
      num_spp <- ncol(x$y)
         
@@ -186,24 +189,28 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
           }
           
 
-     # Normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope          
+     # Normal probability or quantile-quantile plot of residuals with an approximate point-wise 95\% confidence interval envelope          
      if(2 %in% which_plot) {
           qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "theoretical quantiles", ylim = yyy)
           #qqline(c(dsres), col = envelope_col[1])
           
-         K <- 200
-         yy <- quantile(dsres, c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
-         xx <- qnorm(c(0.25, 0.75))
-         slope <- diff(yy) / diff(xx)
-         int <- yy[1] - slope * xx[1]
-         all_ris <- matrix(rnorm(num_units * num_spp * K, mean = int, sd = slope), ncol = K)
-         Ym <- apply(all_ris, 2, sort)
-         Xm <- sort(qq.x$x)
-         #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
-         cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
- 
          num_obs <- num_units * num_spp
-         polygon(Xm[c(1:num_obs,num_obs:1)], c(cis[1,],cis[2, num_obs:1]), col = envelope_col[2], border = NA)
+         if(envelope) {
+                 message("Constructing (approximate) simulation envelopes for normal probability plot...")
+                 
+                 yy <- quantile(dsres, c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
+                 xx <- qnorm(c(0.25, 0.75))
+                 slope <- diff(yy) / diff(xx)
+                 int <- yy[1] - slope * xx[1]
+                 all_ris <- matrix(rnorm(num_units * num_spp * envelope_rep, mean = int, sd = slope), ncol = envelope_rep)
+                 Ym <- apply(all_ris, 2, sort)
+                 Xm <- sort(qq.x$x)
+                 #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
+                 cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
+         
+                 polygon(Xm[c(1:num_obs,num_obs:1)], c(cis[1,],cis[2, num_obs:1]), col = envelope_col[2], border = NA)
+                 }
+ 
          points(qq.x, col = rep(col, each = num_units), cex = 0.5)
          qqline(c(dsres), col = envelope_col[1])
          }
