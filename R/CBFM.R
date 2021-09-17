@@ -186,7 +186,8 @@
 #' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* incldue the quadratic term of the PQL}
 #' \item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
 #' \item{edf/edf1: }{Estimated degrees of freedom for each model parameter in \code{formula_X}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
-#' \item{all_k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+#' \item{pen.edf: }{Estimated degrees of freedom associated with each smoothing term in \code{formula_X}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+#' \item{all_k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -1375,7 +1376,7 @@
 #'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
-#' @importFrom mgcv betar gam k.check ldTweedie logLik.gam model.matrix.gam nb rTweedie Tweedie tw
+#' @importFrom mgcv betar gam k.check ldTweedie logLik.gam model.matrix.gam pen.edf nb rTweedie Tweedie tw
 #' @importFrom numDeriv grad
 #' @importFrom parallel detectCores
 #' @importFrom TMB MakeADFun
@@ -2038,6 +2039,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
           new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf)          
           new_fit_CBFM_ptest$edf1 <- sapply(all_update_coefs, function(x) x$fit$edf1)          
+          new_fit_CBFM_ptest$pen.edf <- sapply(all_update_coefs, function(x) pen.edf(x$fit))     
           for(j in 1:num_spp) {
                if(family$family %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta", "zinegative.binomial"))                        
                     new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
@@ -2128,6 +2130,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$deviance_explained <- (out_CBFM$null_deviance - out_CBFM$deviance)/out_CBFM$null_deviance
      out_CBFM$edf <- new_fit_CBFM_ptest$edf
      out_CBFM$edf1 <- new_fit_CBFM_ptest$edf1
+     out_CBFM$pen.edf <- new_fit_CBFM_ptest$pen.edf
      out_CBFM$all_k_check <- all_k_check
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
@@ -2150,7 +2153,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      #     out_CBFM$fitted <- family$linkinv(eta = out_CBFM$linear_predictor, phi = matrix(out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
      
      names(out_CBFM$dispparam) <- names(out_CBFM$powerparam) <- names(out_CBFM$zeroinfl_prob_intercept) <- 
-          colnames(out_CBFM$edf) <- colnames(out_CBFM$edf1) <- colnames(y)
+          colnames(out_CBFM$edf) <- colnames(out_CBFM$edf1) <- colnames(out_CBFM$pen.edf) <-colnames(y)
      
      if(which_B_used[1]) {
           out_CBFM$Sigma_space <- new_LoadingnuggetSigma_space$cov
