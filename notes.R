@@ -1,4 +1,4 @@
-## UP TO HERE missing.data as of Aug 28 2021. 
+## UP TO HERE plot.gam as of Sep 17 2021. 
 ## See also github issues
 
 ## GENERAL APPROACH TO MODIFYING PACKAGE
