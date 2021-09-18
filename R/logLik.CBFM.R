@@ -1,17 +1,20 @@
 #' @title Log-likelihood of a CBFM fit
 #' 
 #' @description 
-#' `r lifecycle::badge("stable")`
+#' `r lifecycle::badge("experimental")`
 #' 
 #' Extracts the log-likelihood from a fitted \code{CBFM} object.
 #'
 #' @param object An object of class "CBFM".
+#' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'
 #' @details 
 #' In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence. 
 #' 
-#' The degrees of freedom calculated as part of this function is based on: 1) using the estimated degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see [mgcv::logLik.gam()] for details about estimated or effective degrees of freedom when smoothing terms are involved); 2) treating the regression coefficients related to the basis functions as fixed effects (estimated degrees of freedom are currently *not* used). Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021). The community-level covariance matrices are not involved in the calculation of the degrees of freedom. 
+#' By defautl, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see [mgcv::logLik.gam()] for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justificatons for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to [edf_CBFM()] and we refer to the corresponding help file for more information.
+#' 
+#' The community-level covariance matrices are not involved in the calculation of the degrees of freedom. 
 #' 
 #' @return Returns an object of class "logLik".  This is a number with at least one attribute, "df" (degrees of freedom), giving the number of (estimated) parameters in the CBFM model; please see see [stats::logLik()].
 #'
@@ -85,17 +88,24 @@
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' logLik(fitcbfm)
+#' 
+#' logLik(fitcbfm, use_edf = TRUE) # Degrees of freedom for this are much smaller
 #'}
 #'
 #' @export
 #' @md
 
-logLik.CBFM <- function(object, ...) {
+logLik.CBFM <- function(object, use_edf = FALSE, ...) {
     if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
 
      logL <- object$logLik
      num_params <- min(sum(object$edf), nrow(object$betas)*ncol(object$betas)) + nrow(object$basis_effects_mat)*ncol(object$basis_effects_mat)
+     if(use_edf) {
+         getedf <- edf_CBFM(object)
+         getedf <- sum(getedf[(nrow(getedf) - sum(object$which_B_used) + 1):nrow(getedf),])
+         num_params <- min(sum(object$edf), nrow(object$betas)*ncol(object$betas)) + min(getedf, nrow(object$basis_effects_mat)*ncol(object$basis_effects_mat))
+        }
      if(object$family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","ztnegative.binomial"))                       
           num_params <- num_params + length(object$dispparam)
      if(object$family$family %in% c("tweedie"))                        

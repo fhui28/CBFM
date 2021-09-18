@@ -7,12 +7,13 @@
 #'
 #' @param object An object of class "CBFM".
 #' @param k The model complexity penalty to use in the calculation of the information criterion. Defaults to \code{k = 2}, which is the classical AIC.
+#' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'
 #' @details 
 #' While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of 2, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where \code{k = log(nobs(object))}. 
 #' 
-#' The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence and \eqn{df} is the (estimated) degrees of freedom; please [logLik.CBFM()] for more details. In light of the former, one may consider that this function constructs something more akin to a conditional AIC; see the discussion in [mgcv::logLik.gam()] and references therein.
+#' The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence and \eqn{df} is the (estimated) degrees of freedom; please [logLik.CBFM()] for more details, especially regarding the use of the argument \code{use_edf}. In light of the former, one may consider that this function constructs something more akin to a conditional AIC; see the discussion in [mgcv::logLik.gam()] and references therein.
 #' 
 #' As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the [CBFM()] help file as well as [mgcv::gam.selection()] for more information.  
 #' 
@@ -92,16 +93,19 @@
 #' AIC(fitcbfm) # AIC
 #' 
 #' AIC(fitcbfm, k = log(nobs(fitcbfm))) # BIC
+#' 
+#' # BIC using estimated degrees of freedom for basis functions
+#' AIC(fitcbfm, k = log(nobs(fitcbfm)), use_edf = TRUE) 
 #'}
 #'
 #' @export
 #' @md
 #' 
-AIC.CBFM <- function(object, k = 2, ...) {
+AIC.CBFM <- function(object, k = 2, use_edf = FALSE, ...) {
      if(!inherits(object, "CBFM")) 
           stop("`object' is not of class \"CBFM\"")
 
-     get_dfs <- attributes(logLik.CBFM(object))$df
+     get_dfs <- attributes(logLik.CBFM(object, use_edf = use_edf))$df
      
      IC <- -2 * object$logLik + k * get_dfs
      return(IC)

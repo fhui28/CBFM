@@ -4,10 +4,12 @@
 \alias{logLik.CBFM}
 \title{Log-likelihood of a CBFM fit}
 \usage{
-\method{logLik}{CBFM}(object, ...)
+\method{logLik}{CBFM}(object, use_edf = FALSE, ...)
 }
 \arguments{
 \item{object}{An object of class "CBFM".}
+
+\item{use_edf}{If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.}
 
 \item{...}{Not used in this case.}
 }
@@ -15,14 +17,16 @@
 Returns an object of class "logLik".  This is a number with at least one attribute, "df" (degrees of freedom), giving the number of (estimated) parameters in the CBFM model; please see see \code{\link[stats:logLik]{stats::logLik()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Extracts the log-likelihood from a fitted \code{CBFM} object.
 }
 \details{
 In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value (\emph{excluding} the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence.
 
-The degrees of freedom calculated as part of this function is based on: 1) using the estimated degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see \code{\link[mgcv:logLik.gam]{mgcv::logLik.gam()}} for details about estimated or effective degrees of freedom when smoothing terms are involved); 2) treating the regression coefficients related to the basis functions as fixed effects (estimated degrees of freedom are currently \emph{not} used). Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021). The community-level covariance matrices are not involved in the calculation of the degrees of freedom.
+By defautl, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see \code{\link[mgcv:logLik.gam]{mgcv::logLik.gam()}} for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justificatons for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to \code{\link[=edf_CBFM]{edf_CBFM()}} and we refer to the corresponding help file for more information.
+
+The community-level covariance matrices are not involved in the calculation of the degrees of freedom.
 }
 \examples{
 \donttest{
@@ -85,6 +89,8 @@ fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat,
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 logLik(fitcbfm)
+
+logLik(fitcbfm, use_edf = TRUE) # Degrees of freedom for this are much smaller
 }
 
 }

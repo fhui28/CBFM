@@ -103,8 +103,8 @@ edf_CBFM <- function(object, ncores = NULL) {
   if(is.null(object$pen_edf[[1]]))
     edf_part1 <- NULL
   if(!is.null(object$pen_edf[[1]]))
-    edf_part1 <- simplify2array(object$pen_edf) # Effective degrees of freedom for any smoothing terms in the model
-  edf_part2 <- .edf_basisfunctionpart(object = object, ncores = ncores) # Effective degrees of freedom for basis function component
+    edf_part1 <- simplify2array(object$pen_edf) # Estimated degrees of freedom for any smoothing terms in the model
+  edf_part2 <- .edf_basisfunctionpart(object = object, ncores = ncores) # Estimated degrees of freedom for basis function component
   edf_part2 <- edf_part2[!apply(edf_part2, 1, function(x) all(is.na(x))),, drop = FALSE]
   final_edf <- rbind(edf_part1, edf_part2)
   return(final_edf)
@@ -177,7 +177,7 @@ edf_CBFM <- function(object, ncores = NULL) {
   ##------------------
   ## Now the EDF
   ##------------------
-  # Effective degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
+  # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
   # In fact, in additional simulations we found that the EDFs calculated for the terms in formula_X are typically very very close to those from edf and the last update using GAM in the PQL estimation algorithm. 
   edfs <- diag(bigV %*% crossprod(bigsqrtWXB))
   names(edfs) <- colnames(bigV)
