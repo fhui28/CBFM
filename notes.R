@@ -1,5 +1,4 @@
-## UP TO HERE plot.gam as of Sep 17 2021. 
-## See also github issues
+## See github issues for outstanding things to do -- Sept 18 2021
 
 ## GENERAL APPROACH TO MODIFYING PACKAGE
 ## 1. Do all changes
