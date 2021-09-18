@@ -86,7 +86,7 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. 
 #' 
-#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of random intercepts, through the use of the \code{s(..., bs = "re")}; please see [mgcv::smooth.construct.re.smooth.spec()] for more tails.
+#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details. These may be included, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are *not* random row effects as found in packages such as [boral::boral()] and [gllvm::gllvm()]. 
 #' 
 #' When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we must warn the practitioner that **some of the smoothers that \code{mgcv} e.g., [mgcv::linear.functional.terms()] has available have not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
 #' 
@@ -173,9 +173,9 @@
 #' 
 #' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works OK, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are no easy, principled solutions for such situations (as it may reflect an underlying intriguing feature of the proposed model for the predictors, data, or it may genuinely be that the stacked species distribution model is already fitting incredibly well!). One *ad-hoc* fix is available through \code{control$initial_betas_dampen}, but it is not guaranteed to work.  
 #' 
-#' Standard errors and resulting techniques like confidence intervals are based on the approximate large sample distribution of the regression coefficients, and use the so-called Bayesian posterior covariance matrix for the coefficients, similar to (but not as sophisticated as!) what is provided  [mgcv::summary.gam()]. Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}. They can lead to standard errors that are potentially too small, so please keep this in mind. 
+#' Standard errors and resulting techniques like confidence intervals are based on the approximate large sample distribution of the regression coefficients, and use the so-called Bayesian posterior covariance matrix for the coefficients, similar to (but not as sophisticated as!) what is provided  [mgcv::summary.gam()]. Please note that **all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}. They can lead to standard errors that are potentially too small, so please keep this in mind.** 
 #' 
-#' Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}, analogous to how the [mgcv] package (at least bu default) does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!  
+#' Also, the current estimation approach **does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}**, does not provide uncertainty estimates in the smoothing parameter. This is in line with the current main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction (in a relatively computationally efficient and scalable manner). Future versions of package may seek to rectify this, but for now apologies!  
 #' 
 #' 
 #' @return An object of class "CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
@@ -196,8 +196,9 @@
 #' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* incldue the quadratic term of the PQL}
 #' \item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
 #' \item{edf/edf1: }{Estimated degrees of freedom for each model parameter in \code{formula_X}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
-#' \item{pen.edf: }{Estimated degrees of freedom associated with each smoothing term in \code{formula_X}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
-#' \item{all_k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+#' \item{pen_edf: }{Estimated degrees of freedom associated with each smoothing term in \code{formula_X}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+#' \item{k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+#' \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see [mgcv::random.effects()] for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 #' \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -279,7 +280,7 @@
 #' Zammit-Mangion, A., and Cressie, N. (2017). FRK: An R package for spatial and spatio-temporal prediction with large datasets. arXiv preprint arXiv:1705.08105.
 #'
 #'
-#' @seealso [fitted.CBFM()] for extracting the fitted values from a CBFM fit, [ordinate.CBFM()] for an *ad-hoc* approach to constructing spatio-temporal ordinations from a CBFM fit, [plot.CBFM()] for basic residual diagnostics from a CBFM fit, [predict.CBFM()] for constructing predictions from a CBFM fit, [residuals.CBFM()] for calculating residuals from a CBFM fi, [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit, [summary.CBFM()] for summaries including standard errors and confidence intervals, and [varpart()] for variance partitioning of a CBFM fit.
+#' @seealso [fitted.CBFM()] for extracting the fitted values from a CBFM fit, [influence_CBFM()] for calculating some basic influence measures from a CBFM fit, [ordinate.CBFM()] for an *ad-hoc* approach to constructing spatio-temporal ordinations from a CBFM fit, [plot.CBFM()] for basic residual diagnostics from a CBFM fit, [predict.CBFM()] for constructing predictions from a CBFM fit, [residuals.CBFM()] for calculating residuals from a CBFM fit, [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit, [summary.CBFM()] for summaries including standard errors and confidence intervals, and [varpart()] for variance partitioning of a CBFM fit.
 #' 
 #'
 #' @examples
@@ -1386,10 +1387,11 @@
 #'@importFrom stats dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
-#' @importFrom mgcv betar gam k.check ldTweedie logLik.gam model.matrix.gam pen.edf nb rTweedie Tweedie tw
+#' @importFrom mgcv betar gam gam.vcomp k.check ldTweedie logLik.gam model.matrix.gam pen.edf nb rTweedie Tweedie tw
 #' @importFrom numDeriv grad
 #' @importFrom parallel detectCores
 #' @importFrom TMB MakeADFun
+#' @importFrom utils capture.output
 #' @md
 
 
@@ -2049,7 +2051,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
           new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf)          
           new_fit_CBFM_ptest$edf1 <- sapply(all_update_coefs, function(x) x$fit$edf1)          
-          new_fit_CBFM_ptest$pen.edf <- sapply(all_update_coefs, function(x) pen.edf(x$fit))     
+          new_fit_CBFM_ptest$pen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fit))     
           for(j in 1:num_spp) {
                if(family$family %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta", "zinegative.binomial"))                        
                     new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
@@ -2088,10 +2090,19 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                break;
           }
      all_S <- sapply(all_update_coefs, function(x) x$S)
+     was_there_smoothing <- !is.null(all_S[[1]])
      all_k_check <- foreach(j = 1:num_spp) %dopar% k.check(all_update_coefs[[j]]$fit, subsample = k_check_control$subsample, n.rep = k_check_control$n.rep)
      names(all_k_check) <- colnames(y)
-     rm(all_update_coefs, tidbits_data, inner_err, cw_inner_logL, cw_logLik, 
-        cw_params, new_params, diff, counter)
+     invisible(capture.output( all_vcomp <- lapply(1:num_spp, function(j) {
+          out <- gam.vcomp(all_update_coefs[[j]]$fit)
+          if(is.matrix(out))
+               return(out[,1])
+          if(is.list(out))
+               return(out$all)
+          }
+          )))
+     names(all_vcomp) <- colnames(y)
+     rm(all_update_coefs, tidbits_data, inner_err, cw_inner_logL, cw_logLik, cw_params, new_params, diff, counter)
      gc()
      
      
@@ -2140,8 +2151,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$deviance_explained <- (out_CBFM$null_deviance - out_CBFM$deviance)/out_CBFM$null_deviance
      out_CBFM$edf <- new_fit_CBFM_ptest$edf
      out_CBFM$edf1 <- new_fit_CBFM_ptest$edf1
-     out_CBFM$pen.edf <- new_fit_CBFM_ptest$pen.edf
-     out_CBFM$all_k_check <- all_k_check
+     out_CBFM$pen_edf <- new_fit_CBFM_ptest$pen_edf
+     out_CBFM$k_check <- all_k_check
+     out_CBFM$vcomp <- all_vcomp
+     
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
@@ -2163,7 +2176,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      #     out_CBFM$fitted <- family$linkinv(eta = out_CBFM$linear_predictor, phi = matrix(out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
      
      names(out_CBFM$dispparam) <- names(out_CBFM$powerparam) <- names(out_CBFM$zeroinfl_prob_intercept) <- 
-          colnames(out_CBFM$edf) <- colnames(out_CBFM$edf1) <- colnames(out_CBFM$pen.edf) <-colnames(y)
+          colnames(out_CBFM$edf) <- colnames(out_CBFM$edf1) <- colnames(y)
+     if(was_there_smoothing) {
+          names(out_CBFM$pen_edf) <- colnames(y)
+          }
+          
      
      if(which_B_used[1]) {
           out_CBFM$Sigma_space <- new_LoadingnuggetSigma_space$cov
