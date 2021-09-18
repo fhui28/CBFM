@@ -3,7 +3,7 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Takes a fitted \code{CBFM} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian estimated covariance matrix of the parameter estimates.
+#' Takes a fitted \code{CBFM} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in [mgcv::predict.gam()] this is also known as the linear predictor matrix.  
 #' 
 #' @param object An object of class "CBFM".
 #' @param newdata A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula_X}.
@@ -13,6 +13,7 @@
 #' @param new_B_spacetime A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.  
 #' @param type The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.
 #' Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the *actual predicted mean values* of the distribution, consistent with what \code{object$fitted} returns. 
+#' A third option is given by \code{type  = "lpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata}. In [mgcv::predict.gam()], this is also known as the linear predictor matrix. Note under this option, arguments such as \code{new_B_space/new_B_time/new_B_spacetime, se_fit} and \code{coverage} are irrelevant and hence ignored. 
 #' @param se_fit When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.
 #' @param coverage The coverage probability of the uncertainty intervals for prediction. Defaults to 0.95, which corresponds to 95% uncertainty intervals.
 #' @param ncores To speed up calculation of the standard error estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
@@ -30,6 +31,9 @@
 #' \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the predictions.}
 #' \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 #' Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned. 
+#' 
+#' Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \new{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
+#' 
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
@@ -52,7 +56,7 @@
 #' @md
 
 predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, 
-                         type = c("link", "response"), se_fit = FALSE, coverage = 0.95, ncores = NULL, ...) {
+                         type = "link", se_fit = FALSE, coverage = 0.95, ncores = NULL, ...) {
         if(is.null(ncores))
                 registerDoParallel(cores = detectCores()-1)
         if(!is.null(ncores))
@@ -99,11 +103,14 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                         stop("new_B does not contain the same number of columns as the number of columns in object$basis_effects_mat.")
                 }
           
-        type <- match.arg(type, choices = c("link", "response"))
+        type <- match.arg(type, choices = c("link", "response", "lpmatrix"))
         num_spp <- nrow(object$betas)
         num_X <- ncol(new_X)
         num_basisfns <- ncol(new_B)
      
+        if(type == "lpmatrix")
+                return(new_X)
+        
      
         if(se_fit == TRUE & object$stderrors == FALSE)
                 stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.")

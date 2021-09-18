@@ -100,7 +100,10 @@ edf_CBFM <- function(object, ncores = NULL) {
   if(!is.null(ncores))
     registerDoParallel(cores = ncores)
 
-  edf_part1 <- object$pen.edf # Effective degrees of freedom for any smoothing terms in the model
+  if(is.null(object$pen_edf[[1]]))
+    edf_part1 <- NULL
+  if(!is.null(object$pen_edf[[1]]))
+    edf_part1 <- simplify2array(object$pen_edf) # Effective degrees of freedom for any smoothing terms in the model
   edf_part2 <- .edf_basisfunctionpart(object = object, ncores = ncores) # Effective degrees of freedom for basis function component
   edf_part2 <- edf_part2[!apply(edf_part2, 1, function(x) all(is.na(x))),, drop = FALSE]
   final_edf <- rbind(edf_part1, edf_part2)
