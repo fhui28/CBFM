@@ -2,7 +2,7 @@
 % Please edit documentation in R/edf_CBFM.R
 \name{edf_CBFM}
 \alias{edf_CBFM}
-\title{Extract estimated of degrees freedom associated with smoohing terms of basis functions from a CBFM fit}
+\title{Extract estimated/effective degrees of freedom associated with a CBFM fit}
 \usage{
 edf_CBFM(object, ncores = NULL)
 }

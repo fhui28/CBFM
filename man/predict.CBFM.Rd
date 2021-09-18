@@ -11,7 +11,7 @@
   new_B_space = NULL,
   new_B_time = NULL,
   new_B_spacetime = NULL,
-  type = c("link", "response"),
+  type = "link",
   se_fit = FALSE,
   coverage = 0.95,
   ncores = NULL,
@@ -32,7 +32,8 @@
 \item{new_B_spacetime}{A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.}
 
 \item{type}{The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.
-Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the \emph{actual predicted mean values} of the distribution, consistent with what \code{object$fitted} returns.}
+Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the \emph{actual predicted mean values} of the distribution, consistent with what \code{object$fitted} returns.
+A third option is given by \code{type  = "lpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata}. In \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}, this is also known as the linear predictor matrix. Note under this option, arguments such as \code{new_B_space/new_B_time/new_B_spacetime, se_fit} and \code{coverage} are irrelevant and hence ignored.}
 
 \item{se_fit}{When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.}
 
@@ -49,11 +50,13 @@ If \code{se_fit = TRUE}, then a list with the following components (if applicabl
 \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the predictions.}
 \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned.
+
+Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Takes a fitted \code{CBFM} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian estimated covariance matrix of the parameter estimates.
+Takes a fitted \code{CBFM} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} this is also known as the linear predictor matrix.
 }
 \details{
 The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior to, the estimated parameters. This construction is similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.

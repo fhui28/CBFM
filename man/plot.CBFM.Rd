@@ -54,7 +54,13 @@ estimated linear predictors; 2) a normal probability or quantile-quantile plot o
 \details{
 This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the \code{gllvm} package, especially Jenni Niku, for the code!
 
-As basic residual diagnostics, these plots should behave a follows: 1) the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 2) the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 3) a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 4) a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 5) the scale-location plot should not exhibit any trend. 
+As basic residual diagnostics, these plots should behave a follows: 
+
+1. the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 
+2. the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 
+3. a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 
+4. a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 
+5. the scale-location plot should not exhibit any trend. 
 
 If the above does not occur then it may suggest one or more modeling assumptions such as the assumed response distribution, or the model used for the measured covariates, may ot sufficiently satisfied. 
 

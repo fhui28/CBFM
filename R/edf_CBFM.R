@@ -1,4 +1,4 @@
-#' @title Extract estimated of degrees freedom associated with smoohing terms of basis functions from a CBFM fit 
+#' @title Extract estimated/effective degrees of freedom associated with a CBFM fit 
 #' 
 #' @description 
 #' `r lifecycle::badge("experimental")`

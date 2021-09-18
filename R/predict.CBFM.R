@@ -32,7 +32,7 @@
 #' \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 #' Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned. 
 #' 
-#' Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \new{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
+#' Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
 #' 
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
