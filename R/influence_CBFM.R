@@ -9,9 +9,9 @@
 #' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #'
 #' @details 
-#' This is a relatively basic function that calculates the so-called "hat values", an approximate Cook's distance, and some estimated or effective degrees of freedom from a fitted CBFM. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM. 
+#' This is a relatively basic function that calculates the so-called "hat values", an approximate Cook's distance, and some estimated degrees of freedom from a fitted CBFM. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM. 
 #' 
-#' Regarding the estimated or effective degrees of freedom (EDF) for the basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. These degrees of freedom values are analogous to what are available in \code{object$edf/object$edf1}, which are the EDFs for each model parameter in \code{formula_X}; see [CBFM()] for more information. Note however that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. On their own, the EDFs are not really of much use at the moment, especially since they are at the moment **not** used in calculating overall degrees of freedom e.g., [logLik.CBFM()] or in information criteria e.g., [AIC.CBFM()] and [AICc.CBFM()]. This might change at some point down the road though... 
+#' Regarding the estimated degrees of freedom (EDF) for the basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. These degrees of freedom values are analogous to what are available in \code{object$edf/object$edf1}, which are the EDFs for each model parameter in \code{formula_X}; see [CBFM()] for more information. Note however that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. On their own, the EDFs are not really of much use at the moment, especially since they are at the moment **not** used in calculating overall degrees of freedom e.g., [logLik.CBFM()] or in information criteria e.g., [AIC.CBFM()] and [AICc.CBFM()]. This might change at some point down the road though... 
 #' 
 #' All measures are obtained on a *per-species basis*. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates. 
 #' 
@@ -22,7 +22,7 @@
 #' \describe{
 #' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
 #' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
-#' \item{B_edf: }{A matrix of estimated/effective degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of columns of this matrix should be the same as \code{object$y}, while it always has three rows. Any elements in the matrix equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
+#' \item{B_edf: }{A matrix of estimated degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of columns of this matrix should be the same as \code{object$y}, while it always has three rows. Any elements in the matrix equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
 #' }
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -30,7 +30,7 @@
 #' @references 
 #'Fox, J. (2019). Regression diagnostics: An introduction. Sage publications.
 #'   
-#' @seealso [CBFM()] for fitting CBFMs, [edf_CBFM()] for extracting estimated or effective degrees of freedom associated with a CBFM fit, [residuals.CBFM()] for calculating different types of residuals from a CBFM fit, and [plot.CBFM()] for basic residual diagnostics.
+#' @seealso [CBFM()] for fitting CBFMs, [edf_CBFM()] for extracting estimated degrees of freedom associated with a CBFM fit, [residuals.CBFM()] for calculating different types of residuals from a CBFM fit, and [plot.CBFM()] for basic residual diagnostics.
 #' 
 #' @examples
 #' \donttest{
@@ -179,7 +179,7 @@ influence_CBFM <- function(object, ncores = NULL) {
   hatvals <- foreach(j = 1:num_spp, .combine = cbind) %dopar% gethatvals_j(j = j)
   
   
-  # Effective degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
+  # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
   # In fact, in additional simulations we found that the EDFs calculated for the terms in formula_X are typically very very close to those from edf and the last update using GAM in the PQL estimation algorithm. 
   edfs <- diag(bigV %*% crossprod(bigsqrtWXB))
   names(edfs) <- colnames(bigV)

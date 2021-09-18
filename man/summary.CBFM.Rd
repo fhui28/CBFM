@@ -47,7 +47,7 @@ Each summary table itself may consists of (and as appropriate) the estimated coe
 Takes a fitted \code{CBFM} object and produces some useful summaries from it.
 }
 \details{
-Currently, the function is \strong{fairly basic} in set up, returning some estimated species-specific regression coefficients, and estimated vector of species-specific probabilities of zero-inflation (on the logit scale), for distributions which require one. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, and Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is adapted from that of \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}; we refer the reader to their help file as well as Wood (2017) for more details on these tests.
+Currently, the function returns estimated species-specific regression coefficients, and estimated vector of species-specific probabilities of zero-inflation (on the logit scale), for distributions which require one. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is adapted from that of \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}; we refer the reader to their help file as well as Wood (2017) for more details on these tests.
 
 As discussed in \code{\link[=CBFM]{CBFM()}}, all tests are based on the Bayesian posterior covariance matrix of the coefficients. Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
 }
@@ -55,6 +55,8 @@ As discussed in \code{\link[=CBFM]{CBFM()}}, all tests are based on the Bayesian
 Note that if the model matrix created includes smoothing terms as in a generalized additive model or GAM, the Wald P-values and corresponding Wald confidence intervals are approximate and neglect corresponding smoothing parameter uncertainty; please see \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}} for more details.
 
 The current summary function is pretty basic (apologies!), and in the future we hope to add some useful information to the summary output.
+
+Testing of the species-specific coefficients associated with spatial and/or temporal coefficients is \emph{not} performed.
 }
 
 \examples{

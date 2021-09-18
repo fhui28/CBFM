@@ -192,8 +192,8 @@
 #' \item{converged: }{Indicates whether or not the PQL estimation algorithm converged. Note results may still be outputed even if this is \code{FALSE}.}
 #' \item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
 #' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
-#' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* incldue the quadratic term of the PQL.}
-#' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* incldue the quadratic term of the PQL}
+#' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* include the quadratic term of the PQL.}
+#' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* include the quadratic term of the PQL}
 #' \item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
 #' \item{edf/edf1: }{Estimated degrees of freedom for each model parameter in \code{formula_X}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
 #' \item{pen_edf: }{Estimated degrees of freedom associated with each smoothing term in \code{formula_X}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
