@@ -22,6 +22,9 @@
 #' @md
 
 nb2 <- function() {
+     ##--------------------------
+     ## Feed the family!
+     ##--------------------------
 	link <- "log"
 	linkfun <- function(mu) 
           return(log(mu))
