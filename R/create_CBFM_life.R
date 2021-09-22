@@ -41,18 +41,31 @@
 #' 
 #' \subsection{Distributions}{
 #' 
-#' Currently the following response distributions are permitted (in alphabetal order): 
+#' Currently the following response distributions are permitted: 
 #' \describe{
 #' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 #' \item{\code{binomial(link = "logit")}: }{Binomial distribution, noting only the logit link is permitted. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)} where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
+
 #' \item{\code{Gamma(link = "log")}: }{Gamma distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+
 #' \item{\code{gaussian(link = "identity")}: }{Gaussian or normal distribution, noting only the identity link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi}, where \eqn{\phi} is the dispersion parameter.}
+
 #' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
+
 #' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+
 #' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
-#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+
+#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+
 #' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+
+#' \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+ 
+#' \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{pois}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 #' }
+#' 
+#' Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration. 
 #' }
 #' 
 #' @return 
@@ -145,21 +158,55 @@
 #' simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 #' B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
+#' 
+#' 
+#' # Generates spatial multivariate count data from hurdle negative binomial distribution 
+#' # This can be achieved by combining the mechanisms for presence-absence and zero truncated NB
+#' spp_slopes_pa <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_intercepts_pa <- runif(num_spp, -2, 0)
+#' spp_intercepts_ztnb <- runif(num_spp, -2, 0)
+#' 
+#' true_Sigma_space_pa <- rWishart(1, num_basisfunctions+1, 
+#' diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
+#' true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, 
+#' diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
+#' true_G_space_pa <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
+#' cov2cor
+#' true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
+#' cov2cor
+#' 
+#' # Generate spatial multivariate presence-absence data first
+#' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
+#' simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
+#' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' 
+#' # Now generate count data from a truncated negative binomial distribution
+#' spp_dispersion <- runif(num_spp)
+#' simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+#' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
+#' dispparam = spp_dispersion, max_resp = 20000, 
+#' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' 
+#' # Spatial multivariate count data from a hurdle model is then the product of the two
+#' simy_hurdlenb <- simy_pa$y *  simy_ztnb$y
 #' }
 #' 
 #' @export
 #' 
 #' @import Matrix 
+#' @importFrom gamlss.tr trun.r
 #' @importFrom mgcv gam model.matrix.gam
 #' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois plogis
 #' @importFrom tweedie rtweedie
-#' 
 
 create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
      betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
      trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
-     if(!(family$family[1] %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie", "zipoisson", "zinegative.binomial"))) #"ztpoisson","ztnegative.binomial"
+     if(!(family$family[1] %in% c("Beta","binomial","Gamma","gaussian","poisson","negative.binomial","tweedie", 
+                                  "zipoisson", "zinegative.binomial", "ztpoisson","ztnegative.binomial" ))) 
           stop("Family is currently not supported. Sorry!")
      
      formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
@@ -171,7 +218,7 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
      num_units <- nrow(X)
      num_spp <- nrow(betas)
      
-     .check_family(family = family, y = Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE), trial_size = trial_size) 
+     .check_family(family = family, y = matrix(1, nrow = num_units, ncol = num_spp), trial_size = trial_size) 
      
      if(is.null(basis_effects_mat)) {
           .check_B_forms(B_space = B_space, B_time = B_time, B_spacetime = B_spacetime, G = G, Sigma = Sigma, extra_check = TRUE)
@@ -241,10 +288,14 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                 simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
                 sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
                 }
-#           if(family$family == "ztpoisson")
-#                sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
-#           if(family$family == "ztnegative.binomial")
-#                sim_y[,j] <- rztnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j]) ## Have to be careful with interpretation since modeling parameters in non-truncated dist
+           if(family$family == "ztpoisson") {
+                ztpR <- trun.r(par = 0, family = gamlss.dist::PO()$family[1], type = "left") 
+                sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
+                }
+           if(family$family == "ztnegative.binomial") {
+                ztnbR <- trun.r(par = 0, family = gamlss.dist::NBI()$family[1], type = "left") 
+                sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j]), sigma = dispparam[j]) 
+                }
           }
 
      if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson", "zinegative.binomial")) {
@@ -299,10 +350,10 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                             simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
                             sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
                             }
-#                     if(family$family == "ztpoisson")
-#                          sim_y[,j] <- rztpois(num_units, lambda = exp(true_eta[,j])) 
-#                     if(family$family == "ztnegative.binomial")
-#                          sim_y[,j] <- rztnbinom(num_units, mu = exp(true_eta[,j]), size = 1/dispparam[j]) 
+                    if(family$family == "ztpoisson")
+                            sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
+                    if(family$family == "ztnegative.binomial")
+                            sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j]), sigma = dispparam[j]) 
                     }
                inner_counter <- inner_counter + 1
                }
