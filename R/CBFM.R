@@ -28,45 +28,67 @@
 #' @param start_params Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms: 
 #' \itemize{
 #' \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.} 
+
 #' \item{basis_effect_mat: }{A matrix of starting values for the species-specific regression coefficients related to the combined matrix of basis functions. Again, the number of rows is equal to the number of species, while the number of columns should equal to \code{ncol(B_space, B_time, B_spacetime)} (or whatever the supplied basis functions are).}
+
 #' \item{dispparam: }{A vector of starting values for the species-specific dispersion parameters, to be used for distributions that require one.}
+
 #' \item{powerparam: }{A vector of starting values for the species-specific power parameters, to be used for distributions that require one.}
+
 #' \item{zeroinfl_prob: }{A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. }
 #' }
 #' @param TMB_directories A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.
 #' @param control A list of parameters for controlling the fitting process for the "outer" PQL estimation part of the CBFM. This should be a list with the following arguments:
 #' \itemize{
 #' \item{maxit: }{The maximum number of iterations for the outer algorithm.} 
+
 #' \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by [mgcv::gam.control()] itself.}
+
 #' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "linear_predictor" which assesses convergence based on the mean squared error of the difference between estimated linear predictors from successive iterations  and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
+
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
+
 #' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An *ad-hoc* fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
+
 #' \item{subsequent_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}, during the running of the PQL estimation algorithm. To elaborate, during the PQL algorithm updates are made to the regression coefficients related to the combined matrix of basis functions, conditional on the regression coefficients corresponding to the model matrix. However, sometimes this updating can fails due to the latter producing non-sensible values to condition on e.g., due to severe overfitting in that component. If this occurs, then an *ad-hoc* second attempt is made, but conditioning instead on a dampened/shrunk set of the regression coefficients corresponding to the model matrix, which can often help. This amount of dampening is controlled by this argument. For instance, setting \code{subsequent_betas_dampen = 0.25} sets the magnitudes of the regression coefficients related to the model matrix to a quarter of their original size, including the intercepts. 
 #' Note that this argument *only* comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. } 
+
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
+
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
+
 #' \item{ridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates.}
 #' }
 #' @param Sigma_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the community-level covariance matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \itemize{
 #' \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the community-level covariance matrices. The ranks should be at least equal to 2, and not larger than the number of species. Please see details below for more information.} 
+
 #' \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.} 
+
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
+
 #' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
+
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 #' }
 #' @param G_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \itemize{
 #' \item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices. The ranks should be at least equal to 2, and not larger than the number of species. Please see details below for more information.} 
+
 #' \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.} 
+
 #' \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.} 
+
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
+
 #' \item{method: }{The method by which to update the correlation matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
+
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 #' }
 #' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula_X}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
 #' \itemize{
 #' \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.} 
+
 #' \item{n.rep: }{How many re-shuffles of the residuals should be done in order to a P-value for testing. } 
 #' }
 #'
@@ -180,39 +202,73 @@
 #' 
 #' @return An object of class "CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
 #' \item{call: }{The matched function call.}
+
 #' \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
+
 #' \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
+
 #' \item{formula_X: }{The supplied symbolic description of the model matrix to be created.}
+
 #' \item{B: }{The full matrix basis functions i.e., basically the result of \code{cbind(B_space, B_time, B_spacetime)}.}
+
 #' \item{which_B_used: }{A vector of length three, indicating which of \code{B_space, B_time, B_spacetime} was supplied. For example \code{which_B_bused = c(1,0,0)} implies only \code{B_space} was supplied.}
+
 #' \item{num_B_space: }{The number of spatial basis functions supplied i.e., \code{ncol(B_space)}.} 
+
 #' \item{num_B_time: }{The number of temporal basis functions supplied i.e., \code{ncol(B_time)}.} 
+
 #' \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.} 
+
 #' \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
+
 #' \item{converged: }{Indicates whether or not the PQL estimation algorithm converged. Note results may still be outputed even if this is \code{FALSE}.}
+
 #' \item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
+
 #' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
+
 #' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* include the quadratic term of the PQL.}
+
 #' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* include the quadratic term of the PQL}
+
 #' \item{deviance_explained: }{The proportion of null deviance explained by the model. Note in community ecology this is typically not that high (haha!!!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
+
 #' \item{edf/edf1: }{Estimated degrees of freedom for each model parameter in \code{formula_X}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+
 #' \item{pen_edf: }{Estimated degrees of freedom associated with each smoothing term in \code{formula_X}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+
 #' \item{k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+
 #' \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see [mgcv::random.effects()] for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
+
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
+
 #' \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
+
 #' \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
+
 #' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
+
 #' \item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. }
+
 #' \item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.}
+
 #' \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
+
 #' \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
+
 #' \item{Sigma_time/Loading_Sigma_time/nugget_Sigma_time: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied.}
+
 #' \item{G_time/Loading_G_time/nugget_G_time: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied.}
+
 #' \item{Sigma_spacetime/Loading_Sigma_spacetime/nugget_Sigma_spacetime: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied.}
+
 #' \item{G_spacetime/Loading_G_spacetime/nugget_G_spacetime: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied.}
+
 #' \item{stderrors: }{The supplied argument for \code{stderrors} i.e., whether standard errors were calculated.}
+
 #' \item{covar_components: }{If \code{stderrors = TRUE}, then a list containing with the following components: 
 #' 1) \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, and the species-specific zero-inflated probabilities on the logit scale if the response distribution involved one;
 #' 2) \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}; 
@@ -1395,6 +1451,7 @@
 #' @md
 
 
+## START HERE!
 CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, gamma = 1,
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),

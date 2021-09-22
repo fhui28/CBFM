@@ -57,7 +57,7 @@
      
     if(family$family[1] == "gaussian" & family$link != "identity")
         stop("Currently Gaussian family only permits the identity link.")
-    if(family$family[1] %in% c("Gamma","negative.binomial","poisson", "tweedie", "zipoisson", "zinegative.binomial") & family$link != "log")
+    if(family$family[1] %in% c("Gamma","negative.binomial","poisson", "tweedie", "zipoisson", "zinegative.binomial", "ztpoisson", "ztnegative.binomial") & family$link != "log")
         stop("Supplied family currently only permits the log link function to be used.")
     if(family$family[1] %in% c("beta","binomial") & family$link != "logit")
         stop("Supplied family currently only permits the logit link function to be used.")

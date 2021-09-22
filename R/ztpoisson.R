@@ -14,6 +14,7 @@
 #' 
 #' @export 
 #' 
+#' @importFrom gamlss.dist PO
 #' @importFrom gamlss.tr trun
 #' @md
 

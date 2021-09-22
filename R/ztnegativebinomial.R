@@ -16,6 +16,7 @@
 #' 
 #' @export 
 #' 
+#' @importFrom gamlss.dist NBI
 #' @importFrom gamlss.tr trun
 #' @md
 

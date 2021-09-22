@@ -27,8 +27,11 @@
 #' 
 #' @return If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
 #' \item{fit: }{A matrix of predicted values.}
+
 #' \item{stderr: }{A matrix of standard errors associated with the uncertainty intervals for the predictions.}
+
 #' \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the predictions.}
+
 #' \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 #' Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned. 
 #' 

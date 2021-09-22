@@ -22,8 +22,11 @@
 #' @return A list with the following components (if applicable):
 #' \describe{
 #' \item{varpart_X}{Vector containing the proportion of variance for each species explained by measure predictors, and grouped according to \code{goupX} if supplied.}
+
 #' \item{varpart_B_space}{Vector containing the proportion of variance for each species explained by spatial basis functions.}
+
 #' \item{varpart_B_time}{Vector containing the proportion of variance for each species explained by temporal basis functions.}
+
 #' \item{varpart_B_spacetime}{Vector containing the proportion of variance for each species explained by spatio-temporal basis functions.}
 #' }
 #' 

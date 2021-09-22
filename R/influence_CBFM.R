@@ -21,7 +21,9 @@
 #' @return A list containing two elements:
 #' \describe{
 #' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
+
 #' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
+
 #' \item{B_edf: }{A matrix of estimated degrees of freedom corresponding to the spatial and/or temporal basis functions included in the model. The number of columns of this matrix should be the same as \code{object$y}, while it always has three rows. Any elements in the matrix equal to \code{NA} imply that that set "type" of basis function was not included in the model.}
 #' }
 #'

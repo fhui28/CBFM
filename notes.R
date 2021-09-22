@@ -18,6 +18,10 @@ LinkingTo:
 
 
 ##--------------------------------------
+## Random testing jazz
+##-------------------------------------
+
+
 y = simy_train
 useformula <- ~ s(temp) + s(depth) + chla + s(O2)
 formula_X = useformula
@@ -83,7 +87,7 @@ TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/i
 #-----------------------------
 library(tidyverse)
 library(mgcv)
-#library(countreg)
+library(countreg)
 library(gamlss)
 library(gamlss.tr)
 library(gamlss.add)
@@ -93,27 +97,75 @@ cs2 <- CrabSatellites
 cs2$color <- as.numeric(cs2$color)
 cs2 <- subset(cs2, subset = satellites > 0)
 
-fit_tnb1 <- zerotrunc(satellites ~ width + color, data = cs2, dist = "negbin")
-
 ZTNBI <- trun(par = 0, family = "NBI", type = "left", local = FALSE)
 fit_tnb2 <- gamlss(satellites~ga(~s(width) + color, method = "ML"), data = cs2, family = ZTNBI) # OK
-
-fit_tnb3 <- gamlss(satellites ~ pb(width) + color, data = cs2, family = ZTNBI)
-
-getSmo(fit_tnb2) %>% plot
-
 s <- getSmo(fit_tnb3)
 s$coef
 
 
+#-----------------------------
+#-----------------------------
+library(autoFRK)
+library(FRK)
+library(MASS)
+library(mvtnorm)
+library(sp)
+library(RandomFields)
+library(tidyverse)
+ 
+set.seed(2021)
+num_sites <- 500 # 500 (units) sites 
+num_spp <- 50 # Number of species
+num_X <- 4 # Number of regression slopes
+ 
+# Simulate spatial coordinates and environmental covariate components
+xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
+X <- rmvnorm(num_sites, mean = rep(0,4)) 
+colnames(X) <- c("temp", "depth", "chla", "O2")
+dat <- data.frame(xy, X)
+useformula <- ~ temp + depth + chla + O2
+ 
+# Set up spatial basis functions for CBFM 
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
+as.matrix %>%
+{.[,-(1)]} # Remove the first intercept column
 
-simy <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
-                         B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
-                         Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
-
+spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_intercepts_ztnb <- runif(num_spp, -2, 0)
+ 
+true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
+true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% cov2cor
+ 
+# Now generate count data from a truncated negative binomial distribution
 spp_dispersion <- runif(num_spp)
-simy <- create_CBFM_life(family = ztnb2, formula_X = useformula, data = dat, B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes), dispparam = spp_dispersion, max_resp = 20000, Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+                              B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb), dispparam = spp_dispersion, max_resp = 20000, 
+                              Sigma = list(space = true_Sigma_space_ztnb), G = list(space = true_G_space_ztnb))
 
 
+
+y = simy_ztnb
+useformula <- ~ s(temp) + s(depth) + chla + s(O2)
+formula_X = useformula
+data = dat
+B_space = basisfunctions
+family =  ztnb2()
+B_time = NULL
+B_spacetime = NULL
+offset = NULL
+ncores = NULL
+gamma = 1
+trial_size = 1
+dofit = TRUE
+stderrors = TRUE
+select = FALSE
+start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
+TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", tol = 1e-4, initial_beta_dampen = 1, 
+               subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0) 
+Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
+G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
+k_check_control = list(subsample = 5000, n.rep = 400)
 

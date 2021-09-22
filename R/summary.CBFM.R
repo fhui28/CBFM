@@ -20,10 +20,15 @@
 #' @return An object of class "summary.CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
 #' \describe{
 #' \item{call: }{The matched function call of \code{object}.}
+
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created, rounded.}
+
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. }
+
 #' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one, rounded. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. } 
+
 #' \item{zeroinf_prob_intercept_resultstab: }{If the \code{object$stderrors == TRUE}, then a data frame containing the point estimates, standard errors, corresponding Wald statistics and P-values, and the lower and upper limit of Wald confidence intervals for the probabilities of zero-inflation (if appropriate). Please note that the Wald-test is a test of whether the intercept is statistically different from i.e., whether the probability of zero-inflation is statistically different from 0.5. This may not be that useful in practice. }
+
 #' \item{summary_tables: }{If the \code{object$stderrors == TRUE}, then a list with length equal to the number of species i.e., \code{ncol(object$y)}. Each element in the list may contain up to three summary tables: 
 #' 1) \code{parametric_coefs}, which is a summary table corresponding to (any) strictly parametric coefficients included in the model; 
 #' 2) \code{anova_terms}, which is a summary table for (any) parametric terms included in the model. The difference between \code{anova_terms} and \code{parametric_coefs} matters when it comes to categorical predictors (most commonly), with \code{parametric_coefs} returning summaries for individual coefficients involved in parameterizing the factor, and \code{anova_terms} returning a single summary for the entire factor. 

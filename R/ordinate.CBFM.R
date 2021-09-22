@@ -28,6 +28,7 @@
 #'
 #' @return A list with the following items:
 #' \item{scores: }{A matrix of observational unit-specific scores.}
+
 #' \item{loadings: }{A matrix of species-specific loadings.}
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak

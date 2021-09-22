@@ -44,6 +44,7 @@
 #' Currently the following response distributions are permitted: 
 #' \describe{
 #' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+
 #' \item{\code{binomial(link = "logit")}: }{Binomial distribution, noting only the logit link is permitted. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)} where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
 
 #' \item{\code{Gamma(link = "log")}: }{Gamma distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
@@ -179,15 +180,15 @@
 #' # Generate spatial multivariate presence-absence data first
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
 #' simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
-#' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
-#' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
+#' Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 #' 
 #' # Now generate count data from a truncated negative binomial distribution
 #' spp_dispersion <- runif(num_spp)
 #' simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
-#' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
+#' B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
 #' dispparam = spp_dispersion, max_resp = 20000, 
-#' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+#' Sigma = list(space = true_Sigma_space_ztnb), G = list(space = true_G_space_ztnb))
 #' 
 #' # Spatial multivariate count data from a hurdle model is then the product of the two
 #' simy_hurdlenb <- simy_pa$y *  simy_ztnb$y
