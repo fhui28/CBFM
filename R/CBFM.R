@@ -130,7 +130,7 @@
 #'
 #' ## Distributions
 #' 
-#' Currently the following response distributions are permitted (in alphabetal order): 
+#' Currently the following response distributions are permitted: 
 #' \describe{
 #' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
