@@ -30,4 +30,13 @@ betalogitfam <- function() {
      structure(list(family = "Beta", link = link, linkfun = linkfun, linkinv = linkinv, mu.eta = mu.eta, variance = variance), class = "family")
      }
 
-     
+
+.sbetalogit <- function(eta, y, phi) {
+        ystar <- qlogis(y)
+        mu <- betar(link = "logit")$linkinv(eta)   
+        mustar <- digamma(mu * phi) - digamma((1 - mu) * phi)
+       
+        rval <- cbind(phi * (ystar - mustar) * betar(link = "logit")$mu.eta(eta))
+        return(rval)
+        }
+

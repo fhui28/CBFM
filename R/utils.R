@@ -16,24 +16,51 @@
      }
 
                
+## E-step functions for zero-inflated distributions -- calculate the posterior probability of being in the zero-inflation component
+## Hidden and not exported
+.estep_fn <- function(family, cwfit, y, X, B) {
+        num_units <- nrow(y)
+        num_spp <- ncol(y)
+        out <- Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
+        if(family$family %in% c("zipoisson","zinegative.binomial")) {
+                fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
+                zeroinfl_prob <- plogis(cwfit$zeroinfl_prob_intercept)
+                
+                for(j in 1:num_spp) {
+                        sel_zerospp <- which(y[,j] == 0)
+                        if(family$family[1] == "zipoisson")
+                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
+                        if(family$family[1] == "zinegative.binomial")
+                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
+                        }
+                }
+        
+        return(out)
+        }
+
+
+
 ## Get the full S matrix from GAMs. Relies on the fact that gam always move the parametric terms first
 .get_bigS <- function(fit_gam, num_X) {
-     bigS <- Matrix::Matrix(0, num_X, num_X, sparse = TRUE)
-     num_smooth_terms <- length(fit_gam$sp)
-     if(num_smooth_terms == 0)
-          return(bigS)
+   if(class(fit_gam)[1] == "gamlss")
+      fit_gam <- getSmo(fit_gam)
+     
+   bigS <- Matrix::Matrix(0, num_X, num_X, sparse = TRUE)
+   num_smooth_terms <- length(fit_gam$sp)
+   if(num_smooth_terms == 0)
+      return(bigS)
           
-     num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) ncol(x$S[[1]])))
-     num_parametric_cols <- num_X - num_smooth_cols
+   num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) ncol(x$S[[1]])))
+   num_parametric_cols <- num_X - num_smooth_cols
 
-     subS <- lapply(1:num_smooth_terms, function(j) {
-          fit_gam$sp[j] * fit_gam$smooth[[j]]$S[[1]]
-          })
-     subS <- Matrix::bdiag(subS)
-     bigS[-(1:num_parametric_cols), -(1:num_parametric_cols)] <- subS
+   subS <- lapply(1:num_smooth_terms, function(j) {
+      fit_gam$sp[j] * fit_gam$smooth[[j]]$S[[1]]
+      })
+   subS <- Matrix::bdiag(subS)
+   bigS[-(1:num_parametric_cols), -(1:num_parametric_cols)] <- subS
           
-     return(bigS)
-     }
+   return(bigS)
+   }
    
    
 ## This function is used specifically when an additive form of the CBFM is used, for use in the construction of the Bayesian posterior covariance matrix for standard errors.
