@@ -1,19 +1,10 @@
 ## Negative second derivative for a bunch of distributions
 ## Hidden and not exported
+## Some help from Wolfram alpha differentiation online!
 
 .neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zeroinfl_prob_intercept = NULL, trial_size, return_matrix = FALSE, 
                            domore = FALSE, tol = 1e-5) {
-     
         if(family$family[1] %in% c("Beta")) {
-                .sbetalogit <- function(eta, y, phi) {
-                ystar <- qlogis(y)
-                mu <- betar(link = "logit")$linkinv(eta)   
-                mustar <- digamma(mu * phi) - digamma((1 - mu) * phi)
-               
-                rval <- cbind(phi * (ystar - mustar) * betar(link = "logit")$mu.eta(eta))
-                return(rval)
-                }
-          
                 out <- grad(.sbetalogit, x = eta, y = y, phi = phi)    
                 }
         if(family$family[1] %in% c("binomial")) {
@@ -46,21 +37,21 @@
         if(family$family[1] %in% c("poisson")) {
                 out <- exp(eta) 
                 }
-#      if(family$family[1] == "ztpoisson") {
-#           out <- ztpoisson()$mu.eta(eta)
-#           }
-#      if(family$family[1] == "ztnegative.binomial") {
-#           mu <- exp(eta)
-#           out <- sztnbinom(y, mu = mu, size = 1/phi, parameter = "mu", drop=FALSE)*mu + hztnbinom(y, mu = mu, size = 1/phi, parameter = "mu", drop=FALSE)*mu^2
-#           rm(mu)
-#           }
-     if(family$family[1] %in% c("tweedie")) {
+        if(family$family[1] == "ztpoisson") {
+                lambda <- exp(eta)
+                out <- exp(eta) + exp(eta)/(exp(lambda)-1) + exp(2*eta) * exp(lambda) / (exp(lambda)-1)^2
+                rm(lambda)
+                }
+        if(family$family[1] == "ztnegative.binomial") {
+                out <- .hess_ztnbinom(eta = eta, y = y, size = 1/phi)
+                }
+        if(family$family[1] %in% c("tweedie")) {
              two_minus_powerparam <- 2-powerparam
              exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam * eta)
              exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1) * eta)
              out <-  1/phi * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
              }
-     if(family$family[1] %in% c("zipoisson")) {
+        if(family$family[1] %in% c("zipoisson")) {
              lambda <- exp(eta)
              rhat <- numeric(length(y))
              rhat[y == 0] <- as.vector(plogis(zeroinfl_prob_intercept + lambda))[y == 0]
@@ -76,7 +67,7 @@
                      out_zeroinflbetas[y > 0] <- 0
                      }
              }
-     if(family$family[1] %in% c("zinegative.binomial")) { 
+        if(family$family[1] %in% c("zinegative.binomial")) { 
              lambda <- exp(eta)
              phat <- plogis(zeroinfl_prob_intercept)
              
@@ -97,8 +88,7 @@
                      }
              }
 
-        
-        out[out < tol] <- tol ## At the moment, needed primarily for zero-inflated model models where weights have be negative (by design?!)
+        out[out < tol] <- tol ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights have be negative (by design?!)
 
         if(!domore)
                 return(as.vector(out))
@@ -114,27 +104,4 @@
         }
      
      
-
-## E-step functions for zero-inflated distributions -- calculate the posterior probability of being in the zero-inflation component
-## Hidden and not exported
-.estep_fn <- function(family, cwfit, y, X, B) {
-        num_units <- nrow(y)
-        num_spp <- ncol(y)
-        out <- Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
-        if(family$family %in% c("zipoisson","zinegative.binomial")) {
-                fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
-                zeroinfl_prob <- plogis(cwfit$zeroinfl_prob_intercept)
-                
-                for(j in 1:num_spp) {
-                        sel_zerospp <- which(y[,j] == 0)
-                        if(family$family[1] == "zipoisson")
-                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
-                        if(family$family[1] == "zinegative.binomial")
-                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
-                        }
-                }
-        
-        return(out)
-        }
-
 

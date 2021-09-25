@@ -53,7 +53,7 @@
                                  "zipoisson", "zinegative.binomial", "ztpoisson", "ztnegative.binomial")))     
         stop("Family currently not supported. Sorry!")
     if((family$family %in% c("ztpoisson", "ztnegative.binomial")) & any(y == 0))
-        stop("zero counts not allowed for zero truncated distributions.")
+        stop("Zero counts not allowed for zero truncated distributions.")
      
     if(family$family[1] == "gaussian" & family$link != "identity")
         stop("Currently Gaussian family only permits the identity link.")
