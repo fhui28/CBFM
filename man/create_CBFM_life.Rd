@@ -219,11 +219,11 @@ simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = 
 B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
 Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 
-# Now generate count data from a truncated negative binomial distribution
+# Now generate count data from a truncated Poisson distribution
 simy_ztp <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
-B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
-max_resp = 20000, Sigma = list(space = true_Sigma_space_ztnb), 
-G = list(space = true_G_space_ztnb))
+B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
+max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), 
+G = list(space = true_G_space_ztp))
 
 # Spatial multivariate count data from a hurdle model is then the product of the two
 simy_hurdlenb <- simy_pa$y *  simy_ztp$y

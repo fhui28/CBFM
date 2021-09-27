@@ -1439,8 +1439,8 @@
 #' @import foreach  
 #' @import Matrix
 #' @importFrom compiler cmpfun
-#' @importFrom gamlss gamlss gamlss.control getSmo
-#' @importFrom gamlss.add ga
+# @importFrom gamlss gamlss gamlss.control getSmo
+# @importFrom gamlss.add ga
 #' @importFrom doParallel registerDoParallel
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
@@ -2259,8 +2259,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      invisible(capture.output( all_vcomp <- lapply(1:num_spp, function(j) {
           if(class(all_update_coefs[[j]]$fit)[1] == "gam")
                out <- gam.vcomp(all_update_coefs[[j]]$fit)
-          if(class(all_update_coefs[[j]]$fit)[1] == "gamlss")
-               out <- gam.vcomp(getSmo(all_update_coefs[[j]]$fit))
+          # if(class(all_update_coefs[[j]]$fit)[1] == "gamlss")
+          #      out <- gam.vcomp(getSmo(all_update_coefs[[j]]$fit))
           if(is.matrix(out))
                return(out[,1])
           if(is.list(out))
