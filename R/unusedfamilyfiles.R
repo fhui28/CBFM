@@ -260,37 +260,7 @@
 # .ztpois_mu_to_lambda <- .make_.ztpois_mu_to_lambda()
 # 
 # 
-# .dztpois <- function(x, lambda, mu, log = FALSE) {
-#         if(!missing(lambda) & !missing(mu)) 
-#                 stop("only 'lambda' or 'mu' may be specified")
-#         if(!missing(mu)) 
-#                 lambda <- .ztpois_mu_to_lambda(mu)
-#         
-#         rval <- dpois(x, lambda, log = TRUE) - ppois(0, lambda, lower.tail = FALSE, log.p = TRUE)
-#         rval[x < 1] <- -Inf
-#         rval[lambda <= 0] <- 0
-#         if(log)
-#                 rval 
-#         else 
-#                 exp(rval)
-#         }
-# 
-# 
-# .pztpois <- function(q, lambda, mu, lower.tail = TRUE, log.p = FALSE) {
-#         if(!missing(lambda) & !missing(mu)) 
-#                 stop("only 'lambda' or 'mu' may be specified")
-#         if(!missing(mu)) 
-#                 lambda <- .ztpois_mu_to_lambda(mu)
-#         
-#         rval <- log(ppois(q, lambda, lower.tail = lower.tail, log.p = FALSE) - dpois(0, lambda)) - ppois(0, lambda, lower.tail = FALSE, log.p = TRUE)
-#         rval[q < 1] <- if(lower.tail) -Inf else 0
-#         if(log.p) 
-#                 rval 
-#         else 
-#                 exp(rval)
-#         }
-# 
-# 
+# # 
 # .qztpois <- function(p, lambda, mu, lower.tail = TRUE, log.p = FALSE) {
 #         if(!missing(lambda) & !missing(mu)) 
 #                 stop("only 'lambda' or 'mu' may be specified")

@@ -38,9 +38,10 @@
                 out <- exp(eta) 
                 }
         if(family$family[1] == "ztpoisson") {
-                lambda <- exp(eta)
-                out <- exp(eta) + exp(eta)/(exp(lambda)-1) + exp(2*eta) * exp(lambda) / (exp(lambda)-1)^2
-                rm(lambda)
+                out <- .hess_ztpoisson(eta = eta, y = y)
+                # lambda <- exp(eta)
+                # out <- exp(eta) + exp(eta)/(exp(lambda)-1) + exp(2*eta) * exp(lambda) / (exp(lambda)-1)^2
+                # rm(lambda)
                 }
         if(family$family[1] == "ztnegative.binomial") {
                 out <- .hess_ztnbinom(eta = eta, y = y, size = 1/phi)

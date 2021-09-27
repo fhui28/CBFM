@@ -107,7 +107,7 @@ Type objective_function<Type>::operator() () {
           }
      if(family == 9) { //zero-truncated poisson
           for(int i=0; i<num_units; i++) { 
-               nll -= (dpois(y(i), exp(eta(i)), true) - log(1 - exp(-eta(i))));
+               nll -= (dpois(y(i), exp(eta(i)), true) - log(1-dpois(Type(0.0), exp(eta(i)), false)));
                }
           }
      if(family == 10) { //zero-inflated poisson
