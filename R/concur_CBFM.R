@@ -50,7 +50,7 @@
 #' library(tidyverse)
 #' 
 #' ##------------------------------
-#' ## Example 1: Fitting a CBFM to spatial multivariate presence-absence data 
+#' ## **Example 1: Fitting a CBFM to spatial multivariate presence-absence data** 
 #' ## simulated from a spatial latent variable model
 #' ## Please note the data generation process (thus) differs from CBFM.
 #' ##------------------------------
@@ -197,7 +197,7 @@ concur_CBFM <- function(object) {
           
           for(k1 in 1:num_spp) { 
                # Observed 
-               # Consider a QR decompostion [everything else, covariate] = Q R = [R_everythingelse, R_covariate]. Thus covariate = Q R_covariate = Q_everything*R_everythingelse + Q_covariate*R covariate. The first part lies entirely in the space of one or more other covariates in the model. The remainder part that is completely within the covariate's own space. 
+               # Consider a QR decompostion [everything else, covariate] = Q R = Q [R_everythingelse, R_covariate]. Thus covariate = Q R_covariate = Q_everythingelse*R_everythingelse + Q_covariate*R covariate. The first part lies entirely in the space of one or more other covariates in the model. The remainder part that is completely within the covariate's own space. 
                # Numerator is ||Q_everything*R_everythingelse %*% beta ||^2 
                # Denominator is ||X%*%beta||^2 for that covariate
                sel_betas <- object$betas[k1, start[k0]:stop[k0]]

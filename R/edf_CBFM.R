@@ -33,7 +33,7 @@
 #' library(tidyverse)
 #' 
 #' ##------------------------------
-#' ## Example 1: Fitting a CBFM to spatial multivariate presence-absence data 
+#' ## **Example 1: Fitting a CBFM to spatial multivariate presence-absence data** 
 #' ## simulated from a spatial latent variable model
 #' ## Please note the data generation process (thus) differs from CBFM.
 #' ##------------------------------
@@ -173,6 +173,7 @@ edf_CBFM <- function(object, ncores = NULL) {
   rm(X)
   
   bigsqrtWXB <- cbind(bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtX)), bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtB))) 
+  
   
   ##------------------
   ## Now the EDF

@@ -44,7 +44,7 @@ library(RandomFields)
 library(tidyverse)
 
 ##------------------------------
-## Example 1: Fitting a CBFM to spatial multivariate presence-absence data 
+## **Example 1: Fitting a CBFM to spatial multivariate presence-absence data** 
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ##------------------------------
