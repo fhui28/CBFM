@@ -21,13 +21,30 @@ LinkingTo:
 ## Random testing jazz
 ##-------------------------------------
 
+# 
+# dat2 <- data.frame(response = y[,2], dat)
+# fit_trun <- gamlss(formula = response ~ temp + depth + chla + O2, 
+#                    data = dat2, 
+#                    family = NBI,
+#                    #family = trun(0, family = "NBI"),
+#                    control = gamlss.control(n.cyc = 30))
+# 
+# 
+# fit_trun2 <- gamlss(formula = response ~ temp + depth + chla + O2, 
+#                    data = dat2, 
+#                    family = trun(0, family = "NBI"),
+#                    control = gamlss.control(n.cyc = 30))
+# 
+# 
+# 
+
 
 y = simy_train
-useformula <- ~ s(temp) + s(depth) + chla + s(O2)
+useformula <- ~ temp + depth + chla + O2
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions
-family =  binomial()
+family =  nb2()
 B_time = NULL
 B_spacetime = NULL
 offset = NULL
@@ -39,10 +56,12 @@ stderrors = TRUE
 select = FALSE
 start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 1000, optim_lower = -5, optim_upper = 5, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
-G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
+control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
+
+
 
 Ginv = new_LoadingnuggetG_space$covinv
 basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
@@ -83,24 +102,6 @@ TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/i
 
 
 
-#-----------------------------
-#-----------------------------
-library(tidyverse)
-library(mgcv)
-library(countreg)
-library(gamlss)
-library(gamlss.tr)
-library(gamlss.add)
-
-data("CrabSatellites", package = "countreg")
-cs2 <- CrabSatellites
-cs2$color <- as.numeric(cs2$color)
-cs2 <- subset(cs2, subset = satellites > 0)
-
-ZTNBI <- trun(par = 0, family = "NBI", type = "left", local = FALSE)
-fit_tnb2 <- gamlss(satellites~ga(~s(width) + color, method = "ML"), data = cs2, family = ZTNBI) # OK
-s <- getSmo(fit_tnb3)
-s$coef
 
 
 #-----------------------------
@@ -112,6 +113,8 @@ library(mvtnorm)
 library(sp)
 library(RandomFields)
 library(tidyverse)
+library(gamlss.tr)
+library(gamlss.add)
  
 set.seed(2021)
 num_sites <- 500 # 500 (units) sites 
@@ -132,26 +135,52 @@ as.matrix %>%
 {.[,-(1)]} # Remove the first intercept column
 
 
-spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -0.5, 0.5), nrow = num_spp)
+#spp_basis_effects_mat_ztnb <- matrix(runif(num_spp * (num_basisfunctions-1), -0.5, 0.5), nrow = num_spp)
+#spp_basis_effects_mat_ztnb[,15:19] <- 0
 spp_intercepts_ztnb <- runif(num_spp, -2, 0)
  
 true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
 true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% cov2cor
  
 # Now generate count data from a truncated negative binomial distribution
-spp_dispersion <- runif(num_spp)
-simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
-                              B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb), dispparam = spp_dispersion, max_resp = 20000, 
-                              Sigma = list(space = true_Sigma_space_ztnb), G = list(space = true_G_space_ztnb))
+spp_dispersion <- runif(num_spp, 0, 5)
+simy_ztpois <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
+                                B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
+                                G = list(space = true_G_space_ztnb), Sigma = list(space = true_Sigma_space_ztnb),
+                                #basis_effects_mat = spp_basis_effects_mat_ztnb,
+                                max_resp = 20000) 
 
 
 
-y = simy_ztnb
+# manygam <- foreach(j = 1:num_spp) %dopar%
+#     gam(list(response ~ s(temp) + s(depth) + chla + s(O2) + s(x,y), ~1), 
+#         data = data.frame(response = c(simy_ztpois$y[,j], numeric(20)), dat[c(1:nrow(dat),1:20),]),
+#         family = ziplss())
+# 
+# start_params = list(betas = t(sapply(manygam, coef)[1:29,]))
+# rm(manygam)
+
+
+#useformula <- ~ s(temp) + s(depth) + chla + s(O2)
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy_ztpois$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
+                #start_params = start_params, 
+                family = ztpoisson(), control = list(trace = 1, initial_betas_dampen = 0.05))
+
+plot(fitcbfm)
+
+summary(fitcbfm)
+
+
+
+
+y = simy_ztpois$y
 useformula <- ~ s(temp) + s(depth) + chla + s(O2)
 formula_X = useformula
 data = dat
 B_space = basisfunctions
-family =  ztnb2()
+family =  ztpoisson()
 B_time = NULL
 B_spacetime = NULL
 offset = NULL
@@ -163,9 +192,9 @@ stderrors = TRUE
 select = FALSE
 start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", tol = 1e-4, initial_beta_dampen = 1, 
-               subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0) 
-Sigma_control = list(rank = 5, maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
-G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 1000, tol = 1e-4, method = "LA", trace = 0)
+control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, initial_betas_dampen = 0.05, seed = NULL, trace = 1, ridge = 0) 
+Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
+##---------------------

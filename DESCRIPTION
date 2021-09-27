@@ -23,6 +23,7 @@ Imports:
     foreach,
     gamlss,
     gamlss.dist,
+    gamlss.add,
     gamlss.tr,
     graphics,
     grDevices,
