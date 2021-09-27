@@ -138,8 +138,9 @@ An object of class "CBFM" which includes the following components, not necessari
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
 \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
 \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. \emph{Note this is presented on the logit scale}, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
-\item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. }
-\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.}
+\item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM.}
+\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution.
+}
 \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 \item{Sigma_time/Loading_Sigma_time/nugget_Sigma_time: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied.}
@@ -228,6 +229,7 @@ Currently the following response distributions are permitted:
 \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
 \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+\item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
 }
 }
 
@@ -259,15 +261,28 @@ Also, the current estimation approach \strong{does not provide uncertainty quant
 }
 }
 \section{Warning}{
-CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}} and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
+\enumerate{
+\item CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}} and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
+\item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. Also, in zero-truncated distributions it is tha mean of the base distribution that is modeled with the regression model described above.
+\item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well if at all!
+\item Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; \strong{estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.}
+\item Missing values are currently not handled in any manner or form in this package (sorry!). If you do have any missing values, then the standard course of action (and which is what functions such as \code{\link[stats:lm]{stats::lm()}} and \code{\link[mgcv:gam]{mgcv::gam()}} do as a default; see also \code{options("na.action")}) is to apply \code{\link[stats:na.fail]{stats::na.omit()}} and remove all observational units from your data with one or more missing values. This can of course also be done manually by the practitioner.
+}
+}
 
-Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above.
+\section{CBFM isn't working for my data...WTF?!}{
+Once you have finished grumbling about the package and its developer, please brew some tea and grab a packet (or two) of senbei...debugging takes a while!
 
-Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well if at all!
+As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
+\itemize{
+\item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests dampens the starting estimated coefficients from very extreme magnitudes and can faciliate the underlying PQL estimation algorithm to "move".
+\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a good way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
+}\preformatted{manygam <- foreach(j = 1:num_spp) \%dopar\%
+    gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
+start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
+}
 
-Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; \strong{estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.}
-
-Missing values are currently not handled in any manner or form in this package (sorry!). If you do have any missing values, then the standard course of action (and which is what functions such as \code{\link[stats:lm]{stats::lm()}} and \code{\link[mgcv:gam]{mgcv::gam()}} do as a default; see also \code{options("na.action")}) is to apply \code{\link[stats:na.fail]{stats::na.omit()}} and remove all observational units from your data with one or more missing values. This can of course also be done manually by the practitioner.
+If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on \href{https://github.com/fhui28/CBFM}{CBFM Github page} \emph{if} you think there is a genuine bug in the package. Please do not post feature requests or general statistical modeling questions on Github issues as they will likely be ignored or deleted without prior consent. You could email the maintainer if you are desperate for statistical advice, but we are not paid to be statistical consultants so your email may go unnoticed or ignored!
 }
 
 \examples{
@@ -684,7 +699,7 @@ simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
 
 
-# Fit stacked ZIP regression models as a baseline
+# Fit stacked zero-inflated Poisson regression models as a baseline
 fitstacked <- NULL 
 for(j in 1:num_spp) {
 fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, 
@@ -794,7 +809,7 @@ simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
 
 
-# Fit stacked ZIP regression models as a baseline
+# Fit stacked zero-inflated NB regression models as a baseline
 fitstacked <- NULL 
 for(j in 1:num_spp) {
 fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, 
@@ -982,6 +997,103 @@ labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 theme_bw()
 
 rm(list = ls())
+
+
+
+##------------------------------
+## **Example 1h: Repeat Example 1a but illustrate applications to zero-truncated count data** 
+##------------------------------
+library(gamlss)
+library(gamlss.tr)
+gen.trun(0, family = "PO")
+# Simulate spatial multivariate abundance data
+simy <- matrix(rPOtr(num_sites * num_spp, mu = exp(eta)), num_sites, num_spp)
+
+# Form training and test sets
+simy_train <- simy[1:500,]
+simy_test <- simy[501:1000,]
+
+
+# Fit stacked zero-truncated regression models as a baseline
+fitstacked <- NULL 
+for(j in 1:num_spp) {
+fitstacked[[j]] <- gamlss(resp ~ temp + depth + chla + O2, 
+data = data.frame(resp = simy_train[,j], dat_train), family = POtr)
+}
+
+
+# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# This is the same set up as examples above
+num_basisfunctions <- 25 # Number of spatial basis functions to use
+# Training set basis functions
+train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
+# Fit zero-truncated Poisson CBFM
+tic <- proc.time()
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+B_space = train_basisfunctions, family = ztpoisson(), control = list(trace = 1))
+toc <- proc.time()
+toc - tic
+
+summary(fitcbfm) \%>\% 
+str
+
+
+# Calculate predictions onto test dataset
+# Note extra step needed for stacked models from gamlss to get the actual fitted values 
+predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "response"))
+predictions_stacked <- predictions_stacked/(1-exp(-predictions_stacked))
+predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
+new_B_space = test_basisfunctions)
+
+# Evaluation predictions
+# Pseudo R-squared across species
+pseudoR2 <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+out <- cor(predictions_stacked[,j], simy_test[,j], method = "spearman")
+out^2 * sign(out)     
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+out <- cor(predictions_cbfm[,j], simy_test[,j], method = "spearman")
+out^2 * sign(out)     
+})
+)
+
+boxplot(pseudoR2, main = "Pseudo-R2", names = c("Stacked GLM", "CBFM"))
+
+ggplot(pseudoR2, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
+theme_bw()
+
+# Predictive deviance across species (lower is better)
+# Need to define density of zero-inflated Poisson distribution first (or get it from a package)
+preddeviance <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+-2*sum(dPOtr(simy_test[,j], mu = predictions_stacked[,j], log = TRUE))
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+-2*sum(dPOtr(simy_test[,j], mu = predictions_cbfm[,j], log = TRUE))
+})
+)
+
+boxplot(preddeviance, main = "Deviance", names = c("Stacked GLM", "CBFM"))
+
+ggplot(preddeviance, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
+theme_bw()
 
 
 
@@ -1301,7 +1413,7 @@ theme_bw()
 ## Please note the data generation process (thus) differs from CBFM.
 ## To save some time, and for illustrative purposes, we wil use the fast method estimating
 ## the covariance matrices
-# Nevertheless, please note this might take quite a while...grab some senbei or a melonpan!
+# Nevertheless, please note this might take quite a while...grab a melonpan!
 ##------------------------------
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2

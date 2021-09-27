@@ -62,8 +62,6 @@
 #' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 
 #' \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
- 
-#' \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{pois}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 #' }
 #' 
 #' Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration. 
@@ -377,3 +375,4 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
      return(out)
      }
 
+# \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{pois}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
