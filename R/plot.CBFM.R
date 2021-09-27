@@ -64,7 +64,7 @@
 #' library(tidyverse)
 #' 
 #' ##------------------------------
-#' ## Example 1: Fitting a CBFM to spatial multivariate presence-absence data 
+#' ## **Example 1: Fitting a CBFM to spatial multivariate presence-absence data** 
 #' ## simulated from a spatial latent variable model
 #' ## Please note the data generation process (thus) differs from CBFM.
 #' ##------------------------------
@@ -155,7 +155,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      dsres <- res[, sppind]
      etamat <- x$linear_predictor[,sppind]
      xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
-     yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]))     
+     yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]), na.rm = TRUE)     
      
 
      # Form colors for species - done by prevalence
@@ -260,15 +260,15 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      }
 
      
-## Pulled straight from gllvm package. Thanks to Jenni for this function!
+## Modified from gllvm package. Thanks to Jenni for this function!
 .gamEnvelope <- function(x, y, line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, subsample = 5000, ...) {
      xSort <- sort(x, index.return = TRUE)
-     gam.yx <- gam(y[xSort$ix] ~ xSort$x)
-     pr.y <- predict.gam(gam.yx, se.fit = TRUE)
+     gam.yx <- gam(resp ~ cov, data = data.frame(resp = y[xSort$ix], cov = xSort$x))
+     pr.y <- predict.gam(gam.yx, se.fit = TRUE, newdata = data.frame(cov = xSort$x))
      
-     n.obs <- length(xSort$ix)     
      prHi <- pr.y$fit + 1.96*pr.y$se.fit
      prLow <- pr.y$fit - 1.96*pr.y$se.fit
+     n.obs <- length(prLow)     
      sel_x_index <- 1:n.obs
      
      if(envelopes) 

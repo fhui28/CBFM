@@ -44,7 +44,7 @@
 #' library(tidyverse)
 #' 
 #' ##------------------------------
-#' ## Example 1: Fitting a CBFM to spatial multivariate presence-absence data 
+#' ## **Example 1: Fitting a CBFM to spatial multivariate presence-absence data**
 #' ## simulated from a spatial latent variable model
 #' ## Please note the data generation process (thus) differs from CBFM.
 #' ##------------------------------
@@ -98,94 +98,94 @@
 #' 
 #' @export
 #' 
+#' @importFrom gamlss.tr trun.p
 #' @importFrom stats runif qnorm pbeta pbinom pgamma plogis pnorm ppois pnbinom
 #' @importFrom tweedie ptweedie 
 #' @md
 
 residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
-     type <- match.arg(type, choices = c("response", "pearson", "dunnsmyth", "PIT"))
-     num_units <- nrow(object$y)
-     num_spp <- ncol(object$y)
+        type <- match.arg(type, choices = c("response", "pearson", "dunnsmyth", "PIT"))
+        num_units <- nrow(object$y)
+        num_spp <- ncol(object$y)
 
      
-     out <- object$y - object$fitted
-     if(object$family$family[1] == "binomial")
-          out <- object$y/object$trial_size - object$fitted
+        out <- object$y - object$fitted
+        if(object$family$family[1] == "binomial")
+                out <- object$y/object$trial_size - object$fitted
      
-     if(type == "response")
-          out <- out
-          
-     set.seed(seed)
+        if(type == "response")
+                out <- out
      
-     if(type == "pearson") {
-          if(object$family$family[1] %in% c("binomial")) 
-               out <- out / sqrt(object$family$variance(object$fitted)/object$trial_size)     
-          if(object$family$family[1] %in% c("gaussian")) 
-               out <- out / sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-          if(object$family$family[1] %in% c("Gamma")) 
-               out <- out / sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$family$variance(object$fitted))
-          if(object$family$family[1] %in% c("negative.binomial", "ztnegative.binomial","Beta")) 
-               out <- out / sqrt(object$family$variance(object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
-          if(object$family$family[1] %in% c("poisson", "ztpoisson")) 
-               out <- out / sqrt(object$family$variance(object$fitted))     
-          if(object$family$family[1] %in% c("tweedie")) 
-               out <- out / sqrt(object$family$variance(object$fitted, 
-                    phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE), 
-                    power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
-          if(object$family$family[1] %in% c("zipoisson")) 
-               out <- out / sqrt(object$family$actual_variance(object$fitted, 
-                    zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
-          if(object$family$family[1] %in% c("zinegative.binomial")) 
-               out <- out / sqrt(object$family$actual_variance(object$fitted, 
-                    zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE),
-                    phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-                    )
+        if(type == "pearson") {
+                if(object$family$family[1] %in% c("binomial")) 
+                        out <- out / sqrt(object$family$variance(object$fitted)/object$trial_size)     
+                if(object$family$family[1] %in% c("gaussian")) 
+                        out <- out / sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                if(object$family$family[1] %in% c("Gamma")) 
+                        out <- out / sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$family$variance(object$fitted))
+                if(object$family$family[1] %in% c("negative.binomial", "ztnegative.binomial","Beta")) 
+                        out <- out / sqrt(object$family$variance(object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+                if(object$family$family[1] %in% c("poisson", "ztpoisson")) 
+                        out <- out / sqrt(object$family$variance(object$fitted))     
+                if(object$family$family[1] %in% c("tweedie")) 
+                        out <- out / sqrt(object$family$variance(object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE),
+                                                                 power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+                if(object$family$family[1] %in% c("zipoisson")) 
+                        out <- out / sqrt(object$family$actual_variance(object$fitted, zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
+                if(object$family$family[1] %in% c("zinegative.binomial")) 
+                        out <- out / sqrt(object$family$actual_variance(object$fitted, zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                            )
+                if(object$family$family[1] %in% c("ztpoisson")) 
+                        out <- out / sqrt(object$family$actual_variance(mu = object$fitted, lambda = exp(object$linear_predictor)))
           }
           
-     if(type %in% c("PIT","dunnsmyth")) {
-          if(object$family$family[1] %in% c("beta")) 
-               out <- pbeta(object$y, shape1 = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$fitted, 
-                    shape2 = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * (1-object$fitted))
-          if(object$family$family[1] %in% c("binomial")) 
-               out <- runif(length(object$y), 
-                    min = pbinom(object$y-1, size = object$trial_size, prob = object$fitted), 
-                    max = pbinom(object$y, size = object$trial_size, prob = object$fitted))
-          if(object$family$family[1] %in% c("Gamma")) 
-               out <- pgamma(object$y, scale = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$fitted, 
-                    shape = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-          if(object$family$family[1] %in% c("gaussian")) 
-               out <- pnorm(object$y, mean = object$fitted, sd = sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
-          if(object$family$family[1] %in% c("poisson"))
-               out <- runif(length(object$y), min = ppois(object$y-1, lambda = object$fitted), max = ppois(object$y, lambda = object$fitted))
-          if(object$family$family[1] %in% c("negative.binomial")) 
-               out <- runif(length(object$y), 
-                    min = pnbinom(object$y-1, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                    max = pnbinom(object$y, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
-          if(object$family$family[1] %in% c("tweedie")) {
-               a <- b <- ptweedie(object$y, mu = object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE),
-                    power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-               a[object$y == 0] <- 0
-               out <- runif(length(object$y), min = a, max = b)
+        if(type %in% c("PIT","dunnsmyth")) {
+                set.seed(seed)
+                if(object$family$family[1] %in% c("beta")) 
+                        out <- pbeta(object$y, shape1 = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$fitted, 
+                                     shape2 = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * (1-object$fitted))
+                if(object$family$family[1] %in% c("binomial")) 
+                        out <- runif(length(object$y), 
+                                     min = pbinom(object$y-1, size = object$trial_size, prob = object$fitted), 
+                                     max = pbinom(object$y, size = object$trial_size, prob = object$fitted)
+                                     )
+                if(object$family$family[1] %in% c("Gamma"))
+                        out <- pgamma(object$y, scale = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$fitted, 
+                                      shape = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                if(object$family$family[1] %in% c("gaussian")) 
+                        out <- pnorm(object$y, mean = object$fitted, sd = sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+                if(object$family$family[1] %in% c("poisson"))
+                        out <- runif(length(object$y), min = ppois(object$y-1, lambda = object$fitted), max = ppois(object$y, lambda = object$fitted))
+                if(object$family$family[1] %in% c("negative.binomial")) 
+                        out <- runif(length(object$y), 
+                                     min = pnbinom(object$y-1, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                                     max = pnbinom(object$y, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                                     )
+                if(object$family$family[1] %in% c("tweedie")) {
+                        a <- b <- ptweedie(object$y, mu = object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE),
+                                           power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                        a[object$y == 0] <- 0
+                        out <- runif(length(object$y), min = a, max = b)
+                        }
+                if(object$family$family[1] %in% c("zipoisson")) {
+                        out <- runif(length(object$y), 
+                                     min = .pzipois(object$y-1, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                                     max = .pzipois(object$y, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE))
+                                     )
+                        }
+                if(object$family$family[1] %in% c("zinegative.binomial")) {
+                        out <- runif(length(object$y), 
+                                     min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                                     max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                                     )
                }
-          if(object$family$family[1] %in% c("zipoisson")) {
-               out <- runif(length(object$y), 
-                    min = .pzipois(object$y-1, lambda = exp(object$linear_predictor), 
-                                   zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                    max = .pzipois(object$y, lambda = exp(object$linear_predictor), 
-                                  zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
-               }
-          if(object$family$family[1] %in% c("zinegative.binomial")) {
-               out <- runif(length(object$y), 
-                            min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictor), 
-                                   zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE),
-                                   phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                            max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictor), 
-                                  zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE),
-                                  phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-                    )
-               }
-#           if(object$family$family[1] %in% c("ztpoisson"))
-#                out <- runif(length(object$y), min = pztpois(object$y-1, mean = object$fitted), max = ptzpois(object$y, mean = object$fitted))
+          if(object$family$family[1] %in% c("ztpoisson")) {
+                  tmp_trun <- trun.p(par = 0, family = "PO", type = "left")
+                  out <- runif(length(object$y), 
+                               min = tmp_trun(object$y-1, mu = exp(object$linear_predictor)), 
+                               max = tmp_trun(object$y, mu = exp(object$linear_predictor))
+                                )
+                  }
 #           if(object$family$family[1] %in% c("ztnegative.binomial"))
 #                out <- runif(length(object$y), min = pztnbinom(y-1, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)), 
 #                     max = pztnbinom(object$y, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))

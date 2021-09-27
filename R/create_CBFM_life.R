@@ -118,8 +118,9 @@
 #' true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
 #' cov2cor
 #' 
-#' 
-#' # Generates spatial multivariate presence-absence data 
+#' ##-----------------------------------
+#' ## **Example 1: Generate spatial multivariate presence-absence data**
+#' ##-----------------------------------
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
 #' simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
@@ -134,7 +135,9 @@
 #' B_space = basisfunctions)
 #' 
 #' 
-#' # Generates spatial multivariate count data from a negative binomial distribution
+#' ##-----------------------------------
+#' ## **Example 2: Generate spatial multivariate count data from a negative binomial distribution**
+#' ##-----------------------------------
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
 #' spp_dispersion <- runif(num_spp)
 #' simy <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
@@ -143,7 +146,9 @@
 #' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 #' 
 #' 
-#' # Generates spatial multivariate count data from a zero-inflated Poisson distribution 
+#' ##-----------------------------------
+#' ## **Example 3: Generate spatial multivariate count data from a zero-inflated Poisson distribution**
+#' ##-----------------------------------
 #' # Manually supply basis function coefficients 
 #' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
@@ -152,7 +157,10 @@
 #' B_space = basisfunctions, zeroinfl_prob = spp_zeroinfl_prob)
 #' 
 #' 
-#' # Generates spatial multivariate count data from a zero-inflated negative binomial distribution 
+#' ##-----------------------------------
+#' ## **Example 4: Generate spatial multivariate count data from a zero-inflated** 
+#' ## **negative binomial distribution**
+#' ##-----------------------------------
 #' # Manually supply basis function coefficients 
 #' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
@@ -161,20 +169,22 @@
 #' B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
 #' 
 #' 
-#' # Generates spatial multivariate count data from hurdle negative binomial distribution 
+#' ##-----------------------------------
+#' ## **Example 5: Generate spatial multivariate count data from hurdle Poisson distribution**
+#' ##-----------------------------------
 #' # This can be achieved by combining the mechanisms for presence-absence and zero truncated NB
 #' spp_slopes_pa <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-#' spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_slopes_ztp <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 #' spp_intercepts_pa <- runif(num_spp, -2, 0)
-#' spp_intercepts_ztnb <- runif(num_spp, -2, 0)
+#' spp_intercepts_ztp <- runif(num_spp, -2, 0)
 #' 
 #' true_Sigma_space_pa <- rWishart(1, num_basisfunctions+1, 
 #' diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
-#' true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, 
+#' true_Sigma_space_ztp <- rWishart(1, num_basisfunctions+1, 
 #' diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
 #' true_G_space_pa <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
 #' cov2cor
-#' true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
+#' true_G_space_ztp <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% 
 #' cov2cor
 #' 
 #' # Generate spatial multivariate presence-absence data first
@@ -183,20 +193,20 @@
 #' B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
 #' Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 #' 
-#' # Now generate count data from a truncated negative binomial distribution
-#' spp_dispersion <- runif(num_spp)
-#' simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
-#' B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
-#' dispparam = spp_dispersion, max_resp = 20000, 
-#' Sigma = list(space = true_Sigma_space_ztnb), G = list(space = true_G_space_ztnb))
+#' # Now generate count data from a truncated Poisson distribution
+#' simy_ztp <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
+#' B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
+#' max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), 
+#' G = list(space = true_G_space_ztp))
 #' 
 #' # Spatial multivariate count data from a hurdle model is then the product of the two
-#' simy_hurdlenb <- simy_pa$y *  simy_ztnb$y
+#' simy_hurdlenb <- simy_pa$y *  simy_ztp$y
 #' }
 #' 
 #' @export
 #' 
 #' @import Matrix 
+#' @importFrom gamlss.dist PO dPO pPO qPO rPO NBI dNBI pNBI qNBI rNBI
 #' @importFrom gamlss.tr trun.r
 #' @importFrom mgcv gam model.matrix.gam
 #' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois plogis
@@ -290,11 +300,11 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                 sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
                 }
            if(family$family == "ztpoisson") {
-                ztpR <- trun.r(par = 0, family = gamlss.dist::PO()$family[1], type = "left") 
+                ztpR <- trun.r(par = 0, family = PO()$family[1], type = "left") 
                 sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
                 }
            if(family$family == "ztnegative.binomial") {
-                ztnbR <- trun.r(par = 0, family = gamlss.dist::NBI()$family[1], type = "left") 
+                ztnbR <- trun.r(par = 0, family = NBI()$family[1], type = "left") 
                 sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j]), sigma = dispparam[j]) 
                 }
           }

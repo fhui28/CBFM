@@ -124,12 +124,12 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
 
         if(!se_fit) {
                 if(type == "response") {
-                        if(!(object$family$family %in% c("zipoisson", "zinegative.binomial"))) #"ztnegative.binomial"
+                        if(!(object$family$family %in% c("zipoisson", "zinegative.binomial","ztpoisson"))) 
                                 ptpred <- object$family$linkinv(ptpred)
                         if(object$family$family %in% c("zipoisson", "zinegative.binomial"))
                                 ptpred <- object$family$linkinv(ptpred) * matrix(1-plogis(object$zeroinfl_prob_intercept), nrow(new_X), num_spp, byrow = TRUE)
-               # if(object$family$family == "ztnegative.binomial")
-               #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
+                        if(object$family$family %in% c("ztpoisson"))
+                                ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
                }
           return(ptpred)
           }
@@ -137,7 +137,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
         if(se_fit) {
                 ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
                 need_sim <- FALSE
-                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial") & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated component, which does not need simulation
+                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial","ztpoisson") & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated component, which does not need simulation
                         need_sim <- TRUE
           
                 if(!need_sim) {
@@ -169,11 +169,6 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                                 ptpred <- object$family$linkinv(ptpred)
                                 alllower <- object$family$linkinv(alllower)
                                 allupper <- object$family$linkinv(allupper)
-                   # if(object$family$family == "ztnegative.binomial") {
-                   #      ptpred <- object$family$linkinv(eta = ptpred, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
-                   #      alllower <- object$family$linkinv(eta = alllower, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
-                   #      allupper <- object$family$linkinv(eta = allupper, phi = matrix(object$dispparam, nrow = nrow(y), ncol = ncol(y), byrow = TRUE))
-                   #      }
                                 }
                         }
 
@@ -198,6 +193,32 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                                         }
                     
                                 allpreds <- foreach(j = 1:num_reps) %dopar% innerzip_predfn(j = j)
+                                rm(bigcholcovar, mu_vec)
+                                allpreds <- abind(allpreds, along = 3)
+                                ptpred <- apply(allpreds, c(1,2), mean)
+                                stderr <- apply(allpreds, c(1,2), var)
+                                alllower <- apply(allpreds, c(1,2), quantile, prob = (1-coverage)/2)
+                                allupper <- apply(allpreds, c(1,2), quantile, prob = coverage + (1-coverage)/2) 
+                                rm(allpreds)
+                                gc()
+                                }
+                        if(object$family$family[1] %in% c("ztpoisson") & type == "response") {
+                                mu_vec <- as.vector(t(cbind(object$betas, object$basis_effects_mat)))
+                                bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
+                                                                  cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
+                                bigcholcovar <- t(chol(bigcholcovar))
+                    
+                                inner_predfn <- function(j) {
+                                        parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
+                                        betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
+                                        basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
+                        
+                                        ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                                        ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
+                                        return(as.matrix(ptpred))
+                                        }
+                    
+                                allpreds <- foreach(j = 1:num_reps) %dopar% inner_predfn(j = j)
                                 rm(bigcholcovar, mu_vec)
                                 allpreds <- abind(allpreds, along = 3)
                                 ptpred <- apply(allpreds, c(1,2), mean)
