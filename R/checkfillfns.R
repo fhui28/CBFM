@@ -50,7 +50,7 @@
 
 .check_family <- function(family, y, trial_size) {
     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", 
-                                 "zipoisson", "zinegative.binomial", "ztpoisson", "ztnegative.binomial")))     
+                                 "zipoisson", "zinegative.binomial", "ztpoisson"))) #"ztnegative.binomial"     
         stop("Family currently not supported. Sorry!")
     if((family$family %in% c("ztpoisson", "ztnegative.binomial")) & any(y == 0))
         stop("Zero counts not allowed for zero truncated distributions.")
