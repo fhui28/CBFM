@@ -32,7 +32,7 @@
 #' @references 
 #'Fox, J. (2019). Regression diagnostics: An introduction. Sage publications.
 #'   
-#' @seealso [CBFM()] for fitting CBFMs, [edf_CBFM()] for extracting estimated degrees of freedom associated with a CBFM fit, [residuals.CBFM()] for calculating different types of residuals from a CBFM fit, and [plot.CBFM()] for basic residual diagnostics.
+#' @seealso [CBFM()] for fitting CBFMs, [edf.CBFM()] for extracting estimated degrees of freedom associated with a CBFM fit, [residuals.CBFM()] for calculating different types of residuals from a CBFM fit, and [plot.CBFM()] for basic residual diagnostics.
 #' 
 #' @examples
 #' \donttest{

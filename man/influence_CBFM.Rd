@@ -101,7 +101,7 @@ influence_CBFM(fitcbfm)
 Fox, J. (2019). Regression diagnostics: An introduction. Sage publications.
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=edf_CBFM]{edf_CBFM()}} for extracting estimated degrees of freedom associated with a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating different types of residuals from a CBFM fit, and \code{\link[=plot.CBFM]{plot.CBFM()}} for basic residual diagnostics.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=edf.CBFM]{edf.CBFM()}} for extracting estimated degrees of freedom associated with a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating different types of residuals from a CBFM fit, and \code{\link[=plot.CBFM]{plot.CBFM()}} for basic residual diagnostics.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

@@ -7,6 +7,7 @@
 #'
 #' @param object An object of class "CBFM".
 #' @param ncores To speed up calculation of the estimated degrees of freedom, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param ... Not used.
 #'
 #' @details 
 #' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula_X}, the function directly returns what is available from \code{object$pen.edf}. Note that as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate. 
@@ -80,16 +81,18 @@
 #' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
-#' edf_CBFM(fitcbfm)
+#' edf(fitcbfm)
 #' }
 #'
+#' @aliases edf edf.CBFM
 #' @export
+#' @export edf.CBFM
 #' @import foreach  
 #' @import Matrix
 #' @importFrom doParallel registerDoParallel
 #' @md
 
-edf_CBFM <- function(object, ncores = NULL) {
+edf.CBFM <- function(object, ncores = NULL, ...) {
   if(!inherits(object, "CBFM")) 
     stop("`object' is not of class \"CBFM\"")
   if(!object$stderrors)
@@ -211,3 +214,9 @@ edf_CBFM <- function(object, ncores = NULL) {
   return(t(edfs_out))
   }
 
+
+#' @method edf CBFM
+#' @export edf 
+edf <- function(object, ...) {
+     UseMethod("edf")
+     }
