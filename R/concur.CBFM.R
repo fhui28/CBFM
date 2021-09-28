@@ -6,6 +6,7 @@
 #' Calculates measures of concurvity from a fitted \code{CBFM} object. The measures are adapted from those found in [mgcv::concurvity()], and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.  
 #' 
 #' @param object An object of class "CBFM".
+#' @param ... Not used.
 #' 
 #' @details 
 #' As explained in [mgcv::concurvity()], the concurvity can be viewed as a generalization of multicollinearity sometimes/often seen in parametric regression models, where smooth terms in a model could be approximated by one or more of the other smooth terms in the model. Like collinearity, concurvity **may** lead to issues in terms of interpretation of response-covariate relationship, and potentially make estimates unstable with potentially inflated standard errors. It is important to emphasize the "**may**": depending on the scientific question/s of interest and the type/s of inference the practitioner is interested in, concurvity like collineatity may or may not be an issue.    
@@ -97,7 +98,7 @@
 #' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
-#' concur_CBFM(fitcbfm)
+#' concur(fitcbfm)
 #' 
 #' 
 #' ##------------------------------
@@ -121,14 +122,16 @@
 #' toc <- proc.time()
 #' toc-tic
 #' 
-#' concur_CBFM(fitcbfm_gam)
+#' concur(fitcbfm_gam)
 #' }
 #' 
+#' @aliases concur concur.CBFM
 #' @export
+#' @export concur.CBFM
 #' @importFrom mgcv gam 
 #' @md
 
-concur_CBFM <- function(object) {
+concur.CBFM <- function(object, ...) {
      if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
      
@@ -233,4 +236,11 @@ concur_CBFM <- function(object) {
      full_concur <- as.data.frame.table(full_concur)
      colnames(full_concur) <- c("Species", "Measure", "Term", "Value")
      return(full_concur)
+     }
+
+     
+#' @method concur CBFM
+#' @export concur 
+concur <- function(object, ...) {
+     UseMethod("concur")
      }

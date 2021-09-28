@@ -115,5 +115,5 @@ AICc.CBFM <- function(object, use_edf = FALSE, ...) {
 #' @method AICc CBFM
 #' @export AICc 
 AICc <- function(object, ...) {
-     UseMethod(generic = "AICc")
+     UseMethod("AICc")
      }
