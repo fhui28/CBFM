@@ -116,10 +116,10 @@
 #' @md
 
 varpart <- function(object, groupX = NULL) {
-     if(!inherits(object, "CBFM")) 
+    if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
 
-     num_spp <- nrow(object$betas)
+    num_spp <- nrow(object$betas)
      
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
      nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,1], object$data), fit = TRUE, control = list(maxit = 1))

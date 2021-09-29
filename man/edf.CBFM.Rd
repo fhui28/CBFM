@@ -25,7 +25,7 @@ Takes a fitted \code{CBFM} object and calculates the estimated or effective degr
 \details{
 For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula_X}, the function directly returns what is available from \code{object$pen.edf}. Note that as stated in the \code{\link[=CBFM]{CBFM()}}, these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be \emph{very} approximate.
 
-For the EDF associated with the spatial and/or temporal basis function coefficients, similar to \code{\link[=influence_CBFM]{influence_CBFM()}}  for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be \emph{much} smaller than the corresponding number of basis functions included in the model. #'
+For the EDF associated with the spatial and/or temporal basis function coefficients, similar to \code{\link[=influence.CBFM]{influence.CBFM()}}  for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be \emph{much} smaller than the corresponding number of basis functions included in the model.
 }
 \examples{
 \donttest{
@@ -92,7 +92,7 @@ edf(fitcbfm)
 
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=influence_CBFM]{influence_CBFM()}} for computing some influence measures including the estimates degrees of freedom for the species-specific regression coefficients corresponding to spatial and/or temporal basis functions included.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=influence.CBFM]{influence.CBFM()}} for computing some influence measures including the estimates degrees of freedom for the species-specific regression coefficients corresponding to spatial and/or temporal basis functions included.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
