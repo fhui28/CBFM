@@ -52,5 +52,6 @@ ztpoisson <- function() {
     h <- - y/lambda^2 + exp(-lambda)/(1 - exp(-lambda))^2
     h[(y < 1) | (abs(y - round(y)) > sqrt(.Machine$double.eps))] <- 0
     
+    # Zero counts will have negative hess values set to zero, so do not contribute to weighting in any way...
     return(-lambda^2*h - lambda*s) # exp(eta) * score ztnb wrt mu + exp(2*eta) + hessian ztnb wrt mu
     }

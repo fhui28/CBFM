@@ -181,10 +181,10 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                }
           if(object$family$family[1] %in% c("ztpoisson")) {
                   tmp_trun <- trun.p(par = 0, family = "PO", type = "left")
-                  out <- runif(length(object$y), 
-                               min = tmp_trun(object$y-1, mu = exp(object$linear_predictor)), 
-                               max = tmp_trun(object$y, mu = exp(object$linear_predictor))
-                                )
+                  out <- matrix(NA, nrow = num_units, ncol = num_spp)
+                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictor[which(object$y>0)]))
+                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictor[which(object$y>0)]))
+                  out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
 #           if(object$family$family[1] %in% c("ztnegative.binomial"))
 #                out <- runif(length(object$y), min = pztnbinom(y-1, mu = object$fitted, size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)), 

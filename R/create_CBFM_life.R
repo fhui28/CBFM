@@ -170,7 +170,7 @@
 #' ##-----------------------------------
 #' ## **Example 5: Generate spatial multivariate count data from hurdle Poisson distribution**
 #' ##-----------------------------------
-#' # This can be achieved by combining the mechanisms for presence-absence and zero truncated NB
+#' # This can be achieved by combining the mechanisms for presence-absence and zero-trun. Poisson
 #' spp_slopes_pa <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 #' spp_slopes_ztp <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 #' spp_intercepts_pa <- runif(num_spp, -2, 0)
@@ -198,17 +198,17 @@
 #' G = list(space = true_G_space_ztp))
 #' 
 #' # Spatial multivariate count data from a hurdle model is then the product of the two
-#' simy_hurdlenb <- simy_pa$y *  simy_ztp$y
+#' simy_hurdlep <- simy_pa$y *  simy_ztp$y
 #' }
 #' 
 #' @export
-#' 
 #' @import Matrix 
 #' @importFrom gamlss.dist PO dPO pPO qPO rPO NBI dNBI pNBI qNBI rNBI
 #' @importFrom gamlss.tr trun.r
 #' @importFrom mgcv gam model.matrix.gam
 #' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois plogis
 #' @importFrom tweedie rtweedie
+#' @md
 
 create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
      betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 

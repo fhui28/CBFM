@@ -104,6 +104,7 @@ TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/i
 
 
 
+
 #-----------------------------
 #-----------------------------
 library(autoFRK)
@@ -143,14 +144,13 @@ spp_intercepts_ztnb <- runif(num_spp, -2, 0)
 true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
 true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% cov2cor
  
-# Now generate count data from a truncated negative binomial distribution
+# Now generate data from a count distribution 
 spp_dispersion <- runif(num_spp, 0, 5)
-simy_ztpois <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
+simy_ztpois <- create_CBFM_life(family = poisson(), formula_X = useformula, data = dat,
                                 B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
                                 G = list(space = true_G_space_ztnb), Sigma = list(space = true_Sigma_space_ztnb),
                                 #basis_effects_mat = spp_basis_effects_mat_ztnb,
                                 max_resp = 20000) 
-
 
 
 # manygam <- foreach(j = 1:num_spp) %dopar%
@@ -162,21 +162,9 @@ simy_ztpois <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, da
 # rm(manygam)
 
 
-#useformula <- ~ s(temp) + s(depth) + chla + s(O2)
-useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_ztpois$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
-                #start_params = start_params, 
-                family = ztpoisson(), control = list(trace = 1, initial_betas_dampen = 0.05))
-
-plot(fitcbfm)
-
-summary(fitcbfm)
-
-
-
-
+# Now fit a zero-truncated count distribution, and CBFM has to ignore the zeros in the data
 y = simy_ztpois$y
-useformula <- ~ s(temp) + s(depth) + chla + s(O2)
+useformula <- ~ temp + depth + chla + O2
 formula_X = useformula
 data = dat
 B_space = basisfunctions
@@ -197,4 +185,21 @@ Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0
 G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
+
 ##---------------------
+
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy_ztpois$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
+                #start_params = start_params, 
+                family = ztpoisson(), control = list(trace = 1, initial_betas_dampen = 0.05))
+
+plot(spp_slopes_ztnb, fitcbfm$betas[,2:5])
+abline(0,1)
+
+plot(fitcbfm)
+summary(fitcbfm)
+
+
+
+plot(eta, fitcbfm$linear_predictor)
+abline(0,1)

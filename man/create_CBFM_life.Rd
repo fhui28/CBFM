@@ -27,7 +27,7 @@ create_CBFM_life(
 \arguments{
 \item{family}{a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.}
 
-\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.}
+\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
 
 \item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument).}
 
@@ -69,7 +69,7 @@ If \code{only_y = TRUE}, then the simulated spatio-temporal multivariate abundan
 }
 }
 \description{
-`r lifecycle::badge("stable")`
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Simulates spatio-temporal multivariate abundance data based on a CBFM and given the various parameter values as appropriate.
 }
@@ -78,19 +78,19 @@ Simulates spatio-temporal multivariate abundance data from a community-level bas
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
-where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. 
+where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments.
 
-As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the i-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the j-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating 
+As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the i-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the j-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating
 
-\deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
+\deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),}
 
-where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
+where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}.
 
 Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion and power parameters as appropriate.
 
 \subsection{Distributions}{
 
-Currently the following response distributions are permitted: 
+Currently the following response distributions are permitted:
 \describe{
 \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{binomial(link = "logit")}: }{Binomial distribution, noting only the logit link is permitted. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)} where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
@@ -104,7 +104,7 @@ Currently the following response distributions are permitted:
 \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
 }
 
-Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration. 
+Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration.
 }
 }
 \examples{
@@ -197,7 +197,7 @@ B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroin
 ##-----------------------------------
 ## **Example 5: Generate spatial multivariate count data from hurdle Poisson distribution**
 ##-----------------------------------
-# This can be achieved by combining the mechanisms for presence-absence and zero truncated NB
+# This can be achieved by combining the mechanisms for presence-absence and zero-trun. Poisson
 spp_slopes_pa <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_slopes_ztp <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts_pa <- runif(num_spp, -2, 0)
@@ -225,13 +225,13 @@ max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp),
 G = list(space = true_G_space_ztp))
 
 # Spatial multivariate count data from a hurdle model is then the product of the two
-simy_hurdlenb <- simy_pa$y *  simy_ztp$y
+simy_hurdlep <- simy_pa$y *  simy_ztp$y
 }
 
 }
 \seealso{
-[CBFM()] for fitting CBFMs and [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs and \code{\link[=simulate.CBFM]{simulate.CBFM()}} for simulating spatio-temporal multivariate abundance data from a CBFM fit.
 }
 \author{
-Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
+Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
 }

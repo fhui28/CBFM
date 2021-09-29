@@ -19,26 +19,29 @@
 #' @md
 
 print.CBFM <- function(x, ...) {
-     message("Call:")
-     print(x$call)
-     message()
+        message("Call:")
+        print(x$call)
+        message()
 
-     message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), "\nNo. of responses: ", ncol(x$fitted)) 
-     message("Responses-environment relationship fitted: ", x$formula_X) 
-     message("Number of columns in model matrix induced by formula_X: ", ncol(x$betas))
-     message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
+        if(!(x$family$family[1] %in% c("ztpoisson")))
+                message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), "\nNo. of responses: ", ncol(x$fitted)) 
+        if(x$family$family[1] %in% c("ztpoisson"))
+                message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), " (note zero counts in the response matrix are ignored in the model) \nNo. of responses: ", ncol(x$fitted)) 
+        message("Responses-environment relationship fitted: ", x$formula_X) 
+        message("Number of columns in model matrix induced by formula_X: ", ncol(x$betas))
+        message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
-     B_names <- c("B_space ", "B_time ", "B_spacetime ")
-     message("Basis functions included: ", B_names[x$which_B_used==1])
-     message("Total number of basis functions: ", x$num_B)
+        B_names <- c("B_space ", "B_time ", "B_spacetime ")
+        message("Basis functions included: ", B_names[x$which_B_used==1])
+        message("Total number of basis functions: ", x$num_B)
      
-     if(x$which_B_used[1])
-          message("B_space:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_space)) 
-     if(x$which_B_used[2])
-          message("B_time:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_time)) 
-     if(x$which_B_used[3])
-          message("B_spacetime:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_spacetime)) 
+        if(x$which_B_used[1])
+                message("B_space:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_space)) 
+        if(x$which_B_used[2])
+                message("B_time:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_time)) 
+        if(x$which_B_used[3])
+                message("B_spacetime:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_spacetime)) 
           
-     invisible(x)
-     }
+        invisible(x)
+        }
 

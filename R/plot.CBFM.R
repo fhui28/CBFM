@@ -125,59 +125,59 @@
 
 plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Residuals vs. linear predictors", "Normal probability plot", "Residuals vs. unit index", "Residuals vs. species index","Scale-Location plot"), species_colors = NULL, smooth = TRUE, envelope = TRUE, 
                       envelope_col = c("blue","lightblue"), envelope_rep = 100,  which_species = NULL, seed = NULL, ...) {
-     num_units <- nrow(x$y)
-     num_spp <- ncol(x$y)
+        num_units <- nrow(x$y)
+        num_spp <- ncol(x$y)
         
-     sppind <- 1:num_spp
-     if(!is.null(which_species))
-          sppind <- sort(which_species)
+        sppind <- 1:num_spp
+        if(!is.null(which_species))
+                sppind <- sort(which_species)
           
-     if(length(sppind) > num_spp)
-          stop("Length of which_species exceeded the number of species on x$y.")
-     if(any(which_species > num_spp))
-          stop("which_species should be a vector of integers ranging from 1 to ncol(x$y) i.e., the number of species.")
+        if(length(sppind) > num_spp)
+                stop("Length of which_species exceeded the number of species on x$y.")
+        if(any(which_species > num_spp))
+                stop("which_species should be a vector of integers ranging from 1 to ncol(x$y) i.e., the number of species.")
      
-     if(any(which_plot > 5))
-          stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots that this function currently offers.")
+        if(any(which_plot > 5))
+                stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots that this function currently offers.")
      
      
-     # Form plot titles
-     mains <- rep("", 5)
-     mains[which_plot] <- titles[which_plot]
+        # Form plot titles
+        mains <- rep("", 5)
+        mains[which_plot] <- titles[which_plot]
 
-     res <- residuals(object = x, type = type, seed = seed)
-     if(any(res < -1e3))
-          warning("Some extremely large negative residuals will be left out of the plotting.")
-     if(any(res > 1e3))
-          warning("Some extremely large positive residuals will be left out of the plotting.")
-     res[res < -1e3] <- -1e3
-     res[res > 1e3] <- 1e3
-     dsres <- res[, sppind]
-     etamat <- x$linear_predictor[,sppind]
-     xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
-     yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]), na.rm = TRUE)     
+        res <- residuals(object = x, type = type, seed = seed)
+        if(any(res < -1e3, na.rm = TRUE))
+                warning("Some extremely large negative residuals will be left out of the plotting.")
+        if(any(res > 1e3, na.rm = TRUE))
+                warning("Some extremely large positive residuals will be left out of the plotting.")
+        res[res < -1e3] <- -1e3
+        res[res > 1e3] <- 1e3
+        dsres <- res[, sppind]
+        etamat <- x$linear_predictor[,sppind]
+        xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
+        yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]), na.rm = TRUE)     
      
 
-     # Form colors for species - done by prevalence
-     csum <- order(colSums(as.matrix(x$y))[sppind])
-     if(!is.null(species_colors)) {
-          col <- rep(1, num_spp)
-          col[1:num_spp] <- species_colors
-          } 
-     if(is.null(species_colors)) {
-          if(num_spp < 8)
-               col <- (1:num_spp)[csum]
-          else
-               col <- rainbow(num_spp + 1)[2:(num_spp + 1)][csum]
-          }
+        # Form colors for species - done by prevalence
+        csum <- order(colSums(as.matrix(x$y))[sppind])
+        if(!is.null(species_colors)) {
+                col <- rep(1, num_spp)
+                col[1:num_spp] <- species_colors
+                } 
+        if(is.null(species_colors)) {
+                if(num_spp < 8)
+                        col <- (1:num_spp)[csum]
+                else
+                        col <- rainbow(num_spp + 1)[2:(num_spp + 1)][csum]
+                }
           
 
-     gr.pars <- list(...)
-     par(...)
+        gr.pars <- list(...)
+        par(...)
 
      
-     # Residuals versus linear predictors
-     if(1 %in% which_plot) {
+        # Residuals versus linear predictors
+        if(1 %in% which_plot) {
           if(is.null(gr.pars$xlim)) {
                plot(etamat, dsres, xlab = "Linear predictors", ylab = "Residuals", type = "n", col = rep(col, each = num_units), 
                     main = mains[1], xlim = c(min(xxx), max(xxx)), ylim = yyy)
@@ -195,35 +195,36 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
           }
           
 
-     # Normal probability or quantile-quantile plot of residuals with an approximate point-wise 95\% confidence interval envelope          
-     if(2 %in% which_plot) {
-          qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "theoretical quantiles", ylim = yyy)
-          #qqline(c(dsres), col = envelope_col[1])
-          
-         num_obs <- num_units * num_spp
-         if(envelope) {
-                 message("Constructing (approximate) simulation envelopes for normal probability plot...")
+        # Normal probability or quantile-quantile plot of residuals with an approximate point-wise 95\% confidence interval envelope          
+        if(2 %in% which_plot) {
+                qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "theoretical quantiles", ylim = yyy, type = "n")
+
+                num_obs <- num_units * num_spp
+                if(envelope) {
+                        message("Constructing (approximate) simulation envelopes for normal probability plot...")
                  
-                 yy <- quantile(dsres, c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
-                 xx <- qnorm(c(0.25, 0.75))
-                 slope <- diff(yy) / diff(xx)
-                 int <- yy[1] - slope * xx[1]
-                 all_ris <- matrix(rnorm(num_units * num_spp * envelope_rep, mean = int, sd = slope), ncol = envelope_rep)
-                 Ym <- apply(all_ris, 2, sort)
-                 Xm <- sort(qq.x$x)
-                 #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
-                 cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
-         
-                 polygon(Xm[c(1:num_obs,num_obs:1)], c(cis[1,],cis[2, num_obs:1]), col = envelope_col[2], border = NA)
-                 }
+                        yy <- quantile(dsres, c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
+                        xx <- qnorm(c(0.25, 0.75))
+                        slope <- diff(yy) / diff(xx)
+                        int <- yy[1] - slope * xx[1]
+                        all_ris <- matrix(rnorm(sum(!is.na(qq.x$x)) * envelope_rep, mean = int, sd = slope), ncol = envelope_rep)
+                        Ym <- apply(all_ris, 2, sort)
+                        rm(all_ris)
+                        #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
+                        cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
+                        rm(Ym)
+                        Xm <- sort(qq.x$x)
+
+                        polygon(Xm[c(1:length(Xm),length(Xm):1)], c(cis[1,],cis[2, length(Xm):1]), col = envelope_col[2], border = NA)
+                        }
  
-         points(qq.x, col = rep(col, each = num_units), cex = 0.5)
-         qqline(c(dsres), col = envelope_col[1])
-         }
+                points(qq.x$x, qq.x$y, col = rep(col, each = num_units), cex = 0.5)
+                qqline(c(dsres), col = envelope_col[1])
+                }
           
           
-     # Residuals against observational unit index          
-     if(3 %in% which_plot) {
+        # Residuals against observational unit index          
+        if(3 %in% which_plot) {
           plot(rep(1:num_units, num_spp), dsres, xlab = "Unit index", ylab = "Residuals", col = rep(col, each = num_units), main = mains[3], ..., ylim = yyy);
           abline(0, 0, col = "grey", lty = 3)
           if(smooth) 
@@ -231,8 +232,8 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
           }
 
           
-     # Residuals against species index          
-     if(4 %in% which_plot) {
+        # Residuals against species index          
+        if(4 %in% which_plot) {
           plot(rep(1:num_spp, each = num_units), dsres, xlab = "Species index", ylab = " Residuals", col = rep(col[csum], each = num_units), main = mains[4], ylim = yyy, ...) 
           abline(0, 0, col = "grey", lty = 3)
           if(smooth) 
@@ -240,10 +241,10 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
           }
 
           
-     # Scale-location plot
-     if(5 %in% which_plot) {
+        # Scale-location plot
+        if(5 %in% which_plot) {
           sqres <- sqrt(abs(dsres))
-          yyy <- range(sqres[dsres > -1e3 & dsres < 1e3])
+          yyy <- range(sqres[dsres > -1e3 & dsres < 1e3], na.rm = TRUE)
           yl <- as.expression(substitute(sqrt(abs(YL)), list(YL = as.name("Residuals"))))
           
           if(is.null(gr.pars$xlim)) {
@@ -257,26 +258,26 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
                panel.smooth(etamat, sqres, col = rep(col, each = num_units), col.smooth = envelope_col[1], ...)
           }
      
-     }
+        }
 
      
 ## Modified from gllvm package. Thanks to Jenni for this function!
 .gamEnvelope <- function(x, y, line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, subsample = 5000, ...) {
-     xSort <- sort(x, index.return = TRUE)
-     gam.yx <- gam(resp ~ cov, data = data.frame(resp = y[xSort$ix], cov = xSort$x))
-     pr.y <- predict.gam(gam.yx, se.fit = TRUE, newdata = data.frame(cov = xSort$x))
+        xSort <- sort(x, index.return = TRUE)
+        gam.yx <- gam(resp ~ cov, data = data.frame(resp = y[xSort$ix], cov = xSort$x))
+        pr.y <- predict.gam(gam.yx, se.fit = TRUE, newdata = data.frame(cov = xSort$x))
      
-     prHi <- pr.y$fit + 1.96*pr.y$se.fit
-     prLow <- pr.y$fit - 1.96*pr.y$se.fit
-     n.obs <- length(prLow)     
-     sel_x_index <- 1:n.obs
+        prHi <- pr.y$fit + 1.96*pr.y$se.fit
+        prLow <- pr.y$fit - 1.96*pr.y$se.fit
+        n.obs <- length(prLow)     
+        sel_x_index <- 1:n.obs
      
-     if(envelopes) 
-          polygon(xSort$x[c(sel_x_index,rev(sel_x_index))], c(prHi,prLow[rev(sel_x_index)]), col = envelope.col[2], border = NA)
+        if(envelopes) 
+                polygon(xSort$x[c(sel_x_index,rev(sel_x_index))], c(prHi,prLow[rev(sel_x_index)]), col = envelope.col[2], border = NA)
      
-     lines(xSort$x, pr.y$fit, col = envelope.col[1])
-     abline(h = 0, col = 1)
-     points(x, y, col = col, ...)
-     }
+        lines(xSort$x, pr.y$fit, col = envelope.col[1])
+        abline(h = 0, col = 1)
+        points(x, y, col = col, ...)
+        }
      
      
