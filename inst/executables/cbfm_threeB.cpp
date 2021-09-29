@@ -90,70 +90,72 @@ Type objective_function<Type>::operator() () {
     vector<Type> lik_val(num_units);
 
      
-     if(family == 1) { //beta
-          for(int i=0; i<num_units; i++) { 
-               nll -= dbeta(y(i), dispparam(0)*invlogit(eta(i)), dispparam(0)*(1-invlogit(eta(i))), true);
-               }
-          }
-     if(family == 2) { //binomial (logit link)          
-      Type predvalue = Type(0.0);
+  if(family == 1) { //beta
+    for(int i=0; i<num_units; i++) { 
+      nll -= dbeta(y(i), dispparam(0)*invlogit(eta(i)), dispparam(0)*(1-invlogit(eta(i))), true);
+      }
+    }
+  if(family == 2) { //binomial (logit link)          
+    Type predvalue = Type(0.0);
+      
+    for(int i=0; i<num_units; i++) { 
+      predvalue = dbinom(y(i), Type(trial_size(i)), invlogit(eta(i)), true);
+      if(predvalue < -10000) 
+        predvalue = -10000;
+      nll -= predvalue; 
+      }
+    }
+  if(family == 3) { //gamma(logit link)
+    for(int i=0; i<num_units; i++) { 
+      nll -= dgamma(y(i), 1/dispparam(0), exp(eta(i))*dispparam(0), true);
+      }
+    }
+  if(family == 4) { //negative binomial
+    for(int i=0; i<num_units; i++) { 
+      lik_val(i) = dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+      //if(lik_val(i) != lik_val(i)) // Simple Nan check. If x!=x then x is nan 
+      //  lik_val(i) = Type(0.0);
           
-      for(int i=0; i<num_units; i++) { 
-               predvalue = dbinom(y(i), Type(trial_size(i)), invlogit(eta(i)), true);
-               if(predvalue < -10000) 
-                    predvalue = -10000;
-               nll -= predvalue; 
-               }
-          }
-     if(family == 3) { //gamma(logit link)
-          for(int i=0; i<num_units; i++) { 
-               nll -= dgamma(y(i), 1/dispparam(0), exp(eta(i))*dispparam(0), true);
-               }
-          }
-     if(family == 4) { //negative binomial
-          for(int i=0; i<num_units; i++) { 
-            lik_val(i) = dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
-            //if(lik_val(i) != lik_val(i)) // Simple Nan check. If x!=x then x is nan 
-            //  lik_val(i) = Type(0.0);
-              
-            nll -= lik_val(i);
-            }
-          }
-     if(family == 5) { //normal
-          for(int i=0; i<num_units; i++) { 
-               nll -= dnorm(y(i), eta(i), dispparam(0), true);
-               }
-          }
-     if(family == 6) { //poisson
-          for(int i=0; i<num_units; i++) { 
-               nll -= dpois(y(i), exp(eta(i)), true);
-               }
-          }
-     if(family == 7) { //tweedie
-          for(int i=0; i<num_units; i++) { 
-               nll -= dtweedie(y(i), exp(eta(i)), dispparam(0), powerparam(0), true);
-               }
-          }
-     if(family == 8) { //zero-truncated negative binomial
-          for(int i=0; i<num_units; i++) { 
-               nll -= (dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true) - log(1-dnbinom2(Type(0.0), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), false)));
-               }
-          }
-     if(family == 9) { //zero-truncated poisson
-          for(int i=0; i<num_units; i++) { 
-               nll -= (dpois(y(i), exp(eta(i)), true) - log(1 - exp(-eta(i))));
-               }
-          }
-     if(family == 10) { //zero-inflated poisson
-          for(int i=0; i<num_units; i++) { 
-               nll -= (Type(1)-estep_weights(i))*dpois(y(i), exp(eta(i)), true);
-               }
-          }
-     if(family == 11) { //zero-inflated negative binomial
-          for(int i=0; i<num_units; i++) { 
-               nll -= (Type(1)-estep_weights(i))*dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
-               }
-          }
+      nll -= lik_val(i);
+      }
+    }
+  if(family == 5) { //normal
+    for(int i=0; i<num_units; i++) { 
+      nll -= dnorm(y(i), eta(i), dispparam(0), true);
+      }
+    }
+  if(family == 6) { //poisson
+    for(int i=0; i<num_units; i++) { 
+      nll -= dpois(y(i), exp(eta(i)), true);
+      }
+    }
+  if(family == 7) { //tweedie
+    for(int i=0; i<num_units; i++) { 
+      nll -= dtweedie(y(i), exp(eta(i)), dispparam(0), powerparam(0), true);
+      }
+    }
+  if(family == 8) { //zero-truncated negative binomial
+    for(int i=0; i<num_units; i++) { 
+      if(y(i) > 0)
+        nll -= (dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true) - log(1-dnbinom2(Type(0.0), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), false)));
+      }
+    }
+  if(family == 9) { //zero-truncated poisson
+    for(int i=0; i<num_units; i++) { 
+      if(y(i) > 0)
+        nll -= (dpois(y(i), exp(eta(i)), true) - log(1-dpois(Type(0.0), exp(eta(i)), false)));
+      }
+    }
+  if(family == 10) { //zero-inflated poisson
+    for(int i=0; i<num_units; i++) { 
+      nll -= (Type(1)-estep_weights(i))*dpois(y(i), exp(eta(i)), true);
+      }
+    }
+  if(family == 11) { //zero-inflated negative binomial
+    for(int i=0; i<num_units; i++) { 
+      nll -= (Type(1)-estep_weights(i))*dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+      }
+    }
           
           
      ADREPORT(basis_effects);
