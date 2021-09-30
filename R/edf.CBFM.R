@@ -95,6 +95,7 @@
 edf.CBFM <- function(object, ncores = NULL, ...) {
   if(!inherits(object, "CBFM")) 
     stop("`object' is not of class \"CBFM\"")
+  
   if(!object$stderrors)
     stop("Standard errors must have been produced from `object' for influence measures to work.")
   

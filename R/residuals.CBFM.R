@@ -104,6 +104,9 @@
 #' @md
 
 residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
+        if(!inherits(object, "CBFM")) 
+                stop("`object' is not of class \"CBFM\"")
+
         type <- match.arg(type, choices = c("response", "pearson", "dunnsmyth", "PIT"))
         num_units <- nrow(object$y)
         num_spp <- ncol(object$y)

@@ -60,6 +60,9 @@
 
 predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, 
                          type = "link", se_fit = FALSE, coverage = 0.95, ncores = NULL, ...) {
+        if(!inherits(object, "CBFM")) 
+                stop("`object' is not of class \"CBFM\"")
+
         if(is.null(ncores))
                 registerDoParallel(cores = detectCores()-1)
         if(!is.null(ncores))

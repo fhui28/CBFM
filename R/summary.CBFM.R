@@ -65,7 +65,10 @@
 # This version is heavily based on and inspired a lot more by the summary.gam function...acknowledgements go to Simon Wood for his mgcv package.
 # Interesting note that in simulations, most of the time, the results from this are not too far from (but very slightly more conservative than) just ad-hoc applying summary.gam to the last iteration of the PQL estimation algorithm in CBFM! 
 summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("digits") - 3L), ncores = NULL, ...) {
-    if(is.null(ncores))
+    if(!inherits(object, "CBFM")) 
+        stop("`object' is not of class \"CBFM\"")
+    
+  if(is.null(ncores))
         registerDoParallel(cores = detectCores()-1)
     if(!is.null(ncores))
         registerDoParallel(cores = ncores)
