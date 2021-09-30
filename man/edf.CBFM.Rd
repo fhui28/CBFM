@@ -8,7 +8,7 @@
 \method{edf}{CBFM}(object, ncores = NULL, ...)
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{ncores}{To speed up calculation of the estimated degrees of freedom, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.}
 

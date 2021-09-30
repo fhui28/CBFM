@@ -5,7 +5,7 @@
 #' 
 #' Extracts fitted mean values from a \code{CBFM} fit.
 #' 
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ... Not used.
 #' 
 #' @details 

@@ -5,7 +5,7 @@
 #' 
 #' Calculate various types of residuals from a fitted \code{CBFM} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
 #' 
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param type The type of residuals which should be returned. Currently the options available are: "repose" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
 #' @param seed This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.  
 #' @param ... Not used.

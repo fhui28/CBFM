@@ -7,7 +7,7 @@
 varpart(object, groupX = NULL)
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{groupX}{A vector of group indicator variables, which allows the variance partitioning to be done for groups of covariates (including the intercept) i.e., calculating how much of the total variation does a certain subset of the covariates explain. The length of \code{groupX} must be equal to \code{ncol(object$betas)}. Defaults to \code{NULL}, in whih case all the covariates are treated as a single group.}
 }

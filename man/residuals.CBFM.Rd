@@ -7,7 +7,7 @@
 \method{residuals}{CBFM}(object, type = "response", seed = NULL, ...)
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{type}{The type of residuals which should be returned. Currently the options available are: "repose" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.}
 

@@ -17,7 +17,7 @@
 simulate(object, ...)
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{nsim}{A positive integer specifying the number of simulated datasets. Defaults to 1.}
 

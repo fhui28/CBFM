@@ -5,7 +5,7 @@
 #'
 #' Extracts the so-called Bayesian posterior covariance matrix of the parameters estimators from a \code{CBFM} fit.
 #' 
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ... Not used.
 #' 
 #' @details 

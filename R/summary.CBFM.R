@@ -5,7 +5,7 @@
 #'
 #' Takes a fitted \code{CBFM} object and produces some useful summaries from it.
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param coverage The coverage probability for any confidence intervals of the regression coefficients which are calculated. Defaults to 0.95, which corresponds to 95% confidence intervals.
 #' @param digits The number of significant figures to use when printing.
 #' @param ncores To speed up calculation of the standard error estimates and summary tables, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
@@ -53,7 +53,7 @@
 #' 
 #' @examples
 #' \donttest{
-#' # Please see examples in the help file for the main CBFM function 
+#' # Please see examples in the help file for the \code{CBFM} function 
 #' }
 #'
 #' @export

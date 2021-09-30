@@ -7,7 +7,7 @@
 \method{print}{CBFM}(x, ...)
 }
 \arguments{
-\item{x}{An object of class "CBFM".}
+\item{x}{An object of class \code{CBFM}.}
 
 \item{...}{Not used.}
 }
@@ -18,6 +18,12 @@ The default print method for a \code{CBFM} object.
 }
 \details{
 Print out details such as the function call, assumed family/response distribution, number of observational units and species, response-environment relationship fitted as given by the formula, which sets of basis functions are used, and the ranks.`
+}
+\examples{
+\donttest{
+# Please see the help file for the \code{CBFM} function.
+}
+
 }
 \seealso{
 \code{\link[=CBFM]{CBFM()}} for fitting CBFMs and \code{\link[=fitted.values.CBFM]{fitted.values.CBFM()}} for calculating fitted values from a CBFM fit.

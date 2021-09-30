@@ -5,7 +5,7 @@
 #'
 #' Takes a fitted \code{CBFM} object and calculates hat values i.e., diagonal elements of the influence/hat matrix, an approximate Cook's distance, and estimated or effective degrees of freedom for the species-specific regression coefficients corresponding to spatial and/or temporal basis functions included in the model.
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param ... Not used.
 #'

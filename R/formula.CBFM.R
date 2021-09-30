@@ -5,7 +5,7 @@
 #' 
 #' Extract the \code{formula_X} argument from a fitted \code{CBFM} object. Nothing more, nothing less.
 #'
-#' @param x An object of class "CBFM".
+#' @param x An object of class \code{CBFM}.
 #' @param ... Not used in this case.
 #'
 #' @details 

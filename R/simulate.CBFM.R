@@ -5,7 +5,7 @@
 #'
 #' Simulate new spatio-temporal multivariate abundance data based on a fitted \code{CBFM} object.
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param nsim A positive integer specifying the number of simulated datasets. Defaults to 1.
 #' @param seed An integer to set seed number. Defaults to a random seed number.
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.

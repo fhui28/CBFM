@@ -7,7 +7,7 @@
 \method{vcov}{CBFM}(object, ...)
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{...}{Not used.}
 }

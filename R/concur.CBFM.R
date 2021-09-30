@@ -5,7 +5,7 @@
 #' 
 #' Calculates measures of concurvity from a fitted \code{CBFM} object. The measures are adapted from those found in [mgcv::concurvity()], and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.  
 #' 
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ... Not used.
 #' 
 #' @details 

@@ -16,7 +16,7 @@
 )
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{num_comp}{The number of ordination axes to construct.}
 

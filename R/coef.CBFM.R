@@ -5,7 +5,7 @@
 #' 
 #' Extracts the estimated regression coefficients associated with the covariates from a fitted \code{CBFM} object.
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ... Not used in this case.
 #'
 #' @details 

@@ -5,7 +5,7 @@
 #'
 #' Takes a fitted \code{CBFM} object and calculates the estimated or effective degrees of freedom associated with each smoothing terms included in the model, as well as for each of the spatial and/or temporal basis functions included in the model.
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ncores To speed up calculation of the estimated degrees of freedom, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param ... Not used.
 #'

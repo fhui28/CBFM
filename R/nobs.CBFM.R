@@ -5,7 +5,7 @@
 #' 
 #' Extract the number of observational units from a fitted \code{CBFM} object. This is principally intended to be used in computing information criterion such as in the function [AIC.CBFM()].
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param ... Not used in this case.
 #'
 #' @details 

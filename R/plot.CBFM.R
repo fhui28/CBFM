@@ -6,7 +6,7 @@
 #' Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} project: 1) a plot of residuals against
 #' estimated linear predictors; 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
 #' 
-#' @param x An object of class "CBFM".
+#' @param x An object of class \code{CBFM}.
 #' @param type The type of residuals to be used in constructing the plots. Currently the options available are: "response" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
 #' @param which_plot If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.
 #' @param titles Titles to appear above each plot.

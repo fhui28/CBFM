@@ -7,7 +7,7 @@
 \method{AIC}{CBFM}(object, k = 2, use_edf = FALSE, ...)
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{k}{The model complexity penalty to use in the calculation of the information criterion. Defaults to \code{k = 2}, which is the classical AIC.}
 

@@ -5,7 +5,7 @@
 #' 
 #' Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted \code{CBFM} object. This can also be generalized to other information criterion by modifying the model complexity penalty \code{k}.
 #'
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param k The model complexity penalty to use in the calculation of the information criterion. Defaults to \code{k = 2}, which is the classical AIC.
 #' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.

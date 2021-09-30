@@ -21,7 +21,7 @@
 )
 }
 \arguments{
-\item{x}{An object of class "CBFM".}
+\item{x}{An object of class \code{CBFM}.}
 
 \item{which_plot}{If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.}
 

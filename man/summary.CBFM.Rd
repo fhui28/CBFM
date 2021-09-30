@@ -13,7 +13,7 @@
 )
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{coverage}{The coverage probability for any confidence intervals of the regression coefficients which are calculated. Defaults to 0.95, which corresponds to 95\% confidence intervals.}
 
@@ -61,7 +61,7 @@ Testing of the species-specific coefficients associated with spatial and/or temp
 
 \examples{
 \donttest{
-# Please see examples in the help file for the main CBFM function 
+# Please see examples in the help file for the \code{CBFM} function 
 }
 
 }

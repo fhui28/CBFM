@@ -5,7 +5,7 @@
 #' 
 #' Calculates observational unit-specific scores and corresponding species-specific loadings from a fitted \code{CBFM} object, potentially at new values of the basis functions. which in turn can be used as a means of spatio-temporal ordination. 
 #' 
-#' @param object An object of class "CBFM".
+#' @param object An object of class \code{CBFM}.
 #' @param num_comp The number of ordination axes to construct. 
 #' @param new_B_space A matrix of new spatial basis functions at which ordinations are to be constructed. If this is not provided, then ordinations based on the original set of basis functions are returned. If at least one of \code{new_B_space/new_B_time/new_B_spacetime} are provided, then it is \emph{assumed} ordinations at new basis function values are desired. 
 #' @param new_B_time A matrix of new temporal basis functions at which ordinations are to be constructed. If this is not provided, then ordinations based on the original set of basis functions are returned. If at least one of \code{new_B_space/new_B_time/new_B_spacetime} are provided, then it is \emph{assumed} ordinations at new basis function values are desired. 

@@ -19,7 +19,7 @@
 )
 }
 \arguments{
-\item{object}{An object of class "CBFM".}
+\item{object}{An object of class \code{CBFM}.}
 
 \item{newdata}{A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula_X}.}
 
@@ -65,7 +65,7 @@ The functions tries to avoid using simulation for constructing the uncertainty i
 }
 \examples{
 \donttest{
-# Please see examples in the help file for the main CBFM function 
+# Please see examples in the help file for the \code{CBFM} function 
 }
 
 }

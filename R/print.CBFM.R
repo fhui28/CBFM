@@ -5,7 +5,7 @@
 #'
 #' The default print method for a \code{CBFM} object.
 #' 
-#' @param x An object of class "CBFM".
+#' @param x An object of class \code{CBFM}.
 #' @param ... Not used.
 #'
 #' @details 
@@ -15,6 +15,11 @@
 #'
 #' @seealso [CBFM()] for fitting CBFMs and [fitted.values.CBFM()] for calculating fitted values from a CBFM fit.
 #'
+#' @examples
+#' \donttest{
+#' # Please see the help file for the \code{CBFM} function.
+#' }
+#' 
 #' @export
 #' @md
 
