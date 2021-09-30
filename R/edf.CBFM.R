@@ -88,7 +88,7 @@
 #' @export
 #' @export edf.CBFM
 #' @import foreach  
-#' @import Matrix
+#' @import Matrix 
 #' @importFrom doParallel registerDoParallel
 #' @md
 

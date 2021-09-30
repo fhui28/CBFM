@@ -202,7 +202,7 @@
 #' }
 #' 
 #' @export
-#' @import Matrix 
+#' @import Matrix
 #' @importFrom gamlss.dist PO dPO pPO qPO rPO NBI dNBI pNBI qNBI rNBI
 #' @importFrom gamlss.tr trun.r
 #' @importFrom mgcv gam model.matrix.gam

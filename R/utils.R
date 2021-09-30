@@ -21,7 +21,7 @@
 .estep_fn <- function(family, cwfit, y, X, B) {
         num_units <- nrow(y)
         num_spp <- ncol(y)
-        out <- Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
+        out <- Matrix::Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
         if(family$family %in% c("zipoisson","zinegative.binomial")) {
                 fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
                 zeroinfl_prob <- plogis(cwfit$zeroinfl_prob_intercept)

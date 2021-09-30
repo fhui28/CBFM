@@ -235,7 +235,7 @@
 
 #' \item{deviance_explained: }{The *percentage* of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
 
-#' \item{edf/edf1: }{Matrix of estimated degrees of freedom for each model parameter in \code{formula_X}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
+#' \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula_X}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
 
 #' \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula_X}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
 
@@ -1556,7 +1556,7 @@
 #' @export
 #'
 #' @import foreach  
-#' @import Matrix
+#' @import Matrix 
 #' @importFrom compiler cmpfun
 # @importFrom gamlss gamlss gamlss.control getSmo
 # @importFrom gamlss.add ga

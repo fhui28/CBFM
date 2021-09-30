@@ -36,11 +36,11 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
                         }
           
                 BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-                BWB_minus_BWX_XWXinv_XWB <- bdiag(BWB_minus_BWX_XWXinv_XWB)
+                BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
                 gc()
      
-                vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Diagonal(n = num_spp), Sigmainv[,k]))) 
-                Q2 <- kronecker(Diagonal(n = num_spp), vecPsi)
+                vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Matrix::Diagonal(n = num_spp), Sigmainv[,k]))) 
+                Q2 <- kronecker(Matrix::Diagonal(n = num_spp), vecPsi)
                 needonly_cols <- unlist(sapply(1:num_spp, function(j) return((j-1)*num_spp + j:num_spp)))
                 Q2 <- Q2[, needonly_cols, drop = FALSE]
                 rm(vecPsi, weights_mat)
@@ -50,10 +50,10 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
                 diff <- 10
                 cw_G <- chol2inv(chol(Ginv))
                 while(diff > G_control$tol & counter < G_control$maxit) {
-                        cw_Ginv_Sigmainv <- as(kronecker(chol2inv(chol(cw_G)), Sigmainv), "sparseMatrix")
+                        cw_Ginv_Sigmainv <- Matrix::Matrix(kronecker(chol2inv(chol(cw_G)), Sigmainv), sparse = TRUE)
 
                         if(G_control$inv_method == "chol2inv")
-                                Q1 <- as.vector(chol2inv(chol(forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                                Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
                          
 #                if(G_control$inv_method == "schulz") {
 #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
@@ -68,7 +68,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
 #                     new_G <- matrix(as.vector(crossprod(Q2, Q1)), 1, 1)
                         new_G <- new_G + t(new_G) - diag(x = diag(new_G), nrow = num_spp)
                         new_G <- (new_G + A_Sigmain_AT)/num_basisfns
-                        new_G <- forceSymmetric(new_G) 
+                        new_G <- Matrix::forceSymmetric(new_G) 
                
                         diff <- 0.5 * mean(as.vector((new_G - cw_G)^2))
                         if(G_control$trace > 0)
@@ -211,10 +211,10 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                         }
                
                 BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-                BWB_minus_BWX_XWXinv_XWB <- bdiag(BWB_minus_BWX_XWXinv_XWB)
+                BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
                 gc()               
 
-                Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Diagonal(n = num_basisfns), kronecker(Ginv[,k], Diagonal(n = num_basisfns)))) )
+                Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), kronecker(Ginv[,k], Matrix::Diagonal(n = num_basisfns)))) )
                 needonly_cols <- unlist(sapply(1:num_basisfns, function(j) (j-1)*num_basisfns + j:num_basisfns))
                 Q2 <- Q2[, needonly_cols, drop = FALSE]
                 rm(weights_mat)
@@ -227,7 +227,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                         cw_Ginv_Sigmainv <- Matrix(kronecker(Ginv, chol2inv(chol(cw_Sigma))), sparse = TRUE)    
 
                         if(Sigma_control$inv_method == "chol2inv")
-                                Q1 <- as.vector(chol2inv(chol(forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                                Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
                          
 #                if(Sigma_control$inv_method == "schulz") {
 #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
@@ -239,7 +239,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                         new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
                         new_Sigma <- new_Sigma + t(new_Sigma) - diag(diag(new_Sigma))
                         new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
-                        new_Sigma <- forceSymmetric(new_Sigma) 
+                        new_Sigma <- Matrix::forceSymmetric(new_Sigma) 
                
                         diff <- 0.5 * mean(as.vector((new_Sigma - cw_Sigma)^2))
                         if(Sigma_control$trace > 0)
