@@ -1,15 +1,17 @@
-#' @title Extract fitted values from a CBFM fit
+#' @title Extract fitted values from a (hurdle) CBFM fit
 #' 
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extracts fitted mean values from a \code{CBFM} fit.
+#' Extracts fitted mean values from a \code{CBFM} or \code{CBFM_hurdle} fit.
 #' 
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param ... Not used.
 #' 
 #' @details 
-#' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.
+#' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. 
+#' 
+#' Similarly, for hurdle CBFMs, the function returns the estimated values of \eqn{\pi_{ij}*\mu_{ij}} where \eqn{\pi_{ij}} is the probability of observing a presence based on the presence-absence component of the model, and \eqn{\mu_{ij}} is the mean of the zero-truncated component of the model.  
 #' 
 #' @return A matrix of fitted values.
 #' 
@@ -78,18 +80,14 @@
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' fitted(fitcbfm)
+#' 
+#' 
+#' # See also the examples in the help file for the makeahurdle function.
 #' }
 #' 
-#' @aliases fitted.values.CBFM fitted.CBFM
+#' @aliases fitted.CBFM fitted.CBFM_hurdle
 #' @export
 #' @md
-
-fitted.values.CBFM <- function(object, ...) {
-    if(!inherits(object, "CBFM")) 
-        stop("`object' is not of class \"CBFM\"")
-
-    return(object$fitted)
-    }
 
 fitted.CBFM <- function(object, ...) {
     if(!inherits(object, "CBFM")) 
@@ -97,3 +95,17 @@ fitted.CBFM <- function(object, ...) {
     
     return(object$fitted)
      }
+
+
+#' @rdname fitted.CBFM
+#' @export
+fitted.CBFM_hurdle <- function(object, ...) {
+     if(!inherits(object, "CBFM_hurdle")) 
+        stop("`object' is not of class \"CBFM_hurdle\"")
+
+     if(object$count_fit$family$family[1] == "ztpoisson")
+          out <- object$pa_fit$fitted * predict.CBFM(object$count_fit, type = "response")
+     
+     return(out)
+     }
+

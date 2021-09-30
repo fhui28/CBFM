@@ -53,7 +53,7 @@
 #' 
 #' @examples
 #' \donttest{
-#' # Please see examples in the help file for the \code{CBFM} function 
+#' # Please see examples in the help file for the CBFM function 
 #' }
 #'
 #' @export

@@ -100,7 +100,7 @@
 #'
 #' @export
 #' @md
-#' 
+
 AIC.CBFM <- function(object, k = 2, use_edf = FALSE, ...) {
      if(!inherits(object, "CBFM")) 
           stop("`object' is not of class \"CBFM\"")

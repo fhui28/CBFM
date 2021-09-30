@@ -29,7 +29,7 @@
 #' @references 
 #' Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
 #' 
-#' @seealso [CBFM()] for fitting CBFMs and [fitted.values.CBFM()] for calculating fitted values from a CBFM fit.
+#' @seealso [CBFM()] for fitting CBFMs and [fitted.CBFM()] for calculating fitted values from a CBFM fit.
 #' 
 #' @examples
 #' \donttest{

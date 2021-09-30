@@ -40,11 +40,11 @@
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
-#' @seealso [CBFM()] for fitting CBFMs, [fitted.values.CBFM()] for obtaining fitted values from a CBFM fit, and [residuals.CBFM()] for calculating various types of residuals.
+#' @seealso [CBFM()] for fitting CBFMs, [fitted.CBFM()] for obtaining fitted values from a CBFM fit, and [residuals.CBFM()] for calculating various types of residuals.
 #' 
 #' @examples
 #' \donttest{
-#' # Please see examples in the help file for the \code{CBFM} function 
+#' # Please see examples in the help file for the CBFM function 
 #' }
 #' 
 #' @export

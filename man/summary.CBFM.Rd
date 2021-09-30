@@ -4,7 +4,7 @@
 \alias{summary.CBFM}
 \title{Summary for a CBFM bit}
 \usage{
-\method{summary}{CBFM}(
+summary.CBFM(
   object,
   coverage = 0.95,
   digits = max(3L, getOption("digits") - 3L),
@@ -61,7 +61,7 @@ Testing of the species-specific coefficients associated with spatial and/or temp
 
 \examples{
 \donttest{
-# Please see examples in the help file for the \code{CBFM} function 
+# Please see examples in the help file for the CBFM function 
 }
 
 }

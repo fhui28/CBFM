@@ -82,7 +82,7 @@
 #'
 #' @export
 #' @md
-#' 
+
 nobs.CBFM <- function(object, ...) {
     if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
@@ -95,5 +95,5 @@ nobs.CBFM <- function(object, ...) {
 #' @rdname nobs.CBFM
 #' @export
 nobs <- function(object, ...) {
-     UseMethod(generic = "nobs")
-     }
+    UseMethod("nobs")
+    }

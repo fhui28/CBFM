@@ -105,7 +105,7 @@ residuals(fitcbfm, type = "dunnsmyth")
 Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals. Journal of Computational and Graphical Statistics, 5, 236-244.
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs and \code{\link[=fitted.values.CBFM]{fitted.values.CBFM()}} for calculating fitted values from a CBFM fit.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs and \code{\link[=fitted.CBFM]{fitted.CBFM()}} for calculating fitted values from a CBFM fit.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

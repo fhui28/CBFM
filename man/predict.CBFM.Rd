@@ -65,12 +65,12 @@ The functions tries to avoid using simulation for constructing the uncertainty i
 }
 \examples{
 \donttest{
-# Please see examples in the help file for the \code{CBFM} function 
+# Please see examples in the help file for the CBFM function 
 }
 
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=fitted.values.CBFM]{fitted.values.CBFM()}} for obtaining fitted values from a CBFM fit, and \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating various types of residuals.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for obtaining fitted values from a CBFM fit, and \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating various types of residuals.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

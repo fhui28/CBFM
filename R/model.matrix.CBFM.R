@@ -15,7 +15,7 @@
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
-#' @seealso [CBFM()] for fitting CBFMs, [fitted.values.CBFM()] for extracting fitted values from a CBFM fit, [residuals.CBFM()] for calculating various types of residuals, and [predict.CBFM()] for constructing predictions from a CBFM fit.
+#' @seealso [CBFM()] for fitting CBFMs, [fitted.CBFM()] for extracting fitted values from a CBFM fit, [residuals.CBFM()] for calculating various types of residuals, and [predict.CBFM()] for constructing predictions from a CBFM fit.
 #' 
 #' @examples
 #' \donttest{

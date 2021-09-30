@@ -125,13 +125,11 @@
 #' concur(fitcbfm_gam)
 #' }
 #' 
-#' @aliases concur concur.CBFM
 #' @export
-#' @export concur.CBFM
 #' @importFrom mgcv gam 
 #' @md
 
-concur.CBFM <- function(object, ...) {
+concur <- function(object, ...) {
      if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
      
@@ -239,8 +237,8 @@ concur.CBFM <- function(object, ...) {
      }
 
      
-#' @method concur CBFM
-#' @export concur 
-concur <- function(object, ...) {
-     UseMethod("concur")
-     }
+# @method concur CBFM
+# @export concur 
+# concur <- function(object, ...) {
+#      UseMethod("concur")
+#      }

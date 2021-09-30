@@ -87,7 +87,7 @@ model.matrix(fitcbfm)
 
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=fitted.values.CBFM]{fitted.values.CBFM()}} for extracting fitted values from a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating various types of residuals, and \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for extracting fitted values from a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating various types of residuals, and \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
