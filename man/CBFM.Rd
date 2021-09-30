@@ -279,7 +279,7 @@ As with any real-life statistical modeling problem, it is almost impossible to d
 \itemize{
 \item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests dampens the starting estimated coefficients from very extreme magnitudes and can faciliate the underlying PQL estimation algorithm to "move".
 \item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a good way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
-}\preformatted{manygam <- foreach(j = 1:num_spp) \%dopar\%
+}\preformatted{manygam <- foreach::foreach(j = 1:num_spp) \%dopar\%
     gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
 start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
 }

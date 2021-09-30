@@ -101,7 +101,7 @@
 #' @aliases influence influence.CBFM
 #' @export 
 #' @export influence.CBFM
-#' @import foreach  
+#' @importFrom foreach foreach %dopar%
 #' @import Matrix 
 #' @importFrom doParallel registerDoParallel
 #' @md

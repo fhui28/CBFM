@@ -49,7 +49,7 @@
 #' 
 #' @export
 #' 
-#' @import foreach 
+#' @importFrom foreach foreach %dopar%
 #' @import Matrix
 #' @importFrom abind abind
 #' @importFrom doParallel registerDoParallel

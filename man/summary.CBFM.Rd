@@ -4,7 +4,7 @@
 \alias{summary.CBFM}
 \title{Summary for a CBFM bit}
 \usage{
-summary.CBFM(
+\method{summary}{CBFM}(
   object,
   coverage = 0.95,
   digits = max(3L, getOption("digits") - 3L),

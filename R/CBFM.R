@@ -304,7 +304,7 @@
 #' 
 #' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a good way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 #' ```
-#' manygam <- foreach(j = 1:num_spp) %dopar%
+#' manygam <- foreach::foreach(j = 1:num_spp) %dopar%
 #'     gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
 #' start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
 #' ```
@@ -1556,7 +1556,7 @@
 #' 
 #' @export
 #'
-#' @import foreach  
+#' @importFrom foreach foreach %dopar% 
 #' @import Matrix 
 #' @importFrom compiler cmpfun
 # @importFrom gamlss gamlss gamlss.control getSmo
