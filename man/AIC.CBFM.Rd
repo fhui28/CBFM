@@ -2,12 +2,15 @@
 % Please edit documentation in R/AIC.CBFM.R
 \name{AIC.CBFM}
 \alias{AIC.CBFM}
-\title{Akaike's An Information Criterion (AIC) for a CBFM fit}
+\alias{AIC.CBFM_hurdle}
+\title{Akaike's An Information Criterion (AIC) for a (hurdle) CBFM fit}
 \usage{
 \method{AIC}{CBFM}(object, k = 2, use_edf = FALSE, ...)
+
+\method{AIC}{CBFM_hurdle}(object, k = 2, use_edf = FALSE, ...)
 }
 \arguments{
-\item{object}{An object of class \code{CBFM}.}
+\item{object}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
 \item{k}{The model complexity penalty to use in the calculation of the information criterion. Defaults to \code{k = 2}, which is the classical AIC.}
 
@@ -21,12 +24,12 @@ A numeric value of the calculated information criterion.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted \code{CBFM} object. This can also be generalized to other information criterion by modifying the model complexity penalty \code{k}.
+Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This can also be generalized to other information criterion by modifying the model complexity penalty \code{k}.
 }
 \details{
-While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of 2, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where \code{k = log(nobs(object))}.
+While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of two, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where \code{k = log(nobs(object))}.
 
-The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (\emph{excluding} the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence and \eqn{df} is the (estimated) degrees of freedom; please \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details, especially regarding the use of the argument \code{use_edf}. In light of the former, one may consider that this function constructs something more akin to a conditional AIC; see the discussion in \code{\link[mgcv:logLik.gam]{mgcv::logLik.gam()}} and references therein.
+The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (\emph{excluding} the quadratic penalty term in the PQL) of the fitted CBFM at convergence and \eqn{df} is the (estimated) degrees of freedom; please \code{\link[=logLik.CBFM]{logLik.CBFM()}} for more details, especially regarding the use of the argument \code{use_edf}. In light of the former, one may consider that this function constructs something akin to a conditional AIC; see the discussion in \code{\link[mgcv:logLik.gam]{mgcv::logLik.gam()}} and references therein.
 
 As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the \code{\link[=CBFM]{CBFM()}} help file as well as \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} for more information.
 }
@@ -97,6 +100,9 @@ AIC(fitcbfm, k = log(nobs(fitcbfm))) # BIC
 
 # BIC using estimated degrees of freedom for basis functions
 AIC(fitcbfm, k = log(nobs(fitcbfm)), use_edf = TRUE) 
+
+
+# See also the examples in the help file for the makeahurdle function.
 }
 
 }

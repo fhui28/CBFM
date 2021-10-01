@@ -3,12 +3,17 @@
 \name{AICc.CBFM}
 \alias{AICc.CBFM}
 \alias{AICc}
-\title{Corrected An Information Criterion (AICc) for a CBFM fit}
+\alias{AICc.CBFM_hurdle}
+\title{Corrected An Information Criterion (AICc) for a (hurdle) CBFM fit}
 \usage{
 \method{AICc}{CBFM}(object, use_edf = FALSE, ...)
+
+\method{AICc}{CBFM_hurdle}(object, use_edf = FALSE, ...)
+
+AICc(object, ...)
 }
 \arguments{
-\item{object}{An object of class \code{CBFM}.}
+\item{object}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
 \item{use_edf}{If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.}
 
@@ -20,7 +25,7 @@ A numeric value of the calculated corrected AIC.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002) from a fitted \code{CBFM} object.
+Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002) from a fitted \code{CBFM} or \code{CBFM_hurdle} object.
 }
 \details{
 The corrected Akaike Information Criterion (AICc) is a correction of AIC for small sample sizes. For a CBFM, and adapting the idea from \code{\link[gllvm:AICc]{gllvm::AICc()}}, it takes the form
@@ -91,8 +96,10 @@ useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
-
 AICc(fitcbfm)
+
+
+# See also the examples in the help file for the makeahurdle function.
 }
 
 }

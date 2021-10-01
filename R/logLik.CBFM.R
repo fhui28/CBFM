@@ -1,29 +1,34 @@
-#' @title Log-likelihood of a CBFM fit
+#' @title Log-likelihood of a (hurdle) CBFM fit
 #' 
 #' @description 
-#' `r lifecycle::badge("experimental")`
+#' `r lifecycle::badge("stable")`
 #' 
-#' Extracts the log-likelihood from a fitted \code{CBFM} object.
+#' Extracts the log-likelihood from a fitted \code{CBFM} or code{CBFM_hurdle} object.
 #'
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class \code{CBFM} or code{CBFM_hurdle}.
 #' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'
 #' @details 
-#' In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence. 
+#' In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value *excluding* the quadratic penalty term in the PQL of the CBFM fit at convergence. 
 #' 
-#' By defautl, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see [mgcv::logLik.gam()] for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justificatons for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to [edf.CBFM()] and we refer to the corresponding help file for more information.
+#' By default, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see [mgcv::logLik.gam()] for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justifications for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to [edf.CBFM()] and we refer to the corresponding help file for more information.
 #' 
 #' The community-level covariance matrices are not involved in the calculation of the degrees of freedom. 
 #' 
+#' For hurdle CBFMs, the log-likelihood and (estimated) degrees of freedom are calculated by straightforwardly summing the respective quantities in the two underlying component CBFMs. 
+#' 
+#' 
 #' @return Returns an object of class "logLik".  This is a number with at least one attribute, "df" (degrees of freedom), giving the number of (estimated) parameters in the CBFM model; please see see [stats::logLik()].
 #'
+#'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
+#'
 #'
 #' @references 
 #' Hui, F. K. C., Mueller, S., and Welsh, A. H. (2017). Joint selection in mixed models using regularized PQL. Journal of the American Statistical Association, 112, 1323-1333.
 #' 
-#' Hui, F. K. C.(2021). On the use of a penalized quasilikelihood information criterion for generalized linear mixed models. Biometrika, 108, 353-365.
+#' Hui, F. K. C.(2021). On the use of a penalized quasi-likelihood information criterion for generalized linear mixed models. Biometrika, 108, 353-365.
 #' 
 #' @seealso [CBFM()] for fitting CBFMs, and [AIC.CBFM()] and [AICc.CBFM()] for calculation various information criteria from a CBFM fit.
 #'
@@ -90,8 +95,12 @@
 #' logLik(fitcbfm)
 #' 
 #' logLik(fitcbfm, use_edf = TRUE) # Degrees of freedom for this are much smaller
+#' 
+#' 
+#' # See also the examples in the help file for the makeahurdle function.
 #'}
 #'
+#' @aliases logLik.CBFM logLik.CBFM_hurdle
 #' @export
 #' @md
 
@@ -116,6 +125,23 @@ logLik.CBFM <- function(object, use_edf = FALSE, ...) {
      
      attributes(logL)$df <- num_params
      attributes(logL)$nobs <- dim(object$y)[1]
+     class(logL) <- "logLik"
+     return(logL)
+     }
+
+
+#' @rdname logLik.CBFM
+#' @export
+logLik.CBFM_hurdle <- function(object, use_edf = FALSE, ...) {
+    if(!inherits(object, "CBFM_hurdle")) 
+        stop("`object' is not of class \"CBFM_hurdle\"")
+
+     logL_pa <- logLik.CBFM(object$pa_fit, use_edf = use_edf)
+     logL_count <- logLik.CBFM(object$count_fit, use_edf = use_edf)
+
+     logL <- as.vector(logL_pa + logL_count)
+     attributes(logL)$df <- attributes(logL_pa)$df + attributes(logL_count)$df
+     attributes(logL)$nobs <- dim(object$pa_fit$y)[1]
      class(logL) <- "logLik"
      return(logL)
      }

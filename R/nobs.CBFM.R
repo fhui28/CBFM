@@ -1,17 +1,19 @@
-#' @title Extract the number of observational units from a CBFM fit
+#' @title Extract the number of observational units from a (hurdle) CBFM fit
 #' 
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extract the number of observational units from a fitted \code{CBFM} object. This is principally intended to be used in computing information criterion such as in the function [AIC.CBFM()].
+#' Extract the number of observational units from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This is principally intended to be used in computing information criterion such as in the function [AIC.CBFM()].
 #'
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param ... Not used in this case.
 #'
 #' @details 
 #' With CBFM being set up much a like generalized additive model or GAM, then this function returns the number of observational units \eqn{N} e.g., the number of rows in \code{object$y}, as opposed to the total number of elements in the response matrix \code{obejct$y}.
 #' 
+#' 
 #' @return A positive integer.
+#'
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #'
@@ -88,6 +90,17 @@ nobs.CBFM <- function(object, ...) {
         stop("`object' is not of class \"CBFM\"")
      
      n <- nrow(object$y)
+     return(n)
+     }
+
+
+#' @rdname nobs.CBFM
+#' @export
+nobs.CBFM_hurdle <- function(object, ...) {
+    if(!inherits(object, "CBFM_hurdle")) 
+        stop("`object' is not of class \"CBFM_hurdle\"")
+     
+     n <- nrow(object$pa_fit$y)
      return(n)
      }
 

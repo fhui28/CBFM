@@ -2,31 +2,36 @@
 % Please edit documentation in R/print.CBFM.R
 \name{print.CBFM}
 \alias{print.CBFM}
-\title{Print a CBFM object}
+\alias{print.CBFM_hurdle}
+\title{Print a (hurdle) CBFM object}
 \usage{
 \method{print}{CBFM}(x, ...)
+
+\method{print}{CBFM_hurdle}(x, ...)
 }
 \arguments{
-\item{x}{An object of class \code{CBFM}.}
+\item{x}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
 \item{...}{Not used.}
 }
 \description{
 `r lifecycle::badge("stable")
 
-The default print method for a \code{CBFM} object.
+The default print method for a \code{CBFM} or \code{CBFM_hurdle} object.
 }
 \details{
 Print out details such as the function call, assumed family/response distribution, number of observational units and species, response-environment relationship fitted as given by the formula, which sets of basis functions are used, and the ranks.`
+
+For a hurdle CBFM, details are provided for both of the component CBFMs separately.
 }
 \examples{
 \donttest{
-# Please see the help file for the \code{CBFM} function.
+# Please see the examples in the help file for the CBFM and makeahurdle function.s
 }
 
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs and \code{\link[=fitted.values.CBFM]{fitted.values.CBFM()}} for calculating fitted values from a CBFM fit.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs and \code{\link[=makeahurdle]{makeahurdle()}} for forming a hurdle CBFM based on two component CBFMs (a presence-absence component and a zero-truncated count component).
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

@@ -2,12 +2,15 @@
 % Please edit documentation in R/logLik.CBFM.R
 \name{logLik.CBFM}
 \alias{logLik.CBFM}
-\title{Log-likelihood of a CBFM fit}
+\alias{logLik.CBFM_hurdle}
+\title{Log-likelihood of a (hurdle) CBFM fit}
 \usage{
 \method{logLik}{CBFM}(object, use_edf = FALSE, ...)
+
+\method{logLik}{CBFM_hurdle}(object, use_edf = FALSE, ...)
 }
 \arguments{
-\item{object}{An object of class \code{CBFM}.}
+\item{object}{An object of class \code{CBFM} or code{CBFM_hurdle}.}
 
 \item{use_edf}{If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.}
 
@@ -17,16 +20,18 @@
 Returns an object of class "logLik".  This is a number with at least one attribute, "df" (degrees of freedom), giving the number of (estimated) parameters in the CBFM model; please see see \code{\link[stats:logLik]{stats::logLik()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Extracts the log-likelihood from a fitted \code{CBFM} object.
+Extracts the log-likelihood from a fitted \code{CBFM} or code{CBFM_hurdle} object.
 }
 \details{
-In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value (\emph{excluding} the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence.
+In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value \emph{excluding} the quadratic penalty term in the PQL of the CBFM fit at convergence.
 
-By defautl, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see \code{\link[mgcv:logLik.gam]{mgcv::logLik.gam()}} for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justificatons for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to \code{\link[=edf.CBFM]{edf.CBFM()}} and we refer to the corresponding help file for more information.
+By default, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula_X} plus any nuisance parameters (see \code{\link[mgcv:logLik.gam]{mgcv::logLik.gam()}} for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justifications for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to \code{\link[=edf.CBFM]{edf.CBFM()}} and we refer to the corresponding help file for more information.
 
 The community-level covariance matrices are not involved in the calculation of the degrees of freedom.
+
+For hurdle CBFMs, the log-likelihood and (estimated) degrees of freedom are calculated by straightforwardly summing the respective quantities in the two underlying component CBFMs.
 }
 \examples{
 \donttest{
@@ -91,13 +96,16 @@ B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 logLik(fitcbfm)
 
 logLik(fitcbfm, use_edf = TRUE) # Degrees of freedom for this are much smaller
+
+
+# See also the examples in the help file for the makeahurdle function.
 }
 
 }
 \references{
 Hui, F. K. C., Mueller, S., and Welsh, A. H. (2017). Joint selection in mixed models using regularized PQL. Journal of the American Statistical Association, 112, 1323-1333.
 
-Hui, F. K. C.(2021). On the use of a penalized quasilikelihood information criterion for generalized linear mixed models. Biometrika, 108, 353-365.
+Hui, F. K. C.(2021). On the use of a penalized quasi-likelihood information criterion for generalized linear mixed models. Biometrika, 108, 353-365.
 }
 \seealso{
 \code{\link[=CBFM]{CBFM()}} for fitting CBFMs, and \code{\link[=AIC.CBFM]{AIC.CBFM()}} and \code{\link[=AICc.CBFM]{AICc.CBFM()}} for calculation various information criteria from a CBFM fit.

@@ -1,11 +1,11 @@
-#' @title Corrected An Information Criterion (AICc) for a CBFM fit
+#' @title Corrected An Information Criterion (AICc) for a (hurdle) CBFM fit
 #' 
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002) from a fitted \code{CBFM} object. 
+#' Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002) from a fitted \code{CBFM} or \code{CBFM_hurdle} object. 
 #'
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'
@@ -18,7 +18,9 @@
 #' 
 #' As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the [CBFM()] help file as well as [mgcv::gam.selection()] for more information.  
 #' 
+#' 
 #' @return A numeric value of the calculated corrected AIC.
+#'
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
@@ -90,11 +92,13 @@
 #' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
-#' 
 #' AICc(fitcbfm)
+#' 
+#' 
+#' # See also the examples in the help file for the makeahurdle function.
 #'}
 #'
-#' @aliases AICc AICc.CBFM 
+#' @aliases AICc AICc.CBFM AICc.CBFM_hurdle 
 #' @export
 #' @export AICc.CBFM
 #' @md
@@ -111,8 +115,24 @@ AICc.CBFM <- function(object, use_edf = FALSE, ...) {
      return(IC)
      }
 
+#' @rdname AICc.CBFM
+#' @export
+AICc.CBFM_hurdle <- function(object, use_edf = FALSE, ...) {
+        if(!inherits(object, "CBFM_hurdle")) 
+                stop("`object' is not of class \"CBFM_hurdle\"")
 
-#' @method AICc CBFM
+        N <- nrow(object$pa_fit$y)
+        N2 <- sum(object$count_fit$y > 0)
+        m <- ncol(object$pa_fit$y)
+        IC <- logLik.CBFM_hurdle(object, use_edf = use_edf)
+        get_dfs <- attributes(IC)$df
+     
+     IC <- -2 * as.vector(IC) + 2 * get_dfs + 2 * get_dfs * (get_dfs + 1) / (N*m + N2 - get_dfs - 1)
+     return(IC)
+     }
+
+
+#' @rdname AICc.CBFM
 #' @export AICc 
 AICc <- function(object, ...) {
      UseMethod("AICc")

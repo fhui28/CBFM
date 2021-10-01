@@ -2,7 +2,8 @@
 % Please edit documentation in R/predict.CBFM.R
 \name{predict.CBFM}
 \alias{predict.CBFM}
-\title{Construct predictions for a CBFM fit}
+\alias{predict.CBFM_hurdle}
+\title{Construct predictions for a (hurdle) CBFM fit}
 \usage{
 \method{predict}{CBFM}(
   object,
@@ -15,6 +16,27 @@
   se_fit = FALSE,
   coverage = 0.95,
   ncores = NULL,
+  num_sims = 500,
+  return_internals = FALSE,
+  ...
+)
+
+\method{predict}{CBFM_hurdle}(
+  object,
+  newdata_pa = NULL,
+  manualX_pa = NULL,
+  new_B_space_pa = NULL,
+  new_B_time_pa = NULL,
+  new_B_spacetime_pa = NULL,
+  newdata_count = NULL,
+  manualX_count = NULL,
+  new_B_space_count = NULL,
+  new_B_time_count = NULL,
+  new_B_spacetime_count = NULL,
+  se_fit = FALSE,
+  coverage = 0.95,
+  ncores = NULL,
+  num_sims = 500,
   ...
 )
 }
@@ -33,7 +55,8 @@
 
 \item{type}{The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.
 Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the \emph{actual predicted mean values} of the distribution, consistent with what \code{object$fitted} returns.
-A third option is given by \code{type  = "lpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata}. In \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}, this is also known as the linear predictor matrix. Note under this option, arguments such as \code{new_B_space/new_B_time/new_B_spacetime, se_fit} and \code{coverage} are irrelevant and hence ignored.}
+A third option is given by \code{type  = "lpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata}. In \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}, this is also known as the linear predictor matrix. Note under this option, arguments such as \code{new_B_space/new_B_time/new_B_spacetime/se_fit/coverage} are irrelevant and hence ignored.
+Finally, for hurdle CBFMS, this option is not available as by default only predicted mean values i.e., \code{type = "response"} are possible.}
 
 \item{se_fit}{When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.}
 
@@ -41,7 +64,31 @@ A third option is given by \code{type  = "lpmatrix"}, which returns the model ma
 
 \item{ncores}{To speed up calculation of the standard error estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.}
 
+\item{num_sims}{If simulation is required for constructing uncertainty intervals, then this specifies the number of Monte-Carlo examples to simulate.}
+
+\item{return_internals}{Not used. Please ignore this argument!}
+
 \item{...}{Not used.}
+
+\item{newdata_pa}{For hurdle CBFM models, similar to \code{newdata} above but applied to the presence-absence component model.}
+
+\item{manualX_pa}{For hurdle CBFM models, similar to \code{manual_X} above but applied to the presence-absence component model.}
+
+\item{new_B_space_pa}{For hurdle CBFM models, similar to \code{new_B_space} above but applied to the presence-absence component model.}
+
+\item{new_B_time_pa}{For hurdle CBFM models, similar to \code{new_B_time} above but applied to the presence-absence component model.}
+
+\item{new_B_spacetime_pa}{For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the presence-absence component model.}
+
+\item{newdata_count}{For hurdle CBFM models, similar to \code{newdata} above but applied to the zero-truncated count component model.}
+
+\item{manualX_count}{For hurdle CBFM models, similar to \code{manual_X} above but applied to the zero-truncated count component model.}
+
+\item{new_B_space_count}{For hurdle CBFM models, similar to \code{new_B_space} above but applied to the zero-truncated count component model.}
+
+\item{new_B_time_count}{For hurdle CBFM models, similar to \code{new_B_time} above but applied to the zero-truncated count component model.}
+
+\item{new_B_spacetime_count}{For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the zero-truncated count component model.}
 }
 \value{
 If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
@@ -56,16 +103,16 @@ Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows e
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Takes a fitted \code{CBFM} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} this is also known as the linear predictor matrix.
+Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} this is also known as the linear predictor matrix.
 }
 \details{
 The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior to, the estimated parameters. This construction is similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
 
-The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it (blame Francis!) can not find a simple way to construct these intervals e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
+The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
 }
 \examples{
 \donttest{
-# Please see examples in the help file for the CBFM function 
+# Please see examples in the help file for the CBFM and makeahurdle functions 
 }
 
 }

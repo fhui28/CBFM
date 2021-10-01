@@ -1,32 +1,33 @@
-#' @title Simulate data from CBFM fit
+#' @title Simulate data from (hurdle) CBFM fit
 #' 
 #' @description 
-#' `r lifecycle::badge("experimental")`
+#' `r lifecycle::badge("stable")`
 #'
-#' Simulate new spatio-temporal multivariate abundance data based on a fitted \code{CBFM} object.
+#' Simulate new spatio-temporal multivariate abundance data based on a fitted \code{CBFM} or \code{CBFM_hurdle} object.
 #'
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param nsim A positive integer specifying the number of simulated datasets. Defaults to 1.
 #' @param seed An integer to set seed number. Defaults to a random seed number.
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
-#' @param conditional If \code{conditional = TRUE}, the data are simulated conditional on the estimated species-specific regression coefficients associated with the basis functions. Otherwise if \code{conditional = FALSE} then new species-specific regression coefficients are generated from the estimated values of the \eqn{\Sigma}'s and \eqn{G}'s, and their corresponding random effects distribution. Please see the details section in [CBFM()] for more details.
-#' With CBFM being set up much a like generalized additive model or GAM, then simulating conditionally is generally what most practitioners will required...if they need to simulate.
+#' @param conditional If \code{conditional = TRUE}, the data are simulated conditional on the estimated species-specific regression coefficients associated with the basis functions. Otherwise if \code{conditional = FALSE} then new species-specific regression coefficients are generated from the estimated values of the \eqn{\Sigma}'s and \eqn{G}'s, and their corresponding random effects distribution. Please see the details section in [CBFM()] for more details. Note that with CBFM being set up much a like generalized additive model or GAM, then simulating conditionally is generally what most practitioners will required, if they need to simulate.
 #' @param ... not used.
+#'
 #'
 #' @details 
 #' Simulates spatio-temporal multivariate abundance data from a fitted community-level basis function model (CBFM). For the purposes of the package, the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit i i.e., the i-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species j, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit i , and \eqn{a_j} denotes the corresponding regression coefficients for species j. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. 
+#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. For hurdle CBFM models, there are two component models corresponding to the modeling the probability of presence and modeling the distribution of the data conditional on the species being present; please see [makeahurdle()] for more details. 
 #' 
-#' As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the i-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the j-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating 
+#' Now, as an example suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of \code{B_space} and \code{B_time} (which were inputs into the fitted CBFM), while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row of the fitted CBFM i.e., from \code{object$basis_effects_mat}. If \code{object$basis_effects_mat} is not supplied i.e., \code{conditional = FALSE}, then it is instead obtain by simulating 
 #' 
 #' \deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
 #' 
-#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kronecker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
+#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from the corresponding estimates from the ftted CBFM, and \eqn{kronecker(\cdot)} is the Kronecker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
 #' 
-#' Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion/power/zero inflation probability parameters as appropriate. In this function, all parameter are replaced by their estimated values from the fitted CBFM, as appropriate.
+#' By plugging estimated (or simulated) values of the parameters from the fitted CBFM into the mean model given above, responses \eqn{y_{ij}} are then subsequently simulated from the assumed distribution given this mean value, along with any estimated values of the dispersion/power/zero inflation probability parameters from the fitted CBFM as appropriate. For hurdle CBFMs, the simulation process is analogous to this, except that it consists of two steps: 1) simulating presence-absence responses first, and then simulating count responses for the presences only.  
+#' 
 #' 
 #' @return A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
 #' 
@@ -99,9 +100,13 @@
 #' 
 #' # Generate new basis function coefficients as part of the simulation process
 #' simulate(fitcbfm, nseed = 1, conditional = FALSE)
+#' 
+#' 
+#' # See also the examples in the help file for the makeahurdle function.
 #' }
 #'
 #'
+#' @aliases simulate.CBFM simulate.CBFM_hurdle
 #' @export
 #' @importFrom stats plogis
 #' @md
@@ -187,8 +192,23 @@ simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, condit
     return(out)
     }
 
+
+#' @rdname simulate.CBFM
+#' @export
+simulate.CBFM_hurdle <- function(object, nsim = 1, seed = NULL, max_resp = Inf, conditional = TRUE, ...) {
+     if(!inherits(object, "CBFM_hurdle"))
+          stop("`object' is not of class \"CBFM_hurdle\"")
+
+
+     pa_sim <- simulate.CBFM(object$pa_fit, nsim = nsim, seed = seed, max_resp = max_resp, conditional = conditional, ...)
+     ztcount_sim <- simulate.CBFM(object$count_fit, nsim = nsim, seed = seed, max_resp = max_resp, conditional = conditional, ...)
+
+     return(pa_sim * ztcount_sim)
+     }
+
+
 #' @rdname simulate.CBFM
 #' @export 
 simulate <- function(object, ...) {
-    UseMethod(generic = "simulate")
+    UseMethod("simulate")
     }
