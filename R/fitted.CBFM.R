@@ -11,7 +11,9 @@
 #' @details 
 #' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. 
 #' 
-#' Similarly, for hurdle CBFMs, the function returns the estimated values of \eqn{\pi_{ij}*\mu_{ij}} where \eqn{\pi_{ij}} is the probability of observing a presence based on the presence-absence component of the model, and \eqn{\mu_{ij}} is the mean of the zero-truncated component of the model.  
+#' Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.
+#' 
+#' For hurdle CBFMs, the function returns the estimated values of \eqn{\pi_{ij}*\mu_{ij}} where \eqn{\pi_{ij}} is the probability of observing a presence based on the presence-absence component of the model, and \eqn{\mu_{ij}} is the mean of the zero-truncated component of the model.  
 #' 
 #' @return A matrix of fitted values.
 #' 

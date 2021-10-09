@@ -172,7 +172,9 @@
 
 #' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 
-#' \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+#' \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution as described above. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+#' 
+#' \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution as described above. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 #' 
 #' Hurdle CBFMs are also possible (currently in its early stages though!); please see [makeahurdle()] for more information.
 #' }
@@ -255,9 +257,11 @@
 
 #' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
 
-#' \item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
+#' \item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. 
+#' Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
 
-#' \item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.)
+#' \item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. 
+#' Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.)
 #' }
 
 #' \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
@@ -286,7 +290,7 @@
 #' @details # Warning
 #' 1. CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are **not** spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in [gllvm::gllvm()] and [Hmsc::sampleMcmc()].
 #' 
-#' 2. Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. Also, in zero-truncated distributions it is tha mean of the base distribution that is modeled with the regression model described above.
+#' 2. Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
 #' 
 #' 3. Not all (in fact, not many) of the smoothing available that are available in [mgcv::gam.models()] have been fully tested out, so please be aware that some make not work well if at all! 
 #' 
@@ -1080,12 +1084,15 @@
 #' 
 #' ##------------------------------
 #' ## **Example 1h: Repeat Example 1a but illustrate applications to zero-truncated count data** 
+#' ## This one could take a while...grab a cuppa while you wait!
 #' ##------------------------------
 #' library(gamlss)
 #' library(gamlss.tr)
-#' gen.trun(0, family = "PO")
+#' gen.trun(0, family = "NBI")
+#' spp_dispersion <- runif(num_spp)
 #' # Simulate spatial multivariate abundance data
-#' simy <- matrix(rPOtr(num_sites * num_spp, mu = exp(eta)), num_sites, num_spp)
+#' simy <- matrix(rNBItr(num_sites * num_spp, mu = exp(eta), sigma = 
+#' matrix(spp_dispersion, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
 #' 
 #' # Form training and test sets
 #' simy_train <- simy[1:500,]
@@ -1096,7 +1103,7 @@
 #' fitstacked <- NULL 
 #' for(j in 1:num_spp) {
 #' fitstacked[[j]] <- gamlss(resp ~ temp + depth + chla + O2, 
-#' data = data.frame(resp = simy_train[,j], dat_train), family = POtr)
+#' data = data.frame(resp = simy_train[,j], dat_train), family = NBItr)
 #' }
 #' 
 #' 
@@ -1113,11 +1120,11 @@
 #' as.matrix %>%
 #' {.[,-c(1)]} 
 #' 
-#' # Fit zero-truncated Poisson CBFM
+#' # Fit zero-truncated negative binomial CBFM
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
 #' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
-#' B_space = train_basisfunctions, family = ztpoisson(), control = list(trace = 1))
+#' B_space = train_basisfunctions, family = ztnb2(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
 #' 
@@ -1129,7 +1136,10 @@
 #' # Note extra step needed for stacked models from gamlss to get the actual fitted values 
 #' predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
 #' newdata = dat_test, type = "response"))
-#' predictions_stacked <- predictions_stacked/(1-exp(-predictions_stacked))
+#' stacked_dispparam <- sapply(1:num_spp, function(j) exp(fitstacked[[j]]$sigma.coefficient))
+#' stacked_dispparam <- matrix(stacked_dispparam, nrow(dat_test), num_spp, byrow = TRUE)
+#' predictions_stacked <- predictions_stacked / 
+#' (1-dnbinom(0, mu = predictions_stacked, size = 1/stacked_dispparam))
 #' predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
 #' new_B_space = test_basisfunctions)
 #' 
@@ -1155,13 +1165,15 @@
 #' theme_bw()
 #' 
 #' # Predictive deviance across species (lower is better)
-#' # Need to define density of zero-inflated Poisson distribution first (or get it from a package)
+#' # Need to define density of zero-inflated NB distribution first (or get it from a package)
 #' preddeviance <- data.frame(
 #' stacked = sapply(1:num_spp, function(j) { 
-#' -2*sum(dPOtr(simy_test[,j], mu = predictions_stacked[,j], log = TRUE))
+#' -2*sum(dNBItr(simy_test[,j], mu = predictions_stacked[,j], 
+#' sigma = exp(fitstacked[[j]]$sigma.coefficient), log = TRUE))
 #' }),
 #' cbfm = sapply(1:num_spp, function(j) { 
-#' -2*sum(dPOtr(simy_test[,j], mu = predictions_cbfm[,j], log = TRUE))
+#' -2*sum(dNBItr(simy_test[,j], mu = predictions_cbfm[,j], 
+#' sigma = fitcbfm$dispparam[j], log = TRUE))
 #' })
 #' )
 #' 
@@ -1559,8 +1571,6 @@
 #' @importFrom foreach foreach %dopar% 
 #' @import Matrix 
 #' @importFrom compiler cmpfun
-# @importFrom gamlss gamlss gamlss.control getSmo
-# @importFrom gamlss.add ga
 #' @importFrom doParallel registerDoParallel
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
@@ -1776,30 +1786,29 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
                     }
                }
-          # if(family$family %in% c("ztnegative.binomial")) {
-          #      gac <- ga.control(method = "ML", gamma = gamma)
-          #      tmp_formula <- as.formula(paste("response ~ ga(", paste(as.character(formula_X),collapse=""), ", control = gac)"))
-          #      # Due to the way ga works, you need to attach things to the global environment. But then delete them immediately afterwards to be save 
-          #      tmp_dat <<- data.frame(response = y[,j], data)
-          #      tmp_offset <<- offset[,j]
-          #      fit0 <- try(gamlss(tmp_formula, data = tmp_dat, offset = tmp_offset, family = ztnb2(), 
-          #                         control = gamlss.control(trace = TRUE, n.cyc = control$maxit)), silent = TRUE)
-          #      if(inherits(fit0, "try-error")) {
-          #           fit0 <- try(gamlss(tmp_formula, data = tmp_dat, offset = tmp_offset, family = NBI(), 
-          #                              control = gamlss.control(trace = FALSE, n.cyc = control$maxit)), silent = TRUE)
-          #           fit0 <- try(gamlss(tmp_formula, data = tmp_dat, offset = tmp_offset, family = ztnb2(), start.from = fit0, 
-          #                              method = CG(), control = gamlss.control(trace = FALSE, n.cyc = control$maxit)), silent = TRUE) # Using CG tends to be more stable but comes at the risk of non-convergence
-          #           }
-          #      if(fornulldeviance) { # This should always work given it is a null model. We run it separately as interfacing to ga can run into trouble as well 
-          #           fit0 <- try(gamlss(response ~ 1, data = tmp_dat, offset = tmp_offset, family = ztnb2(), 
-          #                              control = gamlss.control(trace = FALSE, n.cyc = control$maxit)), silent = TRUE)
-          #           }
-          #      fit1 <- try(getSmo(fit0), silent = TRUE)
-          #      fit1$logLik <- try(logLik(fit0), silent = TRUE)
-          #      fit0 <- fit1
-          #      rm(tmp_dat, tmp_offset, pos = 1)
-          #      }
-                
+          if(family$family %in% c("ztnegative.binomial")) {
+               init_lambda <- mean(y[,j][y[,j]>0])
+               w <- dnbinom(0, mu = init_lambda, size = 1/0.2) / (1-dnbinom(0, mu = init_lambda, size = 1/0.2))
+               w <- c(rep(1,num_units), rep(w,num_units))
+               w[c(y[,j],y[,j]) == 0] <- 0
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,num_units)), rbind(data, data)), weights = w, offset = rep(offset[,j],2), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+
+               if(fornulldeviance) {
+                    inner_err <- Inf
+                    cw_inner_logL <- logLik(fit0)
+                    while(inner_err > 0.01) {
+                         w <- dnbinom(0, mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE)))
+                         w <- c(rep(1,num_units), w)
+                         w[c(y[,j],y[,j]) == 0] <- 0
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,num_units)), rbind(data, data)), weights = w, offset = rep(offset[,j],2), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+                         inner_err <- abs(logLik(fit0)/cw_inner_logL-1)
+                         cw_inner_logL <- logLik(fit0)
+                         }
+                    }
+               
+               fit0$logLik <- .dztnbinom(y[,j], mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE), log = TRUE) # .dnbinom y = 0 values to -Inf
+               fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
+               }
                    
           if(inherits(fit0, "try-error"))
                fit0 <- list(coefficients = runif(num_X), dispparam = 1)
@@ -1947,8 +1956,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                message("Updating all coefficients and dispersion/power parameters (also running inner EM algorithm if appropriate)...")         
           while(inner_err > 0.01) {
                ##-------------------------
-               ## Updating zero-inflation probabilities for distributions that need it. Note it is parameterized in terms of an intercept on the logit scale
-               ## Also E-step before that if need be
+               ## Updating zero-inflation probabilities for distributions that need it. Note it is parameterized in terms of an intercept on the logit scale. Also E-step before that if need be
                ##-------------------------
                getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B) # Posterior probabilities of zero-inflation
                #if(family$family[1] == "zipoisson") {
@@ -1963,6 +1971,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                
                ##-------------------------
                ## Update smoothing coefficients for all basis functions, one species at a time
+               ## Not for zero-truncated negative binomial distribution, this conditional update is based on the PQL function itself, not the Q-function version of that  
                ##-------------------------
                update_basiscoefsspp_fn <- function(j) {
                     tidbits_parameters <- list(basis_effects = new_fit_CBFM_ptest$basis_effects_mat[j,])
@@ -2086,7 +2095,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          if(inherits(fit0, "try-error"))
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
                                           weights = 1-getweights[,j], family = "poisson", select = select, gamma = gamma)
-                         fit0$logLik = as.vector(logLik(fit0))
+                         fit0$logLik <- sum(.dzipoisson_log(y = y[,j], eta = fit0$linear_predictor, 
+                                                            zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j])))
                          }
                     if(family$family %in% c("zinegative.binomial")) {
                          fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
@@ -2094,7 +2104,9 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          if(inherits(fit0, "try-error"))
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
                                           weights = 1-getweights[,j], family = nb(), select = select, gamma = gamma)
-                         fit0$logLik = as.vector(logLik(fit0))
+                         fit0$logLik <- sum(.dzinegativebinomial_log(y = y[,j], eta = fit0$linear_predictor, 
+                                                                     zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]),
+                                                                     phi = 1/fit0$family$getTheta(TRUE)))
                          }
                     if(family$family %in% c("ztpoisson")) {
                          Hmat <- diag(control$ridge+1e-15, nrow = num_X+1)
@@ -2103,45 +2115,39 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse=""), "+ offset(off)" ) )
                          fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, offset = NULL, method = "ML", H = Hmat, family = ziplss(), 
                                             select = select, gamma = gamma), silent = TRUE)
-                         if(inherits(fit0, "try-error")) {
-                              fit0 <- try(gam(tmp_formula, data = tmp_dat, offset = new_offset, method = "ML", family = ziplss(), select = select, gamma = gamma), silent = TRUE)
-                              }
-                         if(!inherits(fit0, "try-error")) {
-                              fit0$coefficients <- fit0$coefficients[1:num_X] 
-                              fit0$linear.predictors <- fit0$linear.predictors[1:num_units,1] # Note linear predictors are also constructed for non-zero counts 
-                              fit0$logLik <- .dztpois(y[,j], lambda = exp(fitted(fit0)[1:num_units,1]), log = TRUE) # .dztpois y = 0 values to -Inf
-                              fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
-                              }
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- try(gam(tmp_formula, data = tmp_dat, offset = new_offset, method = "ML", family = ziplss(), select = select, 
+                                              gamma = gamma), silent = TRUE)
+                         fit0$coefficients <- fit0$coefficients[1:num_X] 
+                         fit0$linear.predictors <- fit0$linear.predictors[1:num_units,1] # Note linear predictors are also constructed for non-zero counts 
+                         fit0$logLik <- .dztpois(y[,j], lambda = exp(fitted(fit0)[1:num_units,1]), log = TRUE) # .dztpois y = 0 values to -Inf
+                         fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
                          }
-                    # if(family$family %in% c("ztnegative.binomial")) {
-                    #      gac <- ga.control(method = "ML", gamma = gamma)
-                    #      tmp_formula <- as.formula(paste("response ~ ga(", paste(as.character(formula_X),collapse=""), ", control = gac)"))
-                    #      tmp_dat <<- data.frame(response = y[,j], data)
-                    #      tmp_offset <<- offset[,j]
-                    #      fit0 <- try(gamlss(tmp_formula, data = tmp_dat, offset = tmp_offset, family = ztnb2(), 
-                    #                         control = gamlss.control(trace = FALSE, n.cyc = control$maxit)), silent = TRUE)
-                    #      if(inherits(fit0, "try-error")) {
-                    #           fit0 <- try(gamlss(tmp_formula, data = tmp_dat, offset = tmp_offset, family = NBI(), 
-                    #                              control = gamlss.control(trace = FALSE, n.cyc = control$maxit)), silent = TRUE)
-                    #           fit0 <- try(gamlss(tmp_formula, data = tmp_dat, offset = tmp_offset, family = ztnb2(), start.from = fit0, 
-                    #                              method = CG(), control = gamlss.control(trace = FALSE, n.cyc = control$maxit)), silent = TRUE) 
-                    #           }
-                    #      fit1 <- getSmo(fit0)
-                    #      fit0$coefficients <- fit1$coefficients
-                    #      fit0$linear.predictors <- fit1$linear.predictors
-                    #      fit0$edf <- fit1$edf
-                    #      fit0$edf1 <- fit1$edf1
-                    #      rm(tmp_dat, tmp_offset, pos = 1)
-                    #      rm(fit1)
-                    #      }
+                    if(family$family %in% c("ztnegative.binomial")) {
+                         # E-step: Done needed to construct Q-function, which is only needed to update the X coefficients
+                         w <- dnbinom(0, mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + B %*% new_fit_CBFM_ptest$basis_effects_mat[j,] + offset[,j])), 
+                                      size = 1/new_fit_CBFM_ptest$dispparam[j])
+                         w <- w / (1-w)
+                         w <- c(rep(1,num_units), w)
+                         w[c(y[,j],y[,j]) == 0] <- 0
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,num_units)), rbind(data, data)), 
+                                         offset = rep(new_offset,2), method = "ML", weights = w, H = Hmat, family = nb(), select = select, 
+                                         gamma = gamma), silent = TRUE)
+                         if(inherits(fit0, "try-error"))
+                              fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j], rep(0,num_units)), rbind(data, data)), 
+                                         offset = rep(new_offset,2), method = "ML", weights = w, family = nb(), select = select, gamma = gamma)
+                         fit0$linear.predictors <- fit0$linear.predictors[1:num_units] 
+                         fit0$logLik <- .dztnbinom(y[,j], mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE), log = TRUE) # .dztnbinom y = 0 values to -Inf
+                         fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
+                         }
                     
-                    out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = fit0$logLik, fit = fit0, S = .get_bigS(fit_gam = fit0, num_X = num_X))
+                    
+                    out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = fit0$logLik, fit = fit0, 
+                                S = .get_bigS(fit_gam = fit0, num_X = num_X))
                     if(family$family %in% c("gaussian","Gamma"))                        
                          out$dispparam <- fit0$sig2
-                    if(family$family %in% c("negative.binomial","zinegative.binomial"))                        
+                    if(family$family %in% c("negative.binomial","zinegative.binomial","ztnegative.binomial"))                        
                          out$dispparam <- 1/fit0$family$getTheta(TRUE)
-                    if(family$family %in% c("ztnegative.binomial"))                        
-                         out$dispparam <- as.vector(exp(fit0$sigma.coefficients))
                     if(family$family == "Beta")                        
                          out$dispparam <- exp(fit0$family$getTheta(TRUE))
                     if(family$family == "tweedie") {                        
@@ -2157,40 +2163,19 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
                new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)         
                for(j in 1:num_spp) {
-                    if(family$family[1] %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta","zinegative.binomial","ztnegative.binomial"))                        
+                    if(family$family[1] %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta","zinegative.binomial","ztnegative.binomial"))
                          new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
                     if(family$family[1] == "tweedie") {                        
                          new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
                          }
                     }
                new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
-               if(family$family[1] == "zipoisson") {
-                    cw_logL <- 0
-                    for(j in 1:num_spp) {
-                         cw_logL <- cw_logL + sum(.dzipoisson_log(y = y[,j], eta = new_fit_CBFM_ptest$linear_predictor[,j], 
-                                                                  zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]))
-                                                  )
-                         }
-                    new_fit_CBFM_ptest$logLik <- cw_logL
-                    rm(cw_logL)
-                    }
-               if(family$family[1] == "zinegative.binomial") {
-                    cw_logL <- 0
-                    for(j in 1:num_spp) {
-                         cw_logL <- cw_logL + sum(.dzinegativebinomial_log(y = y[,j], eta = new_fit_CBFM_ptest$linear_predictor[,j], 
-                                                                  zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]),
-                                                                  phi = new_fit_CBFM_ptest$dispparam[j])
-                                                  )
-                         }
-                    new_fit_CBFM_ptest$logLik <- cw_logL
-                    rm(cw_logL)
-                    }
                
                inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
                cw_inner_logL <- new_fit_CBFM_ptest$logLik
                rm(all_update_coefs, update_Xcoefsspp_fn)
-
-               if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
+               
+               if(!(family$family[1] %in% c("zipoisson","zinegative.binomial","ztnegative.binomial")))
                     break;
                }          
           
@@ -2351,32 +2336,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     }
                }
           new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
-          if(family$family[1] == "zipoisson") {
-               cw_logL <- 0
-               for(j in 1:num_spp) {
-                    cw_logL <- cw_logL + sum(.dzipoisson_log(y = y[,j], eta = new_fit_CBFM_ptest$linear_predictor[,j], 
-                                                        zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]))
-                                             )
-                    }
-               new_fit_CBFM_ptest$logLik <- cw_logL
-               rm(cw_logL)
-               }
-          if(family$family[1] == "zinegative.binomial") {
-               cw_logL <- 0
-               for(j in 1:num_spp) {
-                    cw_logL <- cw_logL + sum(.dzinegativebinomial_log(y = y[,j], eta = new_fit_CBFM_ptest$linear_predictor[,j], 
-                                                        zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]),
-                                                        phi = new_fit_CBFM_ptest$dispparam[j])
-                                             )
-                    }
-               new_fit_CBFM_ptest$logLik <- cw_logL
-               rm(cw_logL)
-               }
           
           inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
           cw_inner_logL <- new_fit_CBFM_ptest$logLik
-          #print(new_fit_CBFM_ptest$logLik)
-
+          
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                break;
           }
@@ -2384,12 +2347,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      all_k_check <- foreach(j = 1:num_spp) %dopar% k.check(all_update_coefs[[j]]$fit, subsample = k_check_control$subsample, n.rep = k_check_control$n.rep)
      names(all_k_check) <- colnames(y)
      if(family$family[1] %in% c("ztpoisson","ztnegative.binomial"))
-          warning("k_check may not be terrible or not available for zero-truncated distributions. Take any results given here with a big grain of salt!")
+          warning("k_check may not be terrible or not available for zero-truncated distributions. Please take any results given here with a big grain of salt!")
      invisible(capture.output( all_vcomp <- lapply(1:num_spp, function(j) {
           if(class(all_update_coefs[[j]]$fit)[1] == "gam")
                out <- gam.vcomp(all_update_coefs[[j]]$fit)
-          # if(class(all_update_coefs[[j]]$fit)[1] == "gamlss")
-          #      out <- gam.vcomp(getSmo(all_update_coefs[[j]]$fit))
           if(is.matrix(out))
                return(out[,1])
           if(is.list(out))
@@ -2474,8 +2435,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           out_CBFM$linear_predictor[which(out_CBFM$y == 0)] <- NA
           out_CBFM$fitted[which(out_CBFM$y == 0)] <- NA
           }
-     # if(family$family == "ztnegative.binomial")
-     #      out_CBFM$fitted <- exp(out_CBFM$linear_predictor) / (1 - dnbinom(0, mu = exp(out_CBFM$linear_predictor), size = matrix(1/out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+     if(family$family == "ztnegative.binomial") {
+          out_CBFM$fitted <- exp(out_CBFM$linear_predictor) / (1 - dnbinom(0, mu = exp(out_CBFM$linear_predictor), size = matrix(1/out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+          out_CBFM$linear_predictor[which(out_CBFM$y == 0)] <- NA
+          out_CBFM$fitted[which(out_CBFM$y == 0)] <- NA
+          }
      
      names(out_CBFM$dispparam) <- names(out_CBFM$powerparam) <- names(out_CBFM$zeroinfl_prob_intercept) <- 
           colnames(out_CBFM$edf) <- colnames(out_CBFM$edf1) <- colnames(y)

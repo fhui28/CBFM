@@ -103,8 +103,6 @@ TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/i
 
 
 
-
-
 #-----------------------------
 #-----------------------------
 library(autoFRK)
@@ -146,29 +144,20 @@ true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] 
  
 # Now generate data from a count distribution 
 spp_dispersion <- runif(num_spp, 0, 5)
-simy_ztpois <- create_CBFM_life(family = poisson(), formula_X = useformula, data = dat,
-                                B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
-                                G = list(space = true_G_space_ztnb), Sigma = list(space = true_Sigma_space_ztnb),
-                                #basis_effects_mat = spp_basis_effects_mat_ztnb,
-                                max_resp = 20000) 
+simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+                              B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
+                              G = list(space = true_G_space_ztnb), Sigma = list(space = true_Sigma_space_ztnb),
+                              dispparam = spp_dispersion,  max_resp = 20000) 
 
-
-# manygam <- foreach(j = 1:num_spp) %dopar%
-#     gam(list(response ~ s(temp) + s(depth) + chla + s(O2) + s(x,y), ~1), 
-#         data = data.frame(response = c(simy_ztpois$y[,j], numeric(20)), dat[c(1:nrow(dat),1:20),]),
-#         family = ziplss())
-# 
-# start_params = list(betas = t(sapply(manygam, coef)[1:29,]))
-# rm(manygam)
 
 
 # Now fit a zero-truncated count distribution, and CBFM has to ignore the zeros in the data
-y = simy_ztpois$y
+y = simy_ztnb$y
 useformula <- ~ temp + depth + chla + O2
 formula_X = useformula
 data = dat
 B_space = basisfunctions
-family =  ztpoisson()
+family =  ztnb2()
 B_time = NULL
 B_spacetime = NULL
 offset = NULL
@@ -189,17 +178,26 @@ k_check_control = list(subsample = 5000, n.rep = 400)
 ##---------------------
 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_ztpois$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
-                #start_params = start_params, 
-                family = ztpoisson(), control = list(trace = 1, initial_betas_dampen = 0.05))
+fitcbfm_nb <- CBFM(y = simy_ztnb$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
+                family = nb2(), control = list(trace = 1))
+fitcbfm_ztnb <- CBFM(y = simy_ztnb$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
+                family = ztnb2(), control = list(trace = 1))
 
-plot(spp_slopes_ztnb, fitcbfm$betas[,2:5])
+
+par(mfrow = c(1,2))
+plot(spp_slopes_ztnb, fitcbfm_nb$betas[,2:5])
+abline(0,1)
+plot(spp_slopes_ztnb, fitcbfm_ztnb$betas[,2:5])
 abline(0,1)
 
-plot(fitcbfm)
-summary(fitcbfm)
+plot(fitcbfm_ztnb)
 
 
+AIC(fitcbfm_nb)
+AIC(fitcbfm_ztnb)
 
-plot(eta, fitcbfm$linear_predictor)
+par(mfrow = c(1,2))
+plot(simy_ztnb$linear_predictor, fitcbfm_nb$linear_predictor)
+abline(0,1)
+plot(simy_ztnb$linear_predictor, fitcbfm_ztnb$linear_predictor)
 abline(0,1)

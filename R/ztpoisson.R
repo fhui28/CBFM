@@ -6,7 +6,7 @@
 #' A specified family object for the zero-truncated Poisson distribution, using the log link function for the mean of the Poisson distribution component.
 #'
 #' @details 
-#' This family object was created specifically for fitting CBFMs. However it follows heavily from the [gamlss.tr::trun()] so big shout outs to the Mikis and the maintainers of that package.
+#' This family object was created specifically for fitting CBFMs. However, it relies heavily on [gamlss.tr::trun()], so big shout outs to the Mikis and the maintainers of that package.
 #' 
 #' @return An object of class "gamlss.family" and "family"
 #' 

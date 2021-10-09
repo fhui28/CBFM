@@ -8,7 +8,7 @@
 #' @details 
 #' This family object was created specifically for fitting CBFMs. 
 #' 
-#' This family object was created specifically for fitting CBFMs. However it follows heavily from the [gamlss.tr::trun()] so big shout outs to the Mikis and the maintainers of that package.
+#' This family object was created specifically for fitting CBFMs. However it relies heavily on [gamlss.tr::trun()], so big shout outs to the Mikis and the maintainers of that package.
 #' 
 #' @return An object of class "gamlss.family" and "family"
 #' 
@@ -24,9 +24,24 @@ ztnb2 <- function() {
     maketrunfam <- gamlss.tr::trun(par = 0, family = "NBI", type = "left")()
     maketrunfam$family <- "ztnegative.binomial"
     maketrunfam$link <- "log"
+    maketrunfam$actual_variance <- function(lambda, phi) {
+      mu <- lambda / pnbinom(0, mu = lambda, size = 1/phi, lower.tail = FALSE)
+      mu * (1 + phi*lambda + lambda - mu)
+      }
     maketrunfam
      }
 
+
+
+.dztnbinom <- function(x, mu, size, log = FALSE) {
+  rval <- dnbinom(x, mu = mu, size = size, log = TRUE) - pnbinom(0, mu = mu, size = size, lower.tail = FALSE, log.p = TRUE)
+  rval[x < 1] <- -Inf
+  rval[mu <= 0] <- 0
+  if(log)
+    rval
+  else
+    exp(rval)
+    }
 
 
 ## Negative score of log zero truncated NB distribution wrt to eta, the linear predictor of the NB distribution component, where mu = exp(eta) 
@@ -48,6 +63,7 @@ ztnb2 <- function() {
   
   return(-s*mu) # Score of ztnb wrt to mu * eta(eta)
   }
+
 
 ## Negative second derivative of log zero truncated NB distribution wrt to eta, the linear predictor of the NB distribution component, where mu = exp(eta) 
 ## Adapted heavily from and acknowledgements go to the authors of the the countreg package

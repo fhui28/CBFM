@@ -21,8 +21,9 @@
 #' @param new_B_space_count For hurdle CBFM models, similar to \code{new_B_space} above but applied to the zero-truncated count component model. 
 #' @param new_B_time_count For hurdle CBFM models, similar to \code{new_B_time} above but applied to the zero-truncated count component model. 
 #' @param new_B_spacetime_count For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the zero-truncated count component model.
-#' @param type The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predictions for a binomial CBFM are the predicted probabilities.
-#' Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But for \code{type = "response"}, it returns the *actual predicted mean values* of the distribution, consistent with what \code{object$fitted} returns. 
+#' @param type The type of prediction required. The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predicted response for a binomial CBFM are the predicted probabilities.
+#' Note that zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the non-zero-inflated component, consistent with what \code{object$linear_predictor} returns. But \code{type = "response"} returns the *actual predicted mean values* of the distribution, consistent with what \code{object$fitted} returns. 
+#' Similarly, for zero-truncated distributions, code{type = "link"} returns the predicted linear predictor of the base count distribution, consistent with what \code{object$linear_predictor} returns. But \code{type = "response"} returns the *actual predicted mean values* of the zero-truncated distribution, consistent with what \code{object$fitted} returns. 
 #' A third option is given by \code{type  = "lpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata}. In [mgcv::predict.gam()], this is also known as the linear predictor matrix. Note under this option, arguments such as \code{new_B_space/new_B_time/new_B_spacetime/se_fit/coverage} are irrelevant and hence ignored. 
 #' Finally, for hurdle CBFMS, this option is not available as by default only predicted mean values i.e., \code{type = "response"} are possible.
 #' @param se_fit When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.
@@ -140,12 +141,14 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
 
         if(!se_fit) {
                 if(type == "response") {
-                        if(!(object$family$family %in% c("zipoisson", "zinegative.binomial","ztpoisson"))) 
+                        if(!(object$family$family[1] %in% c("zipoisson", "zinegative.binomial","ztpoisson","ztnegative.binomial"))) 
                                 ptpred <- object$family$linkinv(ptpred)
-                        if(object$family$family %in% c("zipoisson", "zinegative.binomial"))
+                        if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial"))
                                 ptpred <- object$family$linkinv(ptpred) * matrix(1-plogis(object$zeroinfl_prob_intercept), nrow(new_X), num_spp, byrow = TRUE)
-                        if(object$family$family %in% c("ztpoisson"))
+                        if(object$family$family[1] %in% c("ztpoisson"))
                                 ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
+                        if(object$family$family[1] %in% c("ztnegative.binomial"))
+                                ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow(new_X), num_spp, byrow = TRUE)))
                }
           return(ptpred)
           }
@@ -175,7 +178,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                 
                 ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
                 need_sim <- FALSE
-                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial","ztpoisson") & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated component, which does not need simulation
+                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial","ztpoisson","ztnegative.binomial") & type == "response") # For type == "link" it only returns the linear predictor of the non-zero-inflated component, which does not need simulation
                         need_sim <- TRUE
                 
                 
@@ -240,6 +243,19 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                         
                                         ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
                                         ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
+                                        return(as.matrix(ptpred))
+                                        }
+                    
+                                allpreds <- foreach(j = 1:num_sims) %dopar% inner_predfn(j = j)
+                                }
+                        if(object$family$family[1] %in% c("ztnegative.binomial") & type == "response") {
+                                inner_predfn <- function(j) {
+                                        parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
+                                        betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
+                                        basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
+                        
+                                        ptpred <- as.matrix(tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim))
+                                        ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow(new_X), num_spp, byrow = TRUE)))
                                         return(as.matrix(ptpred))
                                         }
                     

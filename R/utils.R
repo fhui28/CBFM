@@ -16,13 +16,12 @@
      }
 
                
-## E-step functions for zero-inflated distributions -- calculate the posterior probability of being in the zero-inflation component
-## Hidden and not exported
+## E-step functions for zero-inflated and zero-truncated distributions -- calculate the posterior probability of being in the zero-inflation component/posterior probability of observing a zero
 .estep_fn <- function(family, cwfit, y, X, B) {
-        num_units <- nrow(y)
-        num_spp <- ncol(y)
-        out <- Matrix::Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
-        if(family$family %in% c("zipoisson","zinegative.binomial")) {
+   num_units <- nrow(y)
+   num_spp <- ncol(y)
+   out <- Matrix::Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
+   if(family$family %in% c("zipoisson","zinegative.binomial")) {
                 fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
                 zeroinfl_prob <- plogis(cwfit$zeroinfl_prob_intercept)
                 
@@ -35,8 +34,15 @@
                         }
                 }
         
-        return(out)
-        }
+   # if(family$family %in% c("ztnegative.binomial")) {
+   #    fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
+   #    for(j in 1:num_spp) {
+   #       out[,j] <- dnbinom(0, mu = fitvals[,j], size = 1/cwfit$dispparam[j]) / (1-dnbinom(0, mu = fitvals[,j], size = 1/cwfit$dispparam[j]))
+   #       }
+   #    }
+        
+   return(out)
+   }
 
 
 
