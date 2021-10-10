@@ -2521,7 +2521,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                                         powerparam = matrix(out_CBFM$powerparam, num_units, num_spp, byrow = TRUE),
                                         zeroinfl_prob_intercept = matrix(out_CBFM$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 
                                         trial_size = trial_size, domore = TRUE)
-          if(family$family[1] %in% c("ztpoisson"))
+          if(family$family[1] %in% c("ztpoisson", "ztnegative.binomial"))
                weights_mat$out[is.na(weights_mat$out)] <- 0
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed

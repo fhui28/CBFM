@@ -308,6 +308,8 @@ predict.CBFM_hurdle <- function(object,
                                          type = "response", se_fit = TRUE, coverage = coverage, ncores = ncores, num_sims = num_sims, return_internals = TRUE)
                 if(object$count_fit$family$family[1] == "ztpoisson")
                         preds_counts <- exp(preds_counts) / (1-exp(-exp(preds_counts)))
+                if(object$count_fit$family$family[1] == "ztnegative.binomial")
+                        preds_counts <- exp(preds_counts) / (1-dnbinom(0, mu = exp(preds_counts), size = matrix(1/object$count_fit$dispparam, nrow(preds_counts), ncol(preds_counts), byrow = TRUE)))
                 final_preds <- preds_pa * preds_counts 
                 rm(preds_pa, preds_counts)
                 

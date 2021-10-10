@@ -148,6 +148,8 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
                                 powerparam = matrix(object$powerparam, num_units, num_spp, byrow = TRUE),
                                 zeroinfl_prob_intercept = matrix(object$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 
                                 trial_size = object$trial_size, domore = TRUE)
+  if(object$family$family[1] %in% c("ztpoisson", "ztnegative.binomial"))
+    weights_mat$out[is.na(weights_mat$out)] <- 0
   if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial")))
     weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
   if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))

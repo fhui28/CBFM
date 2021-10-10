@@ -105,7 +105,7 @@ fitted.CBFM_hurdle <- function(object, ...) {
      if(!inherits(object, "CBFM_hurdle")) 
         stop("`object' is not of class \"CBFM_hurdle\"")
 
-     if(object$count_fit$family$family[1] == "ztpoisson")
+     if(object$count_fit$family$family[1] %in% c("ztpoisson", "ztnegative.binomial"))
           out <- object$pa_fit$fitted * predict.CBFM(object$count_fit, type = "response")
      
      return(out)
