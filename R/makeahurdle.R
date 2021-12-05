@@ -123,7 +123,7 @@
 #' # Now simulate spatial count data from a truncated Poisson distribution
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts_ztp,spp_slopes_ztp)) + 
 #' tcrossprod(true_lvs_ztp, spp_loadings_ztp)
-#' ztpR <- trun.r(par = 0, family = PO()$family[1], type = "left") 
+#' ztpR <- trun.r(par = 0, family = "PO", type = "left") 
 #' simy_ztp <- matrix(ztpR(num_sites * num_spp, mu = exp(eta)), nrow = num_sites)
 #' 
 #' # Spatial multivariate count data from a hurdle Poisson model is then the product of the two
@@ -297,7 +297,7 @@
 #' # Now simulate spatial count data from a truncated NB distribution
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts_ztnb,spp_slopes_ztnb)) + 
 #' tcrossprod(true_lvs_ztnb, spp_loadings_ztnb)
-#' ztNBR <- trun.r(par = 0, family = NBI()$family[1], type = "left") 
+#' ztNBR <- trun.r(par = 0, family = "NBI", type = "left") 
 #' simy_ztnb <- matrix(ztNBR(num_sites * num_spp, mu = exp(eta)), nrow = num_sites)
 #' 
 #' # Spatial multivariate count data from a hurdle NB model is then the product of the two

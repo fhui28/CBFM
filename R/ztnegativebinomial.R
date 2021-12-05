@@ -15,13 +15,49 @@
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
 #' @export 
-#' 
-#' @importFrom gamlss.dist NBI
-#' @importFrom gamlss.tr trun
+# #' @importFrom gamlss.dist NBI
+# #' @importFrom gamlss.tr trun
 #' @md
 
 ztnb2 <- function() {
-    maketrunfam <- gamlss.tr::trun(par = 0, family = "NBI", type = "left")()
+    #maketrunfam <- trun(par = 0, family = "NBI", type = "left")()
+    maketrunfam <- list(
+      family = c("NBItr", "left truncated Negative Binomial type I"), 
+      parameters = list(mu = TRUE, sigma = TRUE), 
+      nopar = 2, 
+      type = "Discrete", 
+      mu.link = "log", 
+      #sigma.link = "log", 
+      mu.linkfun = function (mu) log(mu), 
+      #sigma.linkfun = function (mu) log(mu), 
+      mu.linkinv = function (eta) pmax(exp(eta), .Machine$double.eps), 
+      #sigma.linkinv = function (eta) pmax(exp(eta), .Machine$double.eps), 
+      mu.dr = function (eta) pmax(exp(eta), .Machine$double.eps), 
+      #sigma.dr = function (eta) pmax(exp(eta), .Machine$double.eps), 
+      #dldm = function (y, mu, sigma) 
+      #  attr(gamlss::numeric.deriv(dNBItr(y, mu, sigma, log = TRUE), "mu", delta = NULL), "gradient"), 
+      #d2ldm2 = function (mu, sigma) { -1/(mu * (1 + mu * sigma)) }, 
+      #dldd = function (y, mu, sigma) 
+      #  attr(gamlss::numeric.deriv(dNBItr(y, mu, sigma, log = TRUE), "sigma", delta = NULL), "gradient"), 
+      #d2ldd2 = function (y, mu, sigma) {
+      #  dldd <- -((1/sigma)^2) * (digamma(y + (1/sigma)) - digamma(1/sigma) - log(1 + mu * sigma) - (y - mu) * sigma/(1 + mu * sigma))
+      #  d2ldd2 <- -dldd^2
+      #  d2ldd2 <- ifelse(d2ldd2 < -1e-15, d2ldd2, -1e-15)
+      #  d2ldd2
+      #  }, 
+      #d2ldmdd = function (y) rep(0, length(y)), 
+      #G.dev.incr = function (y, mu, sigma, ...)  -2 * dNBItr(y, mu = mu, sigma = sigma, log = TRUE), 
+      #rqres = structure(expression(rqres(pfun = "pNBItr", type = "Discrete", ymin = 1, y = y, mu = mu, sigma = sigma)), 
+      #                  srcfile = <environment>, wholeSrcref = structure(c(1L, 0L, 3L, 0L, 0L, 0L, 1L, 3L), 
+      #                                                                   srcfile = <environment>, class = "srcref")), 
+      mu.initial = expression(mu <- (y + mean(y))/2), 
+      #sigma.initial = expression(sigma <- rep(max(((var(y) - mean(y))/(mean(y)^2)), 0.1), length(y))), 
+      mu.valid = function (mu) all(mu > 0), 
+      #sigma.valid = function (sigma) all(sigma > 0), 
+      y.valid = function (y) all(y >= 0),
+      mean = function (mu, sigma) mu, 
+      variance = function (mu, sigma) mu + sigma * mu^2
+      )
     maketrunfam$family <- "ztnegative.binomial"
     maketrunfam$link <- "log"
     maketrunfam$actual_variance <- function(lambda, phi) {

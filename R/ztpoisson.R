@@ -13,13 +13,35 @@
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
 #' @export 
-#' 
-#' @importFrom gamlss.dist PO
-#' @importFrom gamlss.tr trun
+# #' @importFrom gamlss.dist PO
+# #' @import gamlss.dist
+# #' @importFrom gamlss.tr trun
 #' @md
 
 ztpoisson <- function() {
-    maketrunfam <- trun(par = 0, family = "PO", type = "left")()
+    #maketrunfam <- trun(par = 0, family = "PO", type = "left")()
+    maketrunfam <- list(
+        family = c("POtr", "left truncated Poisson"), 
+        parameters = list(mu = TRUE), 
+        nopar = 1, 
+        type = "Discrete", 
+        mu.link = "log", 
+        mu.linkfun = function(mu) log(mu), 
+        mu.linkinv = function(eta) pmax(exp(eta), .Machine$double.eps), 
+        mu.dr = function(eta) pmax(exp(eta), .Machine$double.eps), 
+        #dldm = function(y, mu) attr(gamlss::numeric.deriv(dPOtr(y, mu, log = TRUE), "mu", delta = NULL), "gradient"), 
+        #d2ldm2 = function(mu) -1/mu, 
+        #G.dev.incr = function(y, mu, ...) -2 * dPOtr(x = y, mu = mu, log = TRUE), 
+        #rqres = structure(expression(rqres(pfun = "pPOtr", type = "Discrete", ymin = 1, y = y, mu = mu)), 
+        #                  srcfile = <environment>, wholeSrcref = structure(c(1L, 0L, 2L, 0L, 0L, 0L, 1L, 2L), 
+        #                                                                   srcfile = <environment>, class = "srcref")), 
+        mu.initial = expression({mu <- (y + mean(y))/2}), 
+        mu.valid = function(mu) all(mu > 0), 
+        y.valid = function(y) all(y >= 0), 
+        mean = function(mu) mu, 
+        variance = function (mu) mu
+        )
+    
     maketrunfam$family <- "ztpoisson"
     maketrunfam$link <- "log"
     maketrunfam$actual_variance <- function(mu, lambda) {
