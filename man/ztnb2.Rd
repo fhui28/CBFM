@@ -17,7 +17,7 @@ A specified family object for the zero-truncated negative binomial distribution,
 \details{
 This family object was created specifically for fitting CBFMs.
 
-This family object was created specifically for fitting CBFMs. However it follows heavily from the \code{\link[gamlss.tr:trun]{gamlss.tr::trun()}} so big shout outs to the Mikis and the maintainers of that package.
+This family object was created specifically for fitting CBFMs. However it relies heavily on \code{\link[gamlss.tr:trun]{gamlss.tr::trun()}}, so big shout outs to the Mikis and the maintainers of that package.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

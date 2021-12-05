@@ -138,8 +138,10 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
 \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
 \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. \emph{Note this is presented on the logit scale}, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
-\item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
-\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.)
+\item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM.
+Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
+\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.
+Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.)
 }
 \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
 \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied.}
@@ -229,7 +231,9 @@ Currently the following response distributions are permitted:
 \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
 \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
-\item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+\item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution as described above. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+
+\item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution as described above. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 
 Hurdle CBFMs are also possible (currently in its early stages though!); please see \code{\link[=makeahurdle]{makeahurdle()}} for more information.
 }
@@ -265,7 +269,7 @@ Also, the current estimation approach \strong{does not provide uncertainty quant
 \section{Warning}{
 \enumerate{
 \item CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}} and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
-\item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. Also, in zero-truncated distributions it is tha mean of the base distribution that is modeled with the regression model described above.
+\item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
 \item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well if at all!
 \item Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; \strong{estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.}
 \item Missing values are currently not handled in any manner or form in this package (sorry!). If you do have any missing values, then the standard course of action (and which is what functions such as \code{\link[stats:lm]{stats::lm()}} and \code{\link[mgcv:gam]{mgcv::gam()}} do as a default; see also \code{options("na.action")}) is to apply \code{\link[stats:na.fail]{stats::na.omit()}} and remove all observational units from your data with one or more missing values. This can of course also be done manually by the practitioner.
@@ -1004,12 +1008,15 @@ rm(list = ls())
 
 ##------------------------------
 ## **Example 1h: Repeat Example 1a but illustrate applications to zero-truncated count data** 
+## This one could take a while...grab a cuppa while you wait!
 ##------------------------------
 library(gamlss)
 library(gamlss.tr)
-gen.trun(0, family = "PO")
+gen.trun(0, family = "NBI")
+spp_dispersion <- runif(num_spp)
 # Simulate spatial multivariate abundance data
-simy <- matrix(rPOtr(num_sites * num_spp, mu = exp(eta)), num_sites, num_spp)
+simy <- matrix(rNBItr(num_sites * num_spp, mu = exp(eta), sigma = 
+matrix(spp_dispersion, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
 
 # Form training and test sets
 simy_train <- simy[1:500,]
@@ -1020,7 +1027,7 @@ simy_test <- simy[501:1000,]
 fitstacked <- NULL 
 for(j in 1:num_spp) {
 fitstacked[[j]] <- gamlss(resp ~ temp + depth + chla + O2, 
-data = data.frame(resp = simy_train[,j], dat_train), family = POtr)
+data = data.frame(resp = simy_train[,j], dat_train), family = NBItr)
 }
 
 
@@ -1037,11 +1044,11 @@ predict(newx = dat_test[,c("x","y")]) \%>\%
 as.matrix \%>\%
 {.[,-c(1)]} 
 
-# Fit zero-truncated Poisson CBFM
+# Fit zero-truncated negative binomial CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
-B_space = train_basisfunctions, family = ztpoisson(), control = list(trace = 1))
+B_space = train_basisfunctions, family = ztnb2(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
 
@@ -1053,7 +1060,10 @@ str
 # Note extra step needed for stacked models from gamlss to get the actual fitted values 
 predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
 newdata = dat_test, type = "response"))
-predictions_stacked <- predictions_stacked/(1-exp(-predictions_stacked))
+stacked_dispparam <- sapply(1:num_spp, function(j) exp(fitstacked[[j]]$sigma.coefficient))
+stacked_dispparam <- matrix(stacked_dispparam, nrow(dat_test), num_spp, byrow = TRUE)
+predictions_stacked <- predictions_stacked / 
+(1-dnbinom(0, mu = predictions_stacked, size = 1/stacked_dispparam))
 predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
 new_B_space = test_basisfunctions)
 
@@ -1079,13 +1089,15 @@ labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
 theme_bw()
 
 # Predictive deviance across species (lower is better)
-# Need to define density of zero-inflated Poisson distribution first (or get it from a package)
+# Need to define density of zero-inflated NB distribution first (or get it from a package)
 preddeviance <- data.frame(
 stacked = sapply(1:num_spp, function(j) { 
--2*sum(dPOtr(simy_test[,j], mu = predictions_stacked[,j], log = TRUE))
+-2*sum(dNBItr(simy_test[,j], mu = predictions_stacked[,j], 
+sigma = exp(fitstacked[[j]]$sigma.coefficient), log = TRUE))
 }),
 cbfm = sapply(1:num_spp, function(j) { 
--2*sum(dPOtr(simy_test[,j], mu = predictions_cbfm[,j], log = TRUE))
+-2*sum(dNBItr(simy_test[,j], mu = predictions_cbfm[,j], 
+sigma = fitcbfm$dispparam[j], log = TRUE))
 })
 )
 

@@ -102,6 +102,7 @@ Currently the following response distributions are permitted:
 \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+\item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 }
 
 Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration.
@@ -226,6 +227,34 @@ G = list(space = true_G_space_ztp))
 
 # Spatial multivariate count data from a hurdle model is then the product of the two
 simy_hurdlep <- simy_pa$y *  simy_ztp$y
+
+
+##-----------------------------------
+## **Example 6: Generate spatial multivariate count data from hurdle NB distribution**
+##-----------------------------------
+# This can be achieved by combining the mechanisms for presence-absence and zero-trun. NB
+spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_intercepts_ztnb <- runif(num_spp, -2, 0)
+
+true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, 
+diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
+true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] \%>\% 
+cov2cor
+
+# Generate spatial multivariate presence-absence data first
+# Basis function coefficients are simulated based on the supplied values of Sigma and G 
+simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
+Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
+
+# Now generate count data from a truncated NB distribution
+simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
+max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), dispparam = spp_dispersion, 
+G = list(space = true_G_space_ztp))
+
+# Spatial multivariate count data from a hurdle model is then the product of the two
+simy_hurdlenb <- simy_pa$y *  simy_ztnb$y
 }
 
 }
