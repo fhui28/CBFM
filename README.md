@@ -40,5 +40,5 @@ If you find something that looks like a bug/issue, please let us know report it,
 
 Thanks heaps!
 
-Finally, please note Github issues is a place to post any bugs/issues/unusual behavior in relation to the package. **Do not post any feature requests or general statistical modeling questions**. They will very likely be ignored and/or deleted without prior consent. Much appreciated.
+Finally, please note Github issues is a place to post any bugs/issues/unusual behavior in relation to the package. **Please do not post any feature general statistical modeling questions**. They will very likely be ignored and/or deleted without prior consent. Much appreciated.
 
