@@ -1,4 +1,4 @@
-## See github issues for outstanding things to do -- Sept 18 2021
+## See github issues for outstanding things to do!!!
 
 ## GENERAL APPROACH TO MODIFYING PACKAGE
 ## 1. Do all changes
@@ -7,9 +7,6 @@
 ## 3. Check package (Ctrl+Shift+E)
 ## 4. Build (optional)
 ## 5. Push to github
-
-# Could use remotes to do installaton for countreg, but then likely can not officially put it up on CRAN
-Remotes: svn:://svn.r-forge.r-project.org/svnroot/countreg/
 
 #Removed from DESCRIPTION since we now turn off compilation of the TMB C++ files [learning from how James Thorson does it with VAST!]
 LinkingTo: 
@@ -75,34 +72,6 @@ zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept
 return_correlation = TRUE
 
 
-
-
-#------------------------
-y = Y[sel_training_units,]
-data = X[sel_training_units,]
-formula_X = ~ TOW_EFFECT + s(DEPTH) + s(SURFTEMP) + s(BOTTEMP) + s(STRESS_Q95_YR)
-B_space =  train_sp_basisfunctions
-B_time = train_time_basisfunctions
-B_spacetime = NULL
-offset = NULL
-ncores = NULL
-gamma = 1
-trial_size = 1
-dofit = TRUE
-stderrors = TRUE
-select = FALSE
-family = nb2()
-control = list(trace = 1, initial_betas_dampen = 1)
-start_params = list(betas = t(sapply(stackedgams_spacetime, coef)[1:38,]))
-G_control = list(rank = c(5,5), method = "LA")
-Sigma_control = list(rank = c(5,2), method = "LA")
-#TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-TMB_directories = list(cpp = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/inst/executables", 
-                       compile = "/home/fh/Dropbox/private/Maths/ANU/Rpackage_CBFM/inst/executables")
-
-
-
-
 #-----------------------------
 #-----------------------------
 library(autoFRK)
@@ -141,10 +110,10 @@ spp_intercepts_ztnb <- runif(num_spp, -2, 0)
  
 true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
 true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% cov2cor
- 
-# Now generate data from a count distribution 
 spp_dispersion <- runif(num_spp, 0, 5)
-simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+
+ 
+simy_count <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
                               B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
                               G = list(space = true_G_space_ztnb), Sigma = list(space = true_Sigma_space_ztnb),
                               dispparam = spp_dispersion,  max_resp = 20000) 
@@ -152,7 +121,7 @@ simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = d
 
 
 # Now fit a zero-truncated count distribution, and CBFM has to ignore the zeros in the data
-y = simy_ztnb$y
+y = simy_count$y
 useformula <- ~ temp + depth + chla + O2
 formula_X = useformula
 data = dat
@@ -175,13 +144,16 @@ G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 
+
+
 ##---------------------
 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm_nb <- CBFM(y = simy_ztnb$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
-                family = nb2(), control = list(trace = 1))
-fitcbfm_ztnb <- CBFM(y = simy_ztnb$y, formula_X = useformula, data = dat, B_space = basisfunctions, 
-                family = ztnb2(), control = list(trace = 1))
+fitcbfm_nb <- CBFM(y = simy_count$y, formula_X = useformula, data = dat, B_space = basisfunctions, family = nb2(), control = list(trace = 1))
+
+fitcbfm_ztnb <- CBFM(y = simy_count$y, formula_X = useformula, data = dat, B_space = basisfunctions, family = ztnb2(), control = list(trace = 1))
+
+
 
 
 par(mfrow = c(1,2))
@@ -192,12 +164,11 @@ abline(0,1)
 
 plot(fitcbfm_ztnb)
 
-
-AIC(fitcbfm_nb)
-AIC(fitcbfm_ztnb)
+AIC(fitcbfm_nb, use_edf = TRUE)
+AIC(fitcbfm_ztnb, use_edf = TRUE)
 
 par(mfrow = c(1,2))
-plot(simy_ztnb$linear_predictor, fitcbfm_nb$linear_predictor)
+plot(simy_count$linear_predictor, fitcbfm_nb$linear_predictor)
 abline(0,1)
-plot(simy_ztnb$linear_predictor, fitcbfm_ztnb$linear_predictor)
+plot(simy_count$linear_predictor, fitcbfm_ztnb$linear_predictor)
 abline(0,1)

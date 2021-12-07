@@ -1787,20 +1787,22 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     }
                }
           if(family$family %in% c("ztnegative.binomial")) {
-               init_lambda <- mean(y[,j][y[,j]>0])
-               w <- dnbinom(0, mu = init_lambda, size = 1/0.2) / (1-dnbinom(0, mu = init_lambda, size = 1/0.2))
-               w <- c(rep(1,num_units), rep(w,num_units))
-               w[c(y[,j],y[,j]) == 0] <- 0
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,num_units)), rbind(data, data)), weights = w, offset = rep(offset[,j],2), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+               find_nonzeros <- which(y[,j] > 0)
+               init_lambda <- mean(y[find_nonzeros,j])
+               initw <- dnbinom(0, mu = init_lambda, size = 1/0.2) / (1-dnbinom(0, mu = init_lambda, size = 1/0.2))
+               w <- c(rep(0,num_units), rep(initw, length(find_nonzeros)))
+               w[find_nonzeros] <- 1
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j], rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), weights = w, offset = c(offset[,j],offset[find_nonzeros,j]), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
 
                if(fornulldeviance) {
                     inner_err <- Inf
                     cw_inner_logL <- logLik(fit0)
                     while(inner_err > 0.01) {
-                         w <- dnbinom(0, mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE)))
-                         w <- c(rep(1,num_units), w)
-                         w[c(y[,j],y[,j]) == 0] <- 0
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,num_units)), rbind(data, data)), weights = w, offset = rep(offset[,j],2), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+                         initw <- dnbinom(0, mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE)))
+                         initw <- initw[find_nonzeros]
+                         w <- c(rep(0,num_units), initw)
+                         w[find_nonzeros] <- 1
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), weights = w, offset = c(offset[,j],offset[find_nonzeros,j]), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
                          inner_err <- abs(logLik(fit0)/cw_inner_logL-1)
                          cw_inner_logL <- logLik(fit0)
                          }
@@ -2025,7 +2027,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          }
                     if(inherits(new_fit_CBFM, "try-error")) {
                          new_fit_CBFM <- list(par = tidbits_parameters$basis_effects)
-                         }
+                    }
                     #new_fit_CBFM <- optim(par = CBFM_objs$par, fn = CBFM_objs$fn, gr = CBFM_objs$gr, method = "BFGS")
                     
                     return(new_fit_CBFM)
@@ -2124,18 +2126,16 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
                          }
                     if(family$family %in% c("ztnegative.binomial")) {
-                         # E-step: Done needed to construct Q-function, which is only needed to update the X coefficients
-                         w <- dnbinom(0, mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + B %*% new_fit_CBFM_ptest$basis_effects_mat[j,] + offset[,j])), 
-                                      size = 1/new_fit_CBFM_ptest$dispparam[j])
-                         w <- w / (1-w)
-                         w <- c(rep(1,num_units), w)
-                         w[c(y[,j],y[,j]) == 0] <- 0
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,num_units)), rbind(data, data)), 
-                                         offset = rep(new_offset,2), method = "ML", weights = w, H = Hmat, family = nb(), select = select, 
-                                         gamma = gamma), silent = TRUE)
+                         find_nonzeros <- which(y[,j] > 0)
+                         initw <- dnbinom(0, mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + B %*% new_fit_CBFM_ptest$basis_effects_mat[j,] + offset[,j])), size = 1/new_fit_CBFM_ptest$dispparam[j])
+                         initw <- initw / (1 - initw)
+                         w <- c(rep(0, num_units), initw[find_nonzeros])
+                         w[find_nonzeros] <- 1
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), 
+                                         offset = c(new_offset,new_offset[find_nonzeros]), method = "ML", weights = w, H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j], rep(0,num_units)), rbind(data, data)), 
-                                         offset = rep(new_offset,2), method = "ML", weights = w, family = nb(), select = select, gamma = gamma)
+                              fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), 
+                                         offset = c(new_offset,new_offset[find_nonzeros]), method = "ML", weights = w, family = nb(), select = select, gamma = gamma)
                          fit0$linear.predictors <- fit0$linear.predictors[1:num_units] 
                          fit0$logLik <- .dztnbinom(y[,j], mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE), log = TRUE) # .dztnbinom y = 0 values to -Inf
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
