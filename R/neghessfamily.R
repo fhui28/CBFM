@@ -3,7 +3,7 @@
 ## Some help from Wolfram alpha differentiation online!
 
 .neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zeroinfl_prob_intercept = NULL, trial_size, return_matrix = FALSE, 
-                           domore = FALSE, tol = 1e-5) {
+                           domore = FALSE, tol = 1e-6) {
         if(family$family[1] %in% c("Beta")) {
                 out <- grad(.sbetalogit, x = eta, y = y, phi = phi)    
                 }
@@ -90,6 +90,7 @@
              }
 
         out[out < tol] <- tol ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights have be negative (by design?!)
+        out[!is.finite(out)] <- 0 ## At the moment, needed primarily for zero-truncated models where weights on the very rare occasional be stupid?
 
         if(!domore)
                 return(as.vector(out))
