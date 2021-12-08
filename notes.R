@@ -172,3 +172,11 @@ plot(simy_count$linear_predictor, fitcbfm_nb$linear_predictor)
 abline(0,1)
 plot(simy_count$linear_predictor, fitcbfm_ztnb$linear_predictor)
 abline(0,1)
+
+
+
+
+#-----------------------------
+#-----------------------------
+
+

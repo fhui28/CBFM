@@ -1777,8 +1777,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           if(family$family %in% c("ztpoisson")) {
                tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse=""), "+ offset(off)" ) )
+               cw_offset <- offset[,j]
+               if(is.null(cw_offset))
+                    cw_offset <- numeric(num_units)
                tmp_dat <- data.frame(response = c(y[,j], numeric(20)), data[c(1:nrow(data), 1:20),],
-                                     off = c(offset[,j], numeric(20))) # Append some zeros speeds ziplss up a heck of a lot!
+                                     off = c(cw_offset, numeric(20))) # Append some zeros speeds ziplss up a heck of a lot!
                fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, method = "ML", family = ziplss(), gamma = gamma), silent = TRUE)
                if(!inherits(fit0, "try-error")) {
                     fit0$coefficients <- fit0$coefficients[1:num_X] 
