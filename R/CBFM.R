@@ -46,6 +46,8 @@
 
 #' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "linear_predictor" which assesses convergence based on the mean squared error of the difference between estimated linear predictors from successive iterations  and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
 
+#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defalts to "ML", which is maximum likeihood esimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why maximum likelihood estimation is adopted as the default. }
+
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
 
 #' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An *ad-hoc* fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
@@ -1588,8 +1590,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, gamma = 1,
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", tol = 1e-4, initial_beta_dampen = 1, 
-                    subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0), 
+     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", gam_method = "ML", tol = 1e-4, initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0), 
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0), 
      G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0),
      k_check_control = list(subsample = 5000, n.rep = 400)
@@ -1710,27 +1711,27 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
           
           if(family$family %in% c("gaussian","poisson","Gamma")) {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = family, gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = family, gamma = gamma), silent = TRUE)
                fit0$logLik <- try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("binomial")) {
                tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
                use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
                
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = "ML", 
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = control$gam_method, 
                     family = family, gamma = gamma), silent = TRUE)
                fit0$logLik <- try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("negative.binomial")) {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = nb(), gamma = gamma), silent = TRUE)
                fit0$logLik <- try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("Beta")) {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = betar(link = "logit"), gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = betar(link = "logit"), gamma = gamma), silent = TRUE)
                fit0$logLik <- try(logLik(fit0), silent = TRUE)
                }
           if(family$family == "tweedie") {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = "ML", family = Tweedie(p = 1.6, link = "log"), gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = Tweedie(p = 1.6, link = "log"), gamma = gamma), silent = TRUE)
                fit0$logLik <- try(logLik(fit0), silent = TRUE)
                }
           if(family$family == "zipoisson") {
@@ -1738,7 +1739,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                init_pi <- mean(y[,j] == 0)
                init_lambda <- mean(y[,j])
                w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson", gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = control$gam_method, family = "poisson", gamma = gamma), silent = TRUE)
                
                if(fornulldeviance) {
                     inner_err <- Inf
@@ -1746,7 +1747,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     while(inner_err > 0.01) {
                          w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, lambda = fitted(fit0))), 0) # Posterior probabilities of being in zero-inflation component
                          init_pi <- mean(w + 1e-3)
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = "poisson", gamma = gamma), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = control$gam_method, family = "poisson", gamma = gamma), silent = TRUE)
                          inner_err <- abs(logLik(fit0)/cw_inner_logL-1)
                          cw_inner_logL <- logLik(fit0)
                          }
@@ -1759,7 +1760,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                init_pi <- mean(y[,j] == 0)
                init_lambda <- mean(y[,j])
                w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = init_lambda, size = 1/0.2)), 0)
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = control$gam_method, family = nb(), gamma = gamma), silent = TRUE)
                
                if(fornulldeviance) {
                     inner_err <- Inf
@@ -1767,7 +1768,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     while(inner_err > 0.01) {
                          w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = fitted(fit0), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
                          init_pi <- mean(w + 1e-3)
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = control$gam_method, family = nb(), gamma = gamma), silent = TRUE)
                          inner_err <- abs(logLik(fit0)/cw_inner_logL-1)
                          cw_inner_logL <- logLik(fit0)
                          }
@@ -1782,7 +1783,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     cw_offset <- numeric(num_units)
                tmp_dat <- data.frame(response = c(y[,j], numeric(20)), data[c(1:nrow(data), 1:20),],
                                      off = c(cw_offset, numeric(20))) # Append some zeros speeds ziplss up a heck of a lot!
-               fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, method = "ML", family = ziplss(), gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), gamma = gamma), silent = TRUE)
                if(!inherits(fit0, "try-error")) {
                     fit0$coefficients <- fit0$coefficients[1:num_X] 
                     fit0$logLik <- .dztpois(y[,j], lambda = exp(fitted(fit0)[1:num_units,1]), log = TRUE) # .dztpois y = 0 values to -Inf
@@ -1795,7 +1796,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                initw <- dnbinom(0, mu = init_lambda, size = 1/0.2) / (1-dnbinom(0, mu = init_lambda, size = 1/0.2))
                w <- c(rep(0,num_units), rep(initw, length(find_nonzeros)))
                w[find_nonzeros] <- 1
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j], rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), weights = w, offset = c(offset[,j],offset[find_nonzeros,j]), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j], rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), weights = w, offset = c(offset[,j],offset[find_nonzeros,j]), method = control$gam_method, family = nb(), gamma = gamma), silent = TRUE)
 
                if(fornulldeviance) {
                     inner_err <- Inf
@@ -1805,7 +1806,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          initw <- initw[find_nonzeros]
                          w <- c(rep(0,num_units), initw)
                          w[find_nonzeros] <- 1
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), weights = w, offset = c(offset[,j],offset[find_nonzeros,j]), method = "ML", family = nb(), gamma = gamma), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), weights = w, offset = c(offset[,j],offset[find_nonzeros,j]), method = control$gam_method, family = nb(), gamma = gamma), silent = TRUE)
                          inner_err <- abs(logLik(fit0)/cw_inner_logL-1)
                          cw_inner_logL <- logLik(fit0)
                          }
@@ -2053,10 +2054,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     Hmat <- diag(control$ridge+1e-15, nrow = num_X)
                     
                     if(family$family %in% c("gaussian","poisson","Gamma")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                          H = Hmat, family = family, select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           family = family, select = select, gamma = gamma)
                          fit0$logLik = as.vector(logLik(fit0))
                          }
@@ -2064,50 +2065,50 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
                          use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
      
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, method = "ML", H = Hmat, family = family, select = select, gamma = gamma), silent = TRUE)
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, method = control$gam_method, H = Hmat, family = family, select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           family = family, select = select, gamma = gamma)
                          fit0$logLik = as.vector(logLik(fit0))
                          }
                     if(family$family %in% c("negative.binomial")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML",
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method,
                                          H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           family = nb(), select = select, gamma = gamma)
                          fit0$logLik = as.vector(logLik(fit0))
                          }
                     if(family$family %in% c("Beta")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                          H = Hmat, family = betar(link = "logit"), select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           family = betar(link = "logit"), select = select, gamma = gamma)
                          fit0$logLik = as.vector(logLik(fit0))
                          }
                     if(family$family %in% c("tweedie")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML",
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method,
                                          H = Hmat, family = tw(link = "log"), select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           family = tw(link = "log"), select = select, gamma = gamma)
                          fit0$logLik = as.vector(logLik(fit0))
                          }
                     if(family$family %in% c("zipoisson")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                          weights = 1-getweights[,j], H = Hmat, family = "poisson", select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           weights = 1-getweights[,j], family = "poisson", select = select, gamma = gamma)
                          fit0$logLik <- sum(.dzipoisson_log(y = y[,j], eta = fit0$linear_predictor, 
                                                             zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j])))
                          }
                     if(family$family %in% c("zinegative.binomial")) {
-                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                         fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                          weights = 1-getweights[,j], H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = "ML", 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           weights = 1-getweights[,j], family = nb(), select = select, gamma = gamma)
                          fit0$logLik <- sum(.dzinegativebinomial_log(y = y[,j], eta = fit0$linear_predictor, 
                                                                      zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]),
@@ -2121,10 +2122,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          tmp_dat <- data.frame(response = c(y[,j], numeric(20)), data[c(1:nrow(data), 1:20),], 
                                                off = c(cw_offset + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,]), runif(20))) # Append some zeros speeds ziplss up a heck of a lot!
                          tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse=""), "+ offset(off)" ) )
-                         fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, offset = NULL, method = "ML", H = Hmat, family = ziplss(), 
+                         fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, offset = NULL, method = control$gam_method, H = Hmat, family = ziplss(), 
                                             select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
-                              fit0 <- try(gam(tmp_formula, data = tmp_dat, offset = new_offset, method = "ML", family = ziplss(), select = select, 
+                              fit0 <- try(gam(tmp_formula, data = tmp_dat, offset = new_offset, method = control$gam_method, family = ziplss(), select = select, 
                                               gamma = gamma), silent = TRUE)
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
                          fit0$linear.predictors <- fit0$linear.predictors[1:num_units,1] # Note linear predictors are also constructed for non-zero counts 
@@ -2138,10 +2139,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          w <- c(rep(0, num_units), initw[find_nonzeros])
                          w[find_nonzeros] <- 1
                          fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), 
-                                         offset = c(new_offset,new_offset[find_nonzeros]), method = "ML", weights = w, H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
+                                         offset = c(new_offset,new_offset[find_nonzeros]), method = control$gam_method, weights = w, H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
                          if(inherits(fit0, "try-error"))
                               fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j],rep(0,length(find_nonzeros))), rbind(data, data[find_nonzeros,])), 
-                                         offset = c(new_offset,new_offset[find_nonzeros]), method = "ML", weights = w, family = nb(), select = select, gamma = gamma)
+                                         offset = c(new_offset,new_offset[find_nonzeros]), method = control$gam_method, weights = w, family = nb(), select = select, gamma = gamma)
                          fit0$linear.predictors <- fit0$linear.predictors[1:num_units] 
                          fit0$logLik <- .dztnbinom(y[,j], mu = fitted(fit0)[1:num_units], size = fit0$family$getTheta(TRUE), log = TRUE) # .dztnbinom y = 0 values to -Inf
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)]) 
