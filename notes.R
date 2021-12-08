@@ -61,7 +61,7 @@ k_check_control = list(subsample = 5000, n.rep = 400)
 
 
 Ginv = new_LoadingnuggetG_space$covinv
-basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
+basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol
 Sigmainv = new_LoadingnuggetSigma_space$covinv
 B = B_space
 y_vec = as.vector(y)

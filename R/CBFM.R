@@ -2115,8 +2115,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          }
                     if(family$family %in% c("ztpoisson")) {
                          Hmat <- diag(control$ridge+1e-15, nrow = num_X+1)
+                         cw_offset <- offset[,j]
+                         if(is.null(cw_offset))
+                              cw_offset <- numeric(num_units)
                          tmp_dat <- data.frame(response = c(y[,j], numeric(20)), data[c(1:nrow(data), 1:20),], 
-                                               off = c(offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,]), runif(20))) # Append some zeros speeds ziplss up a heck of a lot!
+                                               off = c(cw_offset + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,]), runif(20))) # Append some zeros speeds ziplss up a heck of a lot!
                          tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse=""), "+ offset(off)" ) )
                          fit0 <- try(gam(list(tmp_formula, ~1), data = tmp_dat, offset = NULL, method = "ML", H = Hmat, family = ziplss(), 
                                             select = select, gamma = gamma), silent = TRUE)
