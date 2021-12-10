@@ -128,7 +128,7 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                         out <- out / sqrt(matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE) * object$family$variance(object$fitted))
                 if(object$family$family[1] %in% c("negative.binomial", "Beta")) 
                         out <- out / sqrt(object$family$variance(object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
-                if(object$family$family[1] %in% c("poisson", "ztpoisson")) 
+                if(object$family$family[1] %in% c("poisson")) 
                         out <- out / sqrt(object$family$variance(object$fitted))     
                 if(object$family$family[1] %in% c("tweedie")) 
                         out <- out / sqrt(object$family$variance(object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE),
@@ -139,7 +139,7 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                         out <- out / sqrt(object$family$actual_variance(object$fitted, zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
                             )
                 if(object$family$family[1] %in% c("ztpoisson")) 
-                        out <- out / sqrt(object$family$actual_variance(mu = object$fitted, lambda = exp(object$linear_predictor))) # Don't know if this causes issues with linear predictors equal to NA
+                        out <- out / sqrt(object$family$actual_variance(mu = object$fitted, lambda = exp(object$linear_predictor)))
                 if(object$family$family[1] %in% c("ztnegative.binomial")) 
                         out <- out / sqrt(object$family$actual_variance(lambda = exp(object$linear_predictor), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))) # Don't know if this causes issues with linear predictors equal to NA
           }
@@ -199,8 +199,12 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                   out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
                 
-          
-          if(type == "dunnsmyth")
+        
+
+          out[which(out > (1-.Machine$double.eps))] <- (1-.Machine$double.eps)
+          out[which(out < .Machine$double.eps)] <- .Machine$double.eps
+
+        if(type == "dunnsmyth")
                out <- qnorm(out)
           
           out <- matrix(out, nrow = num_units, ncol = num_spp)
