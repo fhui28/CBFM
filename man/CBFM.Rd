@@ -24,7 +24,7 @@ CBFM(
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
   control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type =
-    "parameters", gam_method = "ML", tol = 1e-04, initial_beta_dampen = 1,
+    "parameters", gam_method = "REML", tol = 1e-04, initial_beta_dampen = 1,
     subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0),
   G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100,
@@ -76,8 +76,10 @@ CBFM(
 \itemize{
 \item{maxit: }{The maximum number of iterations for the outer algorithm.}
 \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by \code{\link[mgcv:gam.control]{mgcv::gam.control()}} itself.}
-\item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "linear_predictor" which assesses convergence based on the mean squared error of the difference between estimated linear predictors from successive iterations  and "logLik", which assess convergence based on how close the ratio in the PQL value between successiveiterations is to one.}
-\item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defalts to "ML", which is maximum likeihood esimation. However other options are available; please see the \code{method} argument in \code{\link[mgcv:gam]{mgcv::gam()}} for the available options. In fact, note that \code{\link[mgcv:gam]{mgcv::gam()}} defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why maximum likelihood estimation is adopted as the default. }
+\item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "parameters_relative" which assesses convergence based on the relative change in mean squared error of the difference between estimated parameters from successive iterations, and "logLik_relative", which assess convergence based on the relative change in the PQL value between successive iterations.
+
+Although the first option is employed as a default, the second and third choices are often used in to assess convergence in other, likelihood-based optimization problems (e.g., Green, 1984).}
+\item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defalts to "REML", which is restricted maximum likelihood estimation. However other options are available; please see the \code{method} argument in \code{\link[mgcv:gam]{mgcv::gam()}} for the available options. In fact, note that \code{\link[mgcv:gam]{mgcv::gam()}} defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 \item{tol: }{The tolerance value to use when assessing convergence.}
 \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An \emph{ad-hoc} fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
 \item{subsequent_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}, during the running of the PQL estimation algorithm. To elaborate, during the PQL algorithm updates are made to the regression coefficients related to the combined matrix of basis functions, conditional on the regression coefficients corresponding to the model matrix. However, sometimes this updating can fails due to the latter producing non-sensible values to condition on e.g., due to severe overfitting in that component. If this occurs, then an \emph{ad-hoc} second attempt is made, but conditioning instead on a dampened/shrunk set of the regression coefficients corresponding to the model matrix, which can often help. This amount of dampening is controlled by this argument. For instance, setting \code{subsequent_betas_dampen = 0.25} sets the magnitudes of the regressio
@@ -1453,7 +1455,7 @@ m1 <- predictions_cbfm_tensor[which(simy_test[,j] > 0),j] \%>\%
 mean(na.rm = TRUE)
 m0 <- predictions_cbfm_tensor[which(simy_test[,j] == 0),j] \%>\%
 mean(na.rm = TRUE)
-m1 - m0     
+m1 - m0
 })
 
 boxplot(tjurR2, main = "Tjur-R2", 
@@ -1502,6 +1504,8 @@ Breslow, N. E., and Clayton, D. G. (1993). Approximate inference in generalized 
 Brooks, M. E., Kristensen, K., Van Benthem, K. J., Magnusson, A., Berg, C. W., Nielsen, A., and Bolker, B. M. (2017). glmmTMB balances speed and flexibility among packages for zero-inflated generalized linear mixed modeling. The R journal, 9, 378-400.
 
 Cressie, N., and Johannesson, G. (2008). Fixed rank kriging for very large spatial data sets. Journal of the Royal Statistical Society: Series B (Statistical Methodology), 70, 209-226.
+
+Green, P. J. (1984). Iteratively reweighted least squares for maximum likelihood estimation, and some robust and resistant alternatives. Journal of the Royal Statistical Society: Series B (Methodological), 46, 149-170.
 
 Guisan, A., Edwards Jr, T. C., and Hastie, T. (2002). Generalized linear and generalized additive models in studies of species distributions: setting the scene. Ecological modelling, 157, 89-100.
 
