@@ -37,11 +37,10 @@ LinkingTo:
 
 
 y = simy_train
-useformula <- ~ temp + depth + chla + O2
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions
-family =  nb2()
+family =  ztnb2()
 B_time = NULL
 B_spacetime = NULL
 offset = NULL

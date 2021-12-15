@@ -1811,7 +1811,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                inner_err <- Inf
                cw_logLik <- fit0$logLik
                while(inner_err > 1e-6) { # Being very strict here is needed to get reasonable intercept starting values?
-                    initw <- dnbinom(0, mu = fit0$fitted[1:length(find_nonzeros)], size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = fit0$fitted[1:length(find_nonzeros)], size = fit0$family$getTheta(TRUE)))
+                    initw <- dnbinom(0, mu = fit0$fitted[1:length(find_nonzeros)], size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = fit0$fitted[1:length(find_nonzeros)], size = fit0$family$getTheta(TRUE)) + 1e-4)
                     w <- c(rep(1,length(find_nonzeros)), initw)
                     fit0 <- try(gam(tmp_formula, 
                                     data = data.frame(response = c(y[find_nonzeros,j],rep(0,length(find_nonzeros))), data[c(find_nonzeros,find_nonzeros),]), 
@@ -2148,7 +2148,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          find_nonzeros <- which(y[,j] > 0)
                          while(inner_err > control$tol) {
                               initw <- dnbinom(0, mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset)), size = 1/new_fit_CBFM_ptest$dispparam[j])
-                              initw <- initw / (1 - initw)
+                              initw <- initw / (1 - initw + 1e-4)
                               initw <- initw[find_nonzeros]
                               w <- c(rep(1, length(find_nonzeros)), initw)
                               if(control$ridge > 0)
@@ -2167,7 +2167,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                               inner_err <- abs(fit0$logLik/cw_logLik - 1)
                               new_fit_CBFM_ptest$betas[j,] <- fit0$coefficients
                               new_fit_CBFM_ptest$dispparam[j] <- 1/fit0$family$getTheta(TRUE)
-                              #print(inner_err); print(fit0$logLik); print(fit0$coefficients)
                               cw_logLik <- fit0$logLik
                               }
                          
