@@ -293,6 +293,7 @@ plot.CBFM_hurdle <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c
         res[res > 1e3] <- 1e3
         dsres <- res[, sppind]
         etamat <- log(fitted.CBFM_hurdle(x)[,sppind])
+        etamat[!is.finite(etamat)] <- NA
         xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
         yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]), na.rm = TRUE)     
      
