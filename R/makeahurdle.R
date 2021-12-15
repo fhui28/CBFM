@@ -63,7 +63,7 @@
 #' Welsh, A. H., Cunningham, R. B., Donnelly, C. F., and Lindenmayer, D. B. (1996). Modelling the abundance of rare species: statistical models for counts with extra zeros. Ecological Modelling, 88, 297-308.
 #' 
 #' 
-#' @seealso [AIC.CBFM_hurdle()] and [AICc.CBFM_hurdle()] for calculation various information criteria from a hurdle CBFM fit, [fitted.CBFM_hurdle()] for extracting the fitted values from a hurdle CBFM fit, [logLik.CBFM_hurdle()] for extracting the log-likelihood from a hurdle CBFM fit, [predict.CBFM_hurdle()] for constructing predictions from a hurdle CBFM fit, [simulate.CBFM_hurdle()] for simulating spatio-temporal multivariate abundance data from a hurdle CBFM fit. Note the component CBFMs making up the object can be operated on using standard CBFM functions; see the [CBFM()] help file for more information.
+#' @seealso [AIC.CBFM_hurdle()] and [AICc.CBFM_hurdle()] for calculation various information criteria from a hurdle CBFM fit, [fitted.CBFM_hurdle()] for extracting the fitted values from a hurdle CBFM fit, [logLik.CBFM_hurdle()] for extracting the log-likelihood from a hurdle CBFM fit, [plot.CBFM_hurdle()] for basic residual diagnostics from a hurdle CBFM fit, [predict.CBFM_hurdle()] for constructing predictions from a hurdle CBFM fit, [residuals.CBFM_hurdle()] for constructing residuals from a hurdle CBFM fit, [simulate.CBFM_hurdle()] for simulating spatio-temporal multivariate abundance data from a hurdle CBFM fit. Note the component CBFMs making up the object can be operated on using standard CBFM functions; see the [CBFM()] help file for more information.
 #' 
 #' 
 #' @examples
@@ -178,6 +178,8 @@
 #' fitted(fitcbfm_hurdle)
 #' 
 #' residuals(fitcbfm_hurdle, type = "dunnsmyth")
+#' 
+#' plot(fitcbfm_hurdle)
 #' 
 #' simulate(fitcbfm_hurdle)
 #' 
@@ -354,6 +356,8 @@
 #' fitted(fitcbfm_hurdle)
 #' 
 #' residuals(fitcbfm_hurdle, type = "dunnsmyth")
+#' 
+#' plot(fitcbfm_hurdle)
 #' 
 #' simulate(fitcbfm_hurdle)
 #' 

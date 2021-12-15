@@ -2,7 +2,8 @@
 % Please edit documentation in R/plot.CBFM.R
 \name{plot.CBFM}
 \alias{plot.CBFM}
-\title{Basic plot residual diagnostics from a CBFM fit}
+\alias{plot.CBFM_hurdle}
+\title{Basic plot residual diagnostics from a (hurdle) CBFM fit}
 \usage{
 \method{plot}{CBFM}(
   x,
@@ -21,7 +22,7 @@
 )
 }
 \arguments{
-\item{x}{An object of class \code{CBFM}.}
+\item{x}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
 \item{which_plot}{If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.}
 
@@ -48,15 +49,14 @@
 \description{
 `r lifecycle::badge("experimental")`
 
-Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} project: 1) a plot of residuals against
-estimated linear predictors; 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
+Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} or \code{CBFM_hurdle} project: 1) a plot of residuals against estimated linear predictors (log of the fitted values for a hurdle model); 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
 }
 \details{
 This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the \code{gllvm} package, especially Jenni Niku, for the code!
 
 As basic residual diagnostics, these plots should behave a follows: 
 
-1. the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 
+1. the plot of residuals versus linear predictors/log of the fitted values should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 
 2. the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 
 3. a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 
 4. a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 

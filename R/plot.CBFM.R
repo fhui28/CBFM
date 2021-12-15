@@ -1,12 +1,11 @@
-#' @title Basic plot residual diagnostics from a CBFM fit
+#' @title Basic plot residual diagnostics from a (hurdle) CBFM fit
 #' 
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} project: 1) a plot of residuals against
-#' estimated linear predictors; 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
+#' Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} or \code{CBFM_hurdle} project: 1) a plot of residuals against estimated linear predictors (log of the fitted values for a hurdle model); 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
 #' 
-#' @param x An object of class \code{CBFM}.
+#' @param x An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param type The type of residuals to be used in constructing the plots. Currently the options available are: "response" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
 #' @param which_plot If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.
 #' @param titles Titles to appear above each plot.
@@ -25,7 +24,7 @@
 #' 
 #' As basic residual diagnostics, these plots should behave a follows: 
 #' 
-#' 1. the plot of residuals versus linear predictors should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 
+#' 1. the plot of residuals versus linear predictors/log of the fitted values should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 
 #' 2. the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 
 #' 3. a plot of residuals against observational unit index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying observational units; 
 #' 4. a plot of residuals against species index should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend. The plot can also be used to look for potential outlying species; 
@@ -117,6 +116,7 @@
 #' }
 #' 
 #' @export
+#' @aliases plot.CBFM plot.CBFM_hurdle
 #' @importFrom graphics abline boxplot lines panel.smooth par plot points polygon
 #' @importFrom grDevices rainbow
 #' @importFrom mgcv gam predict.gam
@@ -128,15 +128,15 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
         
         num_units <- nrow(x$y)
         num_spp <- ncol(x$y)
-        
+
         sppind <- 1:num_spp
         if(!is.null(which_species))
                 sppind <- sort(which_species)
           
         if(length(sppind) > num_spp)
-                stop("Length of which_species exceeded the number of species on x$y.")
+                stop("Length of which_species exceeded the number of species.")
         if(any(which_species > num_spp))
-                stop("which_species should be a vector of integers ranging from 1 to ncol(x$y) i.e., the number of species.")
+                stop("which_species should be a vector of integers ranging from 1 to the number of species.")
      
         if(any(which_plot > 5))
                 stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots that this function currently offers.")
@@ -148,9 +148,9 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
 
         res <- residuals(object = x, type = type, seed = seed)
         if(any(res < -1e3, na.rm = TRUE))
-                warning("Some extremely large negative residuals will be left out of the plotting.")
+                warning("Some extremely large negative residuals (< 1000) will be left out of the plotting.")
         if(any(res > 1e3, na.rm = TRUE))
-                warning("Some extremely large positive residuals will be left out of the plotting.")
+                warning("Some extremely large positive residuals (> 1000) will be left out of the plotting.")
         res[res < -1e3] <- -1e3
         res[res > 1e3] <- 1e3
         dsres <- res[, sppind]
@@ -179,26 +179,24 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
      
         # Residuals versus linear predictors
         if(1 %in% which_plot) {
-          if(is.null(gr.pars$xlim)) {
-               plot(etamat, dsres, xlab = "Linear predictors", ylab = "Residuals", type = "n", col = rep(col, each = num_units), 
-                    main = mains[1], xlim = c(min(xxx), max(xxx)), ylim = yyy)
-               abline(0, 0, col = "grey", lty = 3)
-               } 
-          else {
-               plot(etamat, dsres, xlab = "Linear predictors", ylab = "Residuals", type = "n", col = rep(col, each = num_units), 
-                    main = mains[1], ...)
-               abline(0, 0, col = "grey", lty = 3)
-               }
+                if(is.null(gr.pars$xlim)) {
+                        plot(etamat, dsres, xlab = "Linear predictors", ylab = "Residuals", type = "n", col = rep(col, each = num_units), main = mains[1], xlim = c(min(xxx), max(xxx)), ylim = yyy)
+                        abline(0, 0, col = "grey", lty = 3)
+                        } 
+                else {
+                        plot(etamat, dsres, xlab = "Linear predictors", ylab = "Residuals", type = "n", col = rep(col, each = num_units), main = mains[1], ...)
+                        abline(0, 0, col = "grey", lty = 3)
+                        }
  
-          if(smooth) 
-               .gamEnvelope(etamat, dsres, col = rep(col, each = num_units), envelopes = TRUE, envelope.col = envelope_col, ...)
+                if(smooth) 
+                        .gamEnvelope(etamat, dsres, col = rep(col, each = num_units), envelopes = TRUE, envelope.col = envelope_col, ...)
           
-          }
+                }
           
 
         # Normal probability or quantile-quantile plot of residuals with an approximate point-wise 95\% confidence interval envelope          
         if(2 %in% which_plot) {
-                qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "theoretical quantiles", ylim = yyy, type = "n")
+                qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "Theoretical quantiles", ylim = yyy, type = "n")
 
                 num_obs <- num_units * num_spp
                 if(envelope) {
@@ -262,6 +260,142 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
         }
 
      
+plot.CBFM_hurdle <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Residuals vs. log fitted values", "Normal probability plot", "Residuals vs. unit index", "Residuals vs. species index","Scale-Location plot"), species_colors = NULL, smooth = TRUE, envelope = TRUE, 
+                      envelope_col = c("blue","lightblue"), envelope_rep = 100,  which_species = NULL, seed = NULL, ...) {
+        
+        num_units <- nrow(x$pa_fit$y)
+        num_spp <- ncol(x$pa_fit$y)
+        sppind <- 1:num_spp
+        if(!is.null(which_species))
+                sppind <- sort(which_species)
+          
+        if(length(sppind) > num_spp)
+                stop("Length of which_species exceeded the number of species.")
+        if(any(which_species > num_spp))
+                stop("which_species should be a vector of integers ranging from 1 to the number of species.")
+     
+        if(any(which_plot > 5))
+                stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots that this function currently offers.")
+     
+     
+        # Form plot titles
+        mains <- rep("", 5)
+        mains[which_plot] <- titles[which_plot]
+
+        res <- residuals(object = x, type = type, seed = seed)
+        if(any(res < -1e3, na.rm = TRUE))
+                warning("Some extremely large negative residuals (< 1000) will be left out of the plotting.")
+        if(any(res > 1e3, na.rm = TRUE))
+                warning("Some extremely large positive residuals (> 1000) will be left out of the plotting.")
+        res[res < -1e3] <- -1e3
+        res[res > 1e3] <- 1e3
+        dsres <- res[, sppind]
+        etamat <- log(fitted.CBFM_hurdle(x)[,sppind])
+        xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
+        yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]), na.rm = TRUE)     
+     
+
+        # Form colors for species - done by prevalence
+        csum <- order(colSums(as.matrix(x$count_fit$y))[sppind])
+        if(!is.null(species_colors)) {
+                col <- rep(1, num_spp)
+                col[1:num_spp] <- species_colors
+                } 
+        if(is.null(species_colors)) {
+                if(num_spp < 8)
+                        col <- (1:num_spp)[csum]
+                else
+                        col <- rainbow(num_spp + 1)[2:(num_spp + 1)][csum]
+                }
+          
+
+        gr.pars <- list(...)
+        par(...)
+
+     
+        # Residuals versus linear predictors
+        if(1 %in% which_plot) {
+                if(is.null(gr.pars$xlim)) {
+                        plot(etamat, dsres, xlab = "Log of the fitted values", ylab = "Residuals", type = "n", col = rep(col, each = num_units), main = mains[1], xlim = c(min(xxx), max(xxx)), ylim = yyy)
+                        abline(0, 0, col = "grey", lty = 3)
+                        } 
+                else {
+                        plot(etamat, dsres, xlab = "Log of the fitted values", ylab = "Residuals", type = "n", col = rep(col, each = num_units), main = mains[1], ...)
+                        abline(0, 0, col = "grey", lty = 3)
+                        }
+ 
+                if(smooth) 
+                        .gamEnvelope(etamat, dsres, col = rep(col, each = num_units), envelopes = TRUE, envelope.col = envelope_col, ...)
+          
+                }
+          
+
+        # Normal probability or quantile-quantile plot of residuals with an approximate point-wise 95\% confidence interval envelope          
+        if(2 %in% which_plot) {
+                qq.x <- qqnorm(c(dsres), main = mains[2], ylab = "Dunn-Smyth residuals", col = rep(col, each = num_units), cex = 0.5, xlab = "Theoretical quantiles", ylim = yyy, type = "n")
+
+                num_obs <- num_units * num_spp
+                if(envelope) {
+                        message("Constructing (approximate) simulation envelopes for normal probability plot...")
+                 
+                        yy <- quantile(dsres, c(0.25, 0.75), names = FALSE, type = 7, na.rm = TRUE)
+                        xx <- qnorm(c(0.25, 0.75))
+                        slope <- diff(yy) / diff(xx)
+                        int <- yy[1] - slope * xx[1]
+                        all_ris <- matrix(rnorm(sum(!is.na(qq.x$x)) * envelope_rep, mean = int, sd = slope), ncol = envelope_rep)
+                        Ym <- apply(all_ris, 2, sort)
+                        rm(all_ris)
+                        #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
+                        cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
+                        rm(Ym)
+                        Xm <- sort(qq.x$x)
+
+                        polygon(Xm[c(1:length(Xm),length(Xm):1)], c(cis[1,],cis[2, length(Xm):1]), col = envelope_col[2], border = NA)
+                        }
+ 
+                points(qq.x$x, qq.x$y, col = rep(col, each = num_units), cex = 0.5)
+                qqline(c(dsres), col = envelope_col[1])
+                }
+          
+          
+        # Residuals against observational unit index          
+        if(3 %in% which_plot) {
+          plot(rep(1:num_units, num_spp), dsres, xlab = "Unit index", ylab = "Residuals", col = rep(col, each = num_units), main = mains[3], ..., ylim = yyy);
+          abline(0, 0, col = "grey", lty = 3)
+          if(smooth) 
+               panel.smooth(rep(1:num_units, num_spp), dsres, col = rep(col, each = num_units), col.smooth = envelope_col[1], ...)
+          }
+
+          
+        # Residuals against species index          
+        if(4 %in% which_plot) {
+          plot(rep(1:num_spp, each = num_units), dsres, xlab = "Species index", ylab = " Residuals", col = rep(col[csum], each = num_units), main = mains[4], ylim = yyy, ...) 
+          abline(0, 0, col = "grey", lty = 3)
+          if(smooth) 
+               panel.smooth(rep(1:num_spp, each = num_units), dsres, col = rep(col[csum], each = num_units), col.smooth = envelope_col[1], ...)
+          }
+
+          
+        # Scale-location plot
+        if(5 %in% which_plot) {
+          sqres <- sqrt(abs(dsres))
+          yyy <- range(sqres[dsres > -1e3 & dsres < 1e3], na.rm = TRUE)
+          yl <- as.expression(substitute(sqrt(abs(YL)), list(YL = as.name("Residuals"))))
+          
+          if(is.null(gr.pars$xlim)) {
+               plot(etamat, sqres, xlab = "Linear predictors", ylab = yl, col = rep(col, each = num_units), main = mains[5], xlim = c(min(xxx), max(xxx)), ylim = yyy, ...)
+               } 
+          else {
+               plot(etamat, sqres, xlab = "Linear predictors", ylab = yl, col = rep(col, each = num_units), main = mains[5], ...)
+               }
+
+          if(smooth) 
+               panel.smooth(etamat, sqres, col = rep(col, each = num_units), col.smooth = envelope_col[1], ...)
+          }
+     
+        }
+
+
 ## Modified from gllvm package. Thanks to Jenni for this function!
 .gamEnvelope <- function(x, y, line.col = "red", envelope.col = c("blue","lightblue"), col = 1, envelopes = TRUE, subsample = 5000, ...) {
         xSort <- sort(x, index.return = TRUE)

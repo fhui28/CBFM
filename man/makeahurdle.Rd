@@ -162,7 +162,9 @@ fitcbfm_hurdle
 
 fitted(fitcbfm_hurdle)
 
-residuals(fitcbfm_hurdle, type = "dunn")
+residuals(fitcbfm_hurdle, type = "dunnsmyth")
+
+plot(fitcbfm_hurdle)
 
 simulate(fitcbfm_hurdle)
 
@@ -340,6 +342,8 @@ fitted(fitcbfm_hurdle)
 
 residuals(fitcbfm_hurdle, type = "dunnsmyth")
 
+plot(fitcbfm_hurdle)
+
 simulate(fitcbfm_hurdle)
 
 logLik(fitcbfm_hurdle, use_edf = TRUE) 
@@ -433,7 +437,7 @@ Thorson, J. T. (2019). Guidance for decisions using the Vector Autoregressive Sp
 Welsh, A. H., Cunningham, R. B., Donnelly, C. F., and Lindenmayer, D. B. (1996). Modelling the abundance of rare species: statistical models for counts with extra zeros. Ecological Modelling, 88, 297-308.
 }
 \seealso{
-\code{\link[=AIC.CBFM_hurdle]{AIC.CBFM_hurdle()}} and \code{\link[=AICc.CBFM_hurdle]{AICc.CBFM_hurdle()}} for calculation various information criteria from a hurdle CBFM fit, \code{\link[=fitted.CBFM_hurdle]{fitted.CBFM_hurdle()}} for extracting the fitted values from a hurdle CBFM fit, \code{\link[=logLik.CBFM_hurdle]{logLik.CBFM_hurdle()}} for extracting the log-likelihood from a hurdle CBFM fit, \code{\link[=predict.CBFM_hurdle]{predict.CBFM_hurdle()}} for constructing predictions from a hurdle CBFM fit, \code{\link[=simulate.CBFM_hurdle]{simulate.CBFM_hurdle()}} for simulating spatio-temporal multivariate abundance data from a hurdle CBFM fit. Note the component CBFMs making up the object can be operated on using standard CBFM functions; see the \code{\link[=CBFM]{CBFM()}} help file for more information.
+\code{\link[=AIC.CBFM_hurdle]{AIC.CBFM_hurdle()}} and \code{\link[=AICc.CBFM_hurdle]{AICc.CBFM_hurdle()}} for calculation various information criteria from a hurdle CBFM fit, \code{\link[=fitted.CBFM_hurdle]{fitted.CBFM_hurdle()}} for extracting the fitted values from a hurdle CBFM fit, \code{\link[=logLik.CBFM_hurdle]{logLik.CBFM_hurdle()}} for extracting the log-likelihood from a hurdle CBFM fit, \code{\link[=plot.CBFM_hurdle]{plot.CBFM_hurdle()}} for basic residual diagnostics from a hurdle CBFM fit, \code{\link[=predict.CBFM_hurdle]{predict.CBFM_hurdle()}} for constructing predictions from a hurdle CBFM fit, \code{\link[=residuals.CBFM_hurdle]{residuals.CBFM_hurdle()}} for constructing residuals from a hurdle CBFM fit, \code{\link[=simulate.CBFM_hurdle]{simulate.CBFM_hurdle()}} for simulating spatio-temporal multivariate abundance data from a hurdle CBFM fit. Note the component CBFMs making up the object can be operated on using standard CBFM functions; see the \code{\link[=CBFM]{CBFM()}} help file for more information.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
