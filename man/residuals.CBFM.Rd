@@ -2,14 +2,15 @@
 % Please edit documentation in R/residuals.CBFM.R
 \name{residuals.CBFM}
 \alias{residuals.CBFM}
-\title{Extract residuals from a CBFM fit}
+\alias{residuals.CBFM_hurdle}
+\title{Extract residuals from a (hurdle) CBFM fit}
 \usage{
 \method{residuals}{CBFM}(object, type = "response", seed = NULL, ...)
 }
 \arguments{
-\item{object}{An object of class \code{CBFM}.}
+\item{object}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
-\item{type}{The type of residuals which should be returned. Currently the options available are: "repose" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.}
+\item{type}{The type of residuals which should be returned. For general \code{CBFM} objects, the options currently available are: "response" (default), "pearson", "PIT", "dunnsmyth". For \code{CBFM_hurdle} objects, only "response" (default), "PIT", and "dunnsmyth" are permitted. This can be abbreviated.}
 
 \item{seed}{This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.}
 
@@ -21,7 +22,7 @@ A matrix of residuals.
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Calculate various types of residuals from a fitted \code{CBFM} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
+Calculate various types of residuals from a fitted \code{CBFM} or \code{CBFM_hurdle} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
 }
 \details{
 Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then:

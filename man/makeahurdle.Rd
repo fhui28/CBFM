@@ -162,6 +162,8 @@ fitcbfm_hurdle
 
 fitted(fitcbfm_hurdle)
 
+residuals(fitcbfm_hurdle, type = "dunn")
+
 simulate(fitcbfm_hurdle)
 
 logLik(fitcbfm_hurdle, use_edf = TRUE) 
@@ -335,6 +337,8 @@ rm(fitcbfm_pa, fitcbfm_ztnb)
 fitcbfm_hurdle
 
 fitted(fitcbfm_hurdle)
+
+residuals(fitcbfm_hurdle, type = "dunnsmyth")
 
 simulate(fitcbfm_hurdle)
 

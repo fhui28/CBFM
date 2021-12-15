@@ -177,6 +177,8 @@
 #' 
 #' fitted(fitcbfm_hurdle)
 #' 
+#' residuals(fitcbfm_hurdle, type = "dunnsmyth")
+#' 
 #' simulate(fitcbfm_hurdle)
 #' 
 #' logLik(fitcbfm_hurdle, use_edf = TRUE) 
@@ -351,6 +353,8 @@
 #' 
 #' fitted(fitcbfm_hurdle)
 #' 
+#' residuals(fitcbfm_hurdle, type = "dunnsmyth")
+#' 
 #' simulate(fitcbfm_hurdle)
 #' 
 #' logLik(fitcbfm_hurdle, use_edf = TRUE) 
@@ -446,3 +450,76 @@ makeahurdle <- function(pa_object, count_object, ...) {
      return(out)
      }
 
+
+
+# Adapted from and acknowledgement goes to the authors of gamlss.dist
+# Note zeroprob is the probability of a zero
+.phurdlepoisson <- function(q, lambda = 5, zeroprob, lower.tail = TRUE, log.p = FALSE) {
+        if(any(lambda <= 0)) 
+                stop(paste("lambda must be greater than 0", "\n", ""))
+        if(any(zeroprob <= 0) | any(zeroprob >= 1)) 
+                stop(paste("zeroprob must be between 0 and 1", "\n", ""))
+        if(any(q < 0)) 
+                stop(paste("y must be 0 or greater than 0", "\n", ""))
+    
+        ly <- max(length(q), length(lambda), length(zeroprob))
+        q <- rep(q, length = ly)
+        lambda <- rep(lambda, length = ly)
+        zeroprob <- rep(zeroprob, length = ly)
+        
+        cdf <- rep(0, ly)
+        cdf1 <- ppois(q, lambda = lambda, lower.tail = TRUE, log.p = FALSE)
+        cdf2 <- ppois(0, lambda = lambda, lower.tail = TRUE, log.p = FALSE)
+        cdf3 <- zeroprob + ((1 - zeroprob) * (cdf1 - cdf2)/(1 - cdf2))
+        cdf <- ifelse((q == 0), zeroprob, cdf3)
+        
+        if(lower.tail == TRUE) 
+                cdf <- cdf
+        else 
+                cdf <- 1 - cdf
+        
+        if(log.p == FALSE) 
+                cdf <- cdf
+        else
+                cdf <- log(cdf)
+        
+        return(cdf)
+        }
+
+
+
+
+# Adapted from and acknowledgement goes to the authors of gamlss.dist
+# Note zeroprob is the probability of a zero
+.phurdlenb2 <- function(q, mu, phi, zeroprob, lower.tail = TRUE, log.p = FALSE) {
+        if(any(mu <= 0)) 
+                stop(paste("mu must be greater than 0 ", "\n", ""))
+        if(any(phi <= 0)) 
+                stop(paste("phi must be greater than 0 ", "\n", ""))
+        if(any(zeroprob <= 0) | any(zeroprob >= 1)) 
+                stop(paste("zeroprob must be between 0 and 1 ", "\n", ""))
+        if(any(q < 0))
+                stop(paste("y must be >=0", "\n", ""))
+    
+        
+        ly <- max(length(q), length(mu), length(zeroprob), length(phi))
+        q <- rep(q, length = ly)
+        phi <- rep(phi, length = ly)
+        mu <- rep(mu, length = ly)
+        zeroprob <- rep(zeroprob, length = ly)
+    
+        cdf0 <- pnbinom(0, mu = mu, size = 1/phi)
+        cdf1 <- pnbinom(q, mu = mu, size = 1/phi)
+        cdf3 <- zeroprob + ((1 - zeroprob) * (cdf1 - cdf0)/(1 - cdf0))
+        cdf <- ifelse((q == 0), zeroprob, cdf3)
+        
+        if(lower.tail == TRUE) 
+                cdf <- cdf
+        else 
+                cdf <- 1 - cdf
+        if(log.p == FALSE) 
+                cdf <- cdf
+        else 
+                cdf <- log(cdf)
+        return(cdf)
+        }
