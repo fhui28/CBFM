@@ -20,6 +20,22 @@
   seed = NULL,
   ...
 )
+
+\method{plot}{CBFM_hurdle}(
+  x,
+  which_plot = 1:5,
+  type = "dunnsmyth",
+  titles = c("Residuals vs. log fitted values", "Normal probability plot",
+    "Residuals vs. unit index", "Residuals vs. species index", "Scale-Location plot"),
+  species_colors = NULL,
+  smooth = TRUE,
+  envelope = TRUE,
+  envelope_col = c("blue", "lightblue"),
+  envelope_rep = 100,
+  which_species = NULL,
+  seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}

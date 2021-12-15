@@ -219,6 +219,8 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
      }
 
 
+#' @rdname residuals.CBFM
+#' @export
 # Note Pearson residuals currently not allowed
 residuals.CBFM_hurdle <- function(object, type = "response", seed = NULL, ...) {
         if(!inherits(object, "CBFM_hurdle")) 

@@ -6,6 +6,8 @@
 \title{Extract residuals from a (hurdle) CBFM fit}
 \usage{
 \method{residuals}{CBFM}(object, type = "response", seed = NULL, ...)
+
+\method{residuals}{CBFM_hurdle}(object, type = "response", seed = NULL, ...)
 }
 \arguments{
 \item{object}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
