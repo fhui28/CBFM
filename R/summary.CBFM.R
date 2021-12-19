@@ -68,7 +68,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
     if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
     
-  if(is.null(ncores))
+    if(is.null(ncores))
         registerDoParallel(cores = detectCores()-1)
     if(!is.null(ncores))
         registerDoParallel(cores = ncores)
@@ -114,8 +114,9 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
              if(M+1 <= length(D$values))
                  D$values[(M+1):length(D$values)]<-1
              D$values<- 1/D$values
-             if(M+1 <= length(D$values)) D$values[(M+1):length(D$values)]<-0
-             res <- D$vectors %*% tcrossprod(D$values)  ##D$u%*%diag(D$d)%*%D$v
+             if(M+1 <= length(D$values)) 
+               D$values[(M+1):length(D$values)]<-0
+             res <- D$vectors %*% diag(x = D$values, nrow = length(D$values)) %*% t(D$vectors)
              attr(res,"rank") <- M
              res
             }
@@ -178,7 +179,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                             pTerms.df[k] <- nb <- 1
                             pTerms.chi.sq[k] <- V * b * b
                             }
-                        else {
+                        if(length(b) > 1) {
                             V <- pinv(V, length(b), rank.tol = 0.5*.Machine$double.eps)
                             pTerms.df[k] <- nb <- attr(V,"rank")
                             pTerms.chi.sq[k] <- crossprod(b, V) %*% b
