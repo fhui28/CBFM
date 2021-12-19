@@ -1027,6 +1027,7 @@ simy_test <- simy[501:1000,]
 
 
 # Fit stacked zero-truncated regression models as a baseline
+# Note gamlss may sometimes fail...
 fitstacked <- NULL 
 for(j in 1:num_spp) {
 fitstacked[[j]] <- gamlss(resp ~ temp + depth + chla + O2, 
