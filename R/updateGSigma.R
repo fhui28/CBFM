@@ -30,7 +30,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
                 ## Set up to to REML as opposed to ML
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
-                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j]))))
+                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
                         BTWX <- crossprod(B, X*weights_mat[,j])               
                         return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                         }
@@ -205,7 +205,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                 ## Set up to to REML as opposed to ML
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
-                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j]))))
+                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
                         BTWX <- crossprod(B, X*weights_mat[,j])               
                         return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                         }
