@@ -85,11 +85,14 @@
 #' @md
 
 model.matrix.CBFM <- function(object, ...) {
-     if(!inherits(object, "CBFM")) 
-        stop("`object' is not of class \"CBFM\"")
-     
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,1], object$data), fit = TRUE, control = list(maxit = 1))
-     return(predict.gam(nullfit, type = "lpmatrix", ...))
-     }
+        if(!inherits(object, "CBFM")) 
+                stop("`object' is not of class \"CBFM\"")
+
+        
+        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+        nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,1], object$data), fit = TRUE, control = list(maxit = 1))
+
+        MM <- predict.gam(nullfit, type = "lpmatrix", ...)
+        return(MM)
+        }
      
