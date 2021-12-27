@@ -140,9 +140,9 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                         out <- out / sqrt(object$family$actual_variance(object$fitted, zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
                             )
                 if(object$family$family[1] %in% c("ztpoisson")) 
-                        out <- out / sqrt(object$family$actual_variance(mu = object$fitted, lambda = exp(object$linear_predictor)))
+                        out <- out / sqrt(object$family$actual_variance(mu = object$fitted, lambda = exp(object$linear_predictors)))
                 if(object$family$family[1] %in% c("ztnegative.binomial")) 
-                        out <- out / sqrt(object$family$actual_variance(lambda = exp(object$linear_predictor), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))) # Don't know if this causes issues with linear predictors equal to NA
+                        out <- out / sqrt(object$family$actual_variance(lambda = exp(object$linear_predictors), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))) # Don't know if this causes issues with linear predictors equal to NA
           }
           
         if(type %in% c("PIT","dunnsmyth")) {
@@ -175,28 +175,28 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                         }
                 if(object$family$family[1] %in% c("zipoisson")) {
                         out <- runif(length(object$y), 
-                                     min = .pzipois(object$y-1, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                                     max = .pzipois(object$y, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE))
+                                     min = .pzipois(object$y-1, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                                     max = .pzipois(object$y, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE))
                                      )
                         }
                 if(object$family$family[1] %in% c("zinegative.binomial")) {
                         out <- runif(length(object$y), 
-                                     min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                                     max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictor), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                                     min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                                     max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
                                      )
                }
           if(object$family$family[1] %in% c("ztpoisson")) {
                   tmp_trun <- trun.p(par = 0, family = "PO", type = "left")
                   out <- matrix(NA, nrow = num_units, ncol = num_spp)
-                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictor[which(object$y>0)]))
-                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictor[which(object$y>0)]))
+                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]))
+                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]))
                   out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
           if(object$family$family[1] %in% c("ztnegative.binomial")) {
                   tmp_trun <- trun.p(par = 0, family = "NBI", type = "left")
                   out <- matrix(NA, nrow = num_units, ncol = num_spp)
-                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictor[which(object$y>0)]), sigma = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
-                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictor[which(object$y>0)]), sigma = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
+                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]), sigma = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
+                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]), sigma = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
                   out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
                 

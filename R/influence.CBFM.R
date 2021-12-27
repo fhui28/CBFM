@@ -134,7 +134,7 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
    if(is.null(object$zeroinfl_prob_intercept))
       object$zeroinfl_prob_intercept <- rep(0, num_spp)
   
-   weights_mat <- .neghessfamily(family = object$family, eta = object$linear_predictor, y = object$y, 
+   weights_mat <- .neghessfamily(family = object$family, eta = object$linear_predictors, y = object$y, 
                                  phi = matrix(object$dispparam, num_units, num_spp, byrow = TRUE), 
                                  powerparam = matrix(object$powerparam, num_units, num_spp, byrow = TRUE),
                                  zeroinfl_prob_intercept = matrix(object$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 

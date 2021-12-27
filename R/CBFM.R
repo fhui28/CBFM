@@ -261,7 +261,7 @@
 
 #' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
 
-#' \item{linear_predictor: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. 
+#' \item{linear_predictors: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM. 
 #' Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
 
 #' \item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. 
@@ -1814,8 +1814,9 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                
                fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), gamma = gamma)
                if(!inherits(fit0, "try-error")) {
-                    MM <- model.matrix(fit0)[1:num_units,-ncol(MM),drop=FALSE]
-                    fit0$coefficients <- fit0$coefficients[-ncol(MM)] 
+                    MM <- model.matrix(fit0)[1:num_units,,drop=FALSE]
+                    MM <- MM[, -ncol(MM), drop=FALSE]
+                    fit0$coefficients <- fit0$coefficients[1:ncol(MM)] 
                     fit0$logLik <- .dztpois(y[,j], lambda = exp(MM %*% fit0$coefficients + cw_offset), log = TRUE) # .dztpois y = 0 values to -Inf; because offset is in formula, then offset is contained in linear.predictors
                     fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])
                     rm(MM)
@@ -2197,7 +2198,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), select = select, gamma = gamma)
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset 
-                         fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear_predictors), log = TRUE) # .dztpois y = 0 values to -Inf
+                         fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois y = 0 values to -Inf
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])                               
                          }
                     if(family$family %in% c("ztnegative.binomial")) { # Do EM here to update betas
@@ -2268,7 +2269,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                
                all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
                new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
-               new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)         
+               new_fit_CBFM_ptest$linear_predictors <- sapply(all_update_coefs, function(x) x$linear.predictors)         
                for(j in 1:num_spp) {
                     if(family$family[1] %in% c("gaussian","Gamma","negative.binomial","tweedie","Beta","zinegative.binomial","ztnegative.binomial"))
                          new_fit_CBFM_ptest$dispparam[j] <- all_update_coefs[[j]]$dispparam
@@ -2297,7 +2298,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol, 
                     Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor),  dispparam = new_fit_CBFM_ptest$dispparam, 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                     trial_size = trial_size, family = family, G_control = G_control)
                new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1)
@@ -2307,7 +2308,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+G_control$tol, 
                     Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                     trial_size = trial_size, family = family, G_control = G_control)
                new_LoadingnuggetG_time <- update_LoadingG_fn(G = new_G_time, G_control = G_control, use_rank_element = sum(which_B_used[1:2]))
@@ -2317,7 +2318,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+G_control$tol, 
                     Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                     trial_size = trial_size, family = family, G_control = G_control)
                new_LoadingnuggetG_spacetime <- update_LoadingG_fn(G = new_G_spacetime, G_control = G_control, use_rank_element = sum(which_B_used[1:3]))
@@ -2335,7 +2336,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+Sigma_control$tol, 
                     Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                     trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                new_LoadingnuggetSigma_space <- update_LoadingSigma_fn(Sigma = new_Sigma_space, Sigma_control = Sigma_control, use_rank_element = 1)
@@ -2345,7 +2346,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+Sigma_control$tol, 
                     Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor),  dispparam = new_fit_CBFM_ptest$dispparam, 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                     trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                new_LoadingnuggetSigma_time <- update_LoadingSigma_fn(Sigma = new_Sigma_time, Sigma_control = Sigma_control, use_rank_element = sum(which_B_used[1:2]))
@@ -2355,7 +2356,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, 
                     basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+Sigma_control$tol, 
                     Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictor), dispparam = new_fit_CBFM_ptest$dispparam, 
+                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                     trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                new_LoadingnuggetSigma_spacetime <- update_LoadingSigma_fn(Sigma = new_Sigma_spacetime, Sigma_control = Sigma_control, 
@@ -2390,8 +2391,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                diff <- mean((params_diff)^2)/mean(cw_params^2) 
           if(control$convergence_type == "logLik_relative")
                diff <- abs(new_logLik/cw_logLik-1)  
-          #if(control$convergence_type == "linear_predictor")
-          #     diff <- mean((new_fit_CBFM_ptest$linear_predictor - cw_linpred)^2) 
+          #if(control$convergence_type == "linear_predictors")
+          #     diff <- mean((new_fit_CBFM_ptest$linear_predictors - cw_linpred)^2) 
           if(control$trace > 0) {
                if(control$convergence_type == "parameters")
                     message("Iteration: ", counter, "\t Difference in parameter estimates: ", round(diff,5))
@@ -2399,15 +2400,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     message("Iteration: ", counter, "\t Relative difference in parameter estimates: ", round(diff,5))
                if(control$convergence_type == "logLik_relative")
                     message("Iteration: ", counter, "\t Relative difference in PQL values: ", round(diff,5))
-               #if(control$convergence_type == "linear_predictor")
-               #     message("Iteration: ", counter, "\t MSE of linear predictors: ", round(mean((new_fit_CBFM_ptest$linear_predictor - cw_linpred)^2),5))
+               #if(control$convergence_type == "linear_predictors")
+               #     message("Iteration: ", counter, "\t MSE of linear predictors: ", round(mean((new_fit_CBFM_ptest$linear_predictors - cw_linpred)^2),5))
                }
                
           #message("Iteration: ", counter, "\t Current PQL value: ", round(new_logLik,5))
           #message("Iteration: ", counter, "\t Relative change in PQL values: ", round(abs(new_logLik/cw_logLik-1) + 1e6*as.numeric(counter == 0),5))
           cw_params <- new_params
           cw_logLik <- new_logLik
-          #cw_linpred <- new_fit_CBFM_ptest$linear_predictor
+          #cw_linpred <- new_fit_CBFM_ptest$linear_predictors
           counter <- counter + 1
           }
      toc <- proc.time()
@@ -2434,7 +2435,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
           new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
-          new_fit_CBFM_ptest$linear_predictor <- sapply(all_update_coefs, function(x) x$linear.predictors)          
+          new_fit_CBFM_ptest$linear_predictors <- sapply(all_update_coefs, function(x) x$linear.predictors)          
           new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf) # Maybe shoddy for zero-inflated and zero-truncated distributions     
           new_fit_CBFM_ptest$edf1 <- sapply(all_update_coefs, function(x) x$fit$edf1) # Maybe shoddy for zero-inflated and zero-truncated distributions   
           if(family$family[1] %in% c("ztpoisson")) {
@@ -2532,7 +2533,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
      out_CBFM$powerparam <- new_fit_CBFM_ptest$powerparam
      out_CBFM$zeroinfl_prob_intercept <- new_fit_CBFM_ptest$zeroinfl_prob_intercept
-     out_CBFM$linear_predictor <- new_fit_CBFM_ptest$linear_predictor
+     out_CBFM$linear_predictors <- new_fit_CBFM_ptest$linear_predictors
      rm(new_fit_CBFM_ptest, getweights, converged, all_k_check)
 
      # ## Get restricted CBFM estimates of the coefficients (really more for exploration at this point in time)
@@ -2541,17 +2542,17 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      #rm(OLSmatrix_transpose)
 
      if(!(family$family %in% c("zipoisson","zinegative.binomial","ztpoisson","ztnegative.binomial"))) 
-          out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictor)
+          out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictors)
      if(family$family %in% c("zipoisson","zinegative.binomial"))
-          out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictor) * matrix(1-plogis(out_CBFM$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)
+          out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictors) * matrix(1-plogis(out_CBFM$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)
      if(family$family == "ztpoisson") {
-          out_CBFM$fitted <- exp(out_CBFM$linear_predictor) / (1 - dpois(0, lambda = exp(out_CBFM$linear_predictor)) + 1e-8)
-          out_CBFM$linear_predictor[which(out_CBFM$y == 0)] <- NA
+          out_CBFM$fitted <- exp(out_CBFM$linear_predictors) / (1 - dpois(0, lambda = exp(out_CBFM$linear_predictors)) + 1e-8)
+          out_CBFM$linear_predictors[which(out_CBFM$y == 0)] <- NA
           out_CBFM$fitted[which(out_CBFM$y == 0)] <- NA
           }
      if(family$family == "ztnegative.binomial") {
-          out_CBFM$fitted <- exp(out_CBFM$linear_predictor) / (1 - dnbinom(0, mu = exp(out_CBFM$linear_predictor), size = matrix(1/out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)) + 1e-8)
-          out_CBFM$linear_predictor[which(out_CBFM$y == 0)] <- NA
+          out_CBFM$fitted <- exp(out_CBFM$linear_predictors) / (1 - dnbinom(0, mu = exp(out_CBFM$linear_predictors), size = matrix(1/out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)) + 1e-8)
+          out_CBFM$linear_predictors[which(out_CBFM$y == 0)] <- NA
           out_CBFM$fitted[which(out_CBFM$y == 0)] <- NA
           }
      
@@ -2613,8 +2614,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                colnames(out_CBFM$Loading_Sigma_spacetime) <- paste0("Loading", 1:Sigma_control$rank[sum(which_B_used[1:3])])
           }
 
-     rownames(out_CBFM$betas) <- rownames(out_CBFM$basis_effects_mat) <- colnames(out_CBFM$linear_predictor) <- colnames(out_CBFM$fitted) <- colnames(y)
-     rownames(out_CBFM$linear_predictor) <- rownames(out_CBFM$fitted) <- rownames(X)
+     rownames(out_CBFM$betas) <- rownames(out_CBFM$basis_effects_mat) <- colnames(out_CBFM$linear_predictors) <- colnames(out_CBFM$fitted) <- colnames(y)
+     rownames(out_CBFM$linear_predictors) <- rownames(out_CBFM$fitted) <- rownames(X)
      colnames(out_CBFM$betas) <- colnames(X)
      colnames(out_CBFM$basis_effects_mat) <- colnames(B)     
      
@@ -2630,7 +2631,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(control$trace)
                message("Calculating (components of) the covariance (standard error) matrix...")
           
-          weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictor, y = y, 
+          weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictors, y = y, 
                                         phi = matrix(out_CBFM$dispparam, num_units, num_spp, byrow = TRUE), 
                                         powerparam = matrix(out_CBFM$powerparam, num_units, num_spp, byrow = TRUE),
                                         zeroinfl_prob_intercept = matrix(out_CBFM$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 

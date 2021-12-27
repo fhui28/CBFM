@@ -154,7 +154,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
         res[res < -1e3] <- -1e3
         res[res > 1e3] <- 1e3
         dsres <- res[, sppind]
-        etamat <- x$linear_predictor[,sppind]
+        etamat <- x$linear_predictors[,sppind]
         xxx <- boxplot(c(etamat), outline = FALSE, plot = FALSE)$stats     
         yyy <- range(c(dsres[dsres > -1e3 & dsres < 1e3]), na.rm = TRUE)     
      

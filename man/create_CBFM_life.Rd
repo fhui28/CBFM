@@ -64,8 +64,8 @@ If \code{only_y = TRUE}, then the simulated spatio-temporal multivariate abundan
 \describe{
 \item{y }{The simulated spatio-temporal multivariate abundance response matrix.}
 \item{basis_effects_mat }{The matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. This either comes directly from the supplied argument or is a simulated as discussed in Details above.}
-\item{linear_predictor }{The matrix of linear predictors \eqn{\eta_{ij}}'s.}
-\item{linear_predictor_B }{The matrix of linear predictors corresponding to the basis functions only i.e., \eqn{b_i^\top a_j}'s.}
+\item{linear_predictors }{The matrix of linear predictors \eqn{\eta_{ij}}'s.}
+\item{linear_predictors_B }{The matrix of linear predictors corresponding to the basis functions only i.e., \eqn{b_i^\top a_j}'s.}
 }
 }
 \description{

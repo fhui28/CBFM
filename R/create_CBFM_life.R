@@ -74,8 +74,8 @@
 #' \describe{
 #' \item{y }{The simulated spatio-temporal multivariate abundance response matrix.}
 #' \item{basis_effects_mat }{The matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. This either comes directly from the supplied argument or is a simulated as discussed in Details above.}
-#' \item{linear_predictor }{The matrix of linear predictors \eqn{\eta_{ij}}'s.}
-#' \item{linear_predictor_B }{The matrix of linear predictors corresponding to the basis functions only i.e., \eqn{b_i^\top a_j}'s.}
+#' \item{linear_predictors }{The matrix of linear predictors \eqn{\eta_{ij}}'s.}
+#' \item{linear_predictors_B }{The matrix of linear predictors corresponding to the basis functions only i.e., \eqn{b_i^\top a_j}'s.}
 #' }
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -394,7 +394,7 @@ create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NUL
                }
           }
           
-     out <- list(y = sim_y, basis_effects_mat = basis_effects_mat, linear_predictor = true_eta, linear_predictor_B = true_eta_B)
+     out <- list(y = sim_y, basis_effects_mat = basis_effects_mat, linear_predictors = true_eta, linear_predictors_B = true_eta_B)
      
      if(only_y)
           out <- sim_y
