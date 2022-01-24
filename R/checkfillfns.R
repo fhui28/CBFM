@@ -180,7 +180,7 @@
      return(family_counter)
      }
           
-.fill_control <- function(control) {
+.fill_control <- function(control, num_spp) {
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$optim_lower))
@@ -191,8 +191,17 @@
           control$tol <- 1e-4
      if(is.null(control$initial_betas_dampen))
           control$initial_betas_dampen <- 1
+     if(!is.null(control$initial_betas_dampen)) {
+        if(!(length(control$initial_betas_dampen) %in% c(1, num_spp)))
+            stop("control$initial_betas_dampen should either be a scalar or a vector equal to the number of species i.e., ncol(y).")
+        }
      if(is.null(control$subsequent_betas_dampen))
           control$subsequent_betas_dampen <- 0.25
+     if(!is.null(control$subsequent_betas_dampen)) {
+        if(!(length(control$subsequent_betas_dampen) %in% c(1, num_spp)))
+            stop("control$subsequent_betas_dampen should either be a scalar or a vector equal to the number of species i.e., ncol(y).")
+        }
+     
      if(is.null(control$convergence_type))
           control$convergence_type <- "parameters"
      if(is.null(control$gam_method))

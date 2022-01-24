@@ -52,9 +52,13 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
 
-#' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting  values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas} due to the stacked species distribution model being severely overfitted. An *ad-hoc* fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.5} halves the magnitudes of the staring values for the \code{betas}, including the intercepts.}
+#' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. This can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. 
+#' To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas}, due to the stacked species distribution model being severely overfitted. An *ad-hoc* fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.8} means the magnitudes of the staring values for the \code{betas} are reduced to 0.8 of their full values. This includes the species-specific intercepts. 
+#' When \code{initial_betas_dampen} is a vector, then the dampening factor can vary with species.}
 
-#' \item{subsequent_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}, during the running of the PQL estimation algorithm. To elaborate, during the PQL algorithm updates are made to the regression coefficients related to the combined matrix of basis functions, conditional on the regression coefficients corresponding to the model matrix. However, sometimes this updating can fails due to the latter producing non-sensible values to condition on e.g., due to severe overfitting in that component. If this occurs, then an *ad-hoc* second attempt is made, but conditioning instead on a dampened/shrunk set of the regression coefficients corresponding to the model matrix, which can often help. This amount of dampening is controlled by this argument. For instance, setting \code{subsequent_betas_dampen = 0.25} sets the magnitudes of the regression coefficients related to the model matrix to a quarter of their original size, including the intercepts. 
+#' \item{subsequent_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}, during the running of the PQL estimation algorithm. This can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. 
+#' To elaborate, during the PQL algorithm updates are made to the regression coefficients related to the combined matrix of basis functions, conditional on the regression coefficients corresponding to the model matrix. However, sometimes this updating can fails due to the latter producing non-sensible values to condition on e.g., due to severe overfitting in that component. If this occurs, then an *ad-hoc* second attempt is made, but conditioning instead on a dampened/shrunk set of the regression coefficients corresponding to the model matrix, which can often help. This amount of dampening is controlled by this argument. For instance, setting \code{subsequent_betas_dampen = 0.25} sets the magnitudes of the regression coefficients related to the model matrix to a quarter of their original size, including the intercepts. 
+#' When \code{subsequent_betas_dampen} is a vector, then the dampening factor can vary with species.
 #' Note that this argument *only* comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. } 
 
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
@@ -201,7 +205,7 @@
 #' 
 #' ## A note on estimation and inference
 #' 
-#' As mentioned above, because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-response correlation and community-level covariance matrices are estimated by maximum Laplace approximated residual maximum likelihood (REML) estimation (Wood, 2011). Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this. 
+#' As mentioned above, because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-species correlation and community-level covariance matrices are estimated by maximum Laplace approximated residual maximum likelihood (REML) estimation (Wood, 2011). Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this. 
 #' 
 #' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works OK, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are no easy, principled solutions for such situations (as it may reflect an underlying intriguing feature of the proposed model for the predictors, data, or it may genuinely be that the stacked species distribution model is already fitting incredibly well!). One *ad-hoc* fix is available through \code{control$initial_betas_dampen}, but it is not guaranteed to work.  
 #' 
@@ -308,7 +312,7 @@
 #' 
 #' As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
 #' 
-#' * Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests dampens the starting estimated coefficients from very extreme magnitudes and can faciliate the underlying PQL estimation algorithm to "move".
+#' * Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from very extreme magnitudes and can faciliate the underlying PQL estimation algorithm to "move".
 #' 
 #' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a good way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 #' ```
@@ -360,7 +364,7 @@
 #' 
 #' Warton, D. I., Blanchet, F. G., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2015). So many variables: joint modeling in community ecology. Trends in Ecology and Evolution, 30, 766-779.
 #'
-#' Warton, D. I., Blanchet, F. G., O'Hara, R., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2016). Extending Joint Models in Community Ecology: A Response to Beissinger et al. Trends in ecology & evolution, 31, 737-738.
+#' Warton, D. I., Blanchet, F. G., O'Hara, R., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2016). Extending joint models in community ecology: A response to Beissinger et al. Trends in ecology & evolution, 31, 737-738.
 #'
 #' Wood, S. N. (2011). Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric generalized linear models. Journal of the Royal Statistical Society: Series B (Statistical Methodology), 73, 3-36.
 #' 
@@ -1647,8 +1651,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      #if(is.null(rownames(B)))
      #     rownames(B) <- paste0("units", 1:nrow(B_space))
           
-          
-     control <- .fill_control(control = control)
+     
+     control <- .fill_control(control = control, num_spp = ncol(y))
      Sigma_control <- .fill_Sigma_control(control = Sigma_control, which_B_used = which_B_used)
      G_control <- .fill_G_control(control = G_control, which_B_used = which_B_used)
 
@@ -1881,7 +1885,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           
           all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = formula_X)              
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
-          start_params$betas <- start_params$betas * control$initial_betas_dampen
+          start_params$betas <- start_params$betas * control$initial_betas_dampen # Should be OK even if control$initial_betas_dampen is vector equal to number of species
           rm(all_start_fits)
           gc()
           }
@@ -2084,7 +2088,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
                     # Dampen Xbeta component and run it again...it is kind of ad-hoc but has been shown to be helpful especially with GAM fits to extremely overdispersed counts 
                     if(inherits(new_fit_CBFM, "try-error")) {
-                         tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen 
+                         if(length(control$subsequent_betas_dampen) == 1)
+                              tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen 
+                         if(length(control$subsequent_betas_dampen) == num_spp)
+                              tidbits_data$Xbeta <- tidbits_data$Xbeta * matrix(control$subsequent_betas_dampen, nrow = num_units, ncol = num_spp, byrow = TRUE)
                          CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                          new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
                               lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
