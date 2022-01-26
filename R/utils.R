@@ -52,15 +52,24 @@
    #    fit_gam <- getSmo(fit_gam)
      
    bigS <- Matrix::Matrix(0, num_X, num_X, sparse = TRUE)
-   num_smooth_terms <- length(fit_gam$sp)
+   num_smooth_terms <- length(fit_gam$smooth)
+   num_Smatrices_per_smooth <- sapply(fit_gam$smooth, function(x) length(x$S)) # The sum of this should equal length(fit_gam$sp)
+   sp_index <- split(1:length(fit_gam$sp), rep(1:num_smooth_terms, num_Smatrices_per_smooth)) # Because te and ti smooths have multiple S and smoothing parameters, then this tells you how many S/sp's are within each smooth term  
+   rm(num_Smatrices_per_smooth)
+   
    if(num_smooth_terms == 0)
       return(bigS)
           
-   num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) ncol(x$S[[1]])))
+   num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) x$df)) # Acoording to ?smooth.construct, this is the degrees of freedom associated with this term when unpenalized and unconstrained
    num_parametric_cols <- num_X - num_smooth_cols
 
    subS <- lapply(1:num_smooth_terms, function(j) {
-      fit_gam$sp[j] * fit_gam$smooth[[j]]$S[[1]]
+      out <- fit_gam$sp[sp_index[[j]][1]] * fit_gam$smooth[[j]]$S[[1]]
+      if(length(sp_index[[j]]) > 1) { # To deal with smooths that have multiple S matrices and smoothing parameters
+         for(l0 in 2:length(sp_index[[j]]))
+            out <- out + fit_gam$sp[sp_index[[j]][l0]] * fit_gam$smooth[[j]]$S[[l0]]
+         }
+      return(out)
       })
    subS <- Matrix::bdiag(subS)
    bigS[-(1:num_parametric_cols), -(1:num_parametric_cols)] <- subS

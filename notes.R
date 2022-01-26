@@ -18,29 +18,12 @@ LinkingTo:
 ## Random testing jazz
 ##-------------------------------------
 
-# 
-# dat2 <- data.frame(response = y[,2], dat)
-# fit_trun <- gamlss(formula = response ~ temp + depth + chla + O2, 
-#                    data = dat2, 
-#                    family = NBI,
-#                    #family = trun(0, family = "NBI"),
-#                    control = gamlss.control(n.cyc = 30))
-# 
-# 
-# fit_trun2 <- gamlss(formula = response ~ temp + depth + chla + O2, 
-#                    data = dat2, 
-#                    family = trun(0, family = "NBI"),
-#                    control = gamlss.control(n.cyc = 30))
-# 
-# 
-# 
-
-
 y = simy_train
+useformula <- ~ s(temp) + s(depth) + ti(temp, depth)
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions
-family =  ztpoisson()
+family =  binomial()
 B_time = NULL
 B_spacetime = NULL
 offset = NULL
