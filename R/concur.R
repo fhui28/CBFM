@@ -135,7 +135,7 @@ concur <- function(object, ...) {
      
      num_spp <- ncol(object$y)
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,1], object$data), fit = TRUE, control = list(maxit = 1))
+     nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
      
      # Start with parametric terms, but exclude intercept. Then include smoothing terms. Then basis functions.
      if(length(nullfit$smooth) == 0) {

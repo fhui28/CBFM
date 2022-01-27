@@ -19,6 +19,8 @@
 #'
 #' If \code{groupX} is supplied, the variance due to the included covariates is done based on subsets of covariates (including the intercept) as identified by \code{groupX}, and then rescaled correspondingly. This is useful if one was to, for example, quantify the proportion of variation in each species which is explained by each specific environmental covariate and there are multiple terms associated with each covariate e.g., due to polynomial or smoothing terms.  
 #'
+#' Finally, note that if there are missing values in the response matrix, then the variance partitioning calculation will ignore all values of \eqn{\eta_{ij}} corresponding to this.
+#'
 #' @return A list with the following components (if applicable):
 #' \describe{
 #' \item{varpart_X}{Vector containing the proportion of variance for each species explained by measure predictors, and grouped according to \code{goupX} if supplied.}
@@ -121,10 +123,10 @@ varpart <- function(object, groupX = NULL) {
 
     num_spp <- nrow(object$betas)
      
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,1], object$data), fit = TRUE, control = list(maxit = 1))
-     X <- model.matrix(nullfit)
-     rm(tmp_formula, nullfit)
+     #tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+     #nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+     X <- model.matrix.CBFM(object)
+     #rm(tmp_formula, nullfit)
      rownames(X) <- rownames(object$data)
     
      if(!is.null(groupX)) { 
@@ -137,25 +139,34 @@ varpart <- function(object, groupX = NULL) {
     #    all_cors_spp <- matrix(0, nrow(fit.mcmc), num_spp)
     #    }
 
-        
-     X_var <- apply(tcrossprod(X, object$betas), 2, var)
-     if(!is.null(groupX)) {
+    X_var <- tcrossprod(X, object$betas)
+    X_var[is.na(object$y)] <- NA
+    X_var <- apply(tcrossprod(X, object$betas), 2, var, na.rm = TRUE)
+    if(!is.null(groupX)) {
           X_var <- matrix(0, nrow = length(unique(groupX)), ncol = num_spp)        
           for(k0 in 1:length(unique(groupX))) {
-               X_var[k0,] <- apply(tcrossprod(X[,which(groupX==k0),drop=FALSE], object$betas[,which(groupX==k0),drop=FALSE]), 2, var)
+              cw_X_var <- tcrossprod(X[,which(groupX==k0),drop=FALSE], object$betas[,which(groupX==k0),drop=FALSE])
+              cw_X_var[is.na(object$y)] <- NA
+              X_var[k0,] <- apply(cw_X_var, 2, var, na.rm = TRUE)
                }
           }
           
      B_space_var <- B_time_var <- B_spacetime_var <- rep(0, num_spp)
-     if(object$which_B_used[1])
-          B_space_var <- apply(tcrossprod(object$B[,1:object$num_B_space,drop=FALSE], 
-               object$basis_effects_mat[,1:object$num_B_space,drop=FALSE]), 2, var)
-     if(object$which_B_used[2])
-          B_time_var <- apply(tcrossprod(object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE], 
-               object$basis_effects_mat[,object$num_B_space + (1:object$num_B_time),drop=FALSE]), 2, var)
-     if(object$which_B_used[3])
-          B_spacetime_var <- apply(tcrossprod(object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE], 
-               object$basis_effects_mat[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE]), 2, var)
+     if(object$which_B_used[1]) {
+        cw_B_var <- tcrossprod(object$B[,1:object$num_B_space,drop=FALSE], object$basis_effects_mat[,1:object$num_B_space,drop=FALSE])
+        cw_B_var[is.na(object$y)] <- NA
+        B_space_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
+        }
+     if(object$which_B_used[2]) {
+        cw_B_var <- tcrossprod(object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE], object$basis_effects_mat[,object$num_B_space + (1:object$num_B_time),drop=FALSE])
+        cw_B_var[is.na(object$y)] <- NA
+         B_time_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
+        }
+     if(object$which_B_used[3]) {
+        cw_B_var <- tcrossprod(object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE], object$basis_effects_mat[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE])
+        cw_B_var[is.na(object$y)] <- NA
+        B_spacetime_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
+        }
      #if(!is.null(object$traits)) {
      #     cw.traits.coefs <- cbind(fit.mcmc[k, grep("traits.int",colnames(fit.mcmc))], matrix(fit.mcmc[k, grep("traits.coefs",colnames(fit.mcmc))], nrow = ncol(object$X)+1))
      #     rownames(cw.traits.coefs) <- c("beta0", colnames(object$X))

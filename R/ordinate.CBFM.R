@@ -141,8 +141,7 @@ ordinate.CBFM <- function(object, num_comp = 2, new_B_space = NULL, new_B_time =
                 linpred_basisfunctions <- tcrossprod(object$B, object$basis_effects_mat)
                 }
         else {
-                linpred_basisfunctions <- .predictorforordinate.CBFM(object = object, new_B_space = new_B_space, 
-                                                               new_B_time = new_B_time, new_B_spacetime = new_B_spacetime)           
+                linpred_basisfunctions <- .predictorforordinate.CBFM(object = object, new_B_space = new_B_space, new_B_time = new_B_time, new_B_spacetime = new_B_spacetime)           
                 }
 
           

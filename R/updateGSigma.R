@@ -28,6 +28,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
                                               zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
 
                 ## Set up to to REML as opposed to ML
+                weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
                         XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
@@ -203,6 +204,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                                               zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
 
                 ## Set up to to REML as opposed to ML
+                weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
                         XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))

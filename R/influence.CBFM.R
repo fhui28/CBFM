@@ -141,10 +141,15 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
                                  trial_size = object$trial_size, domore = TRUE)
    if(object$family$family[1] %in% c("ztpoisson"))
       weights_mat$out[is.na(weights_mat$out)] <- 0
-   if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial")))
-      weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
-   if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
-      weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
+  if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
+    weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
+    weights_mat[is.na(object$y)] <- 0
+    }
+  if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+    weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
+    weights_mat$out_zeroinflzeroinfl[is.na(object$y)] <- 0
+    weights_mat$out_zeroinflbetas[is.na(object$y)] <- 0
+    }
 
    # [W^{1/2}X, W^{1/2}B]
    X <- model.matrix.CBFM(object)
@@ -185,8 +190,6 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
     #hatvals <- rowSums((bigsqrtWXB %*% bigV) * bigsqrtWXB)
    #hatvals <- matrix(hatvals, nrow = num_units, ncol = num_spp)
    hatvals <- foreach(j = 1:num_spp, .combine = cbind) %dopar% gethatvals_j(j = j)
-   if(object$family$family[1] %in% c("ztpoisson"))
-      hatvals[which(object$y == 0)] <- NA
    
   
    # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
@@ -234,6 +237,12 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
   
    rownames(hatvals) <- rownames(cookD) <- rownames(object$y)
    colnames(hatvals) <- colnames(cookD) <- colnames(object$y)
+   hatvals[is.na(object$y)] <- NA
+   cookD[is.na(object$y)] <- NA
+   if(object$family$family[1] %in% c("ztpoisson", "ztnegative.binomial")) {
+      hatvals[which(object$y == 0)] <- NA
+      cookD[which(object$y == 0)] <- NA
+      }
   
 
    return(list(hat = hatvals, cooks = cookD, B_edf = t(edfs_out)))

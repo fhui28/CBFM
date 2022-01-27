@@ -90,7 +90,7 @@
              }
 
         out[out < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
-        out[!is.finite(out)] <- 0 ## At the moment, needed primarily for zero-truncated models where weights on the very rare occasional be stupid?
+        out[!is.finite(out)] <- 0 ## Needed when for zero-truncated models where weights on the very rare occasional be stupid?
 
         if(!domore)
                 return(as.vector(out))

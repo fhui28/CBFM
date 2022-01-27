@@ -187,6 +187,8 @@
 #' Hurdle CBFMs are also possible (currently in its early stages though!); please see [makeahurdle()] for more information.
 #' }
 #' 
+#' Missing (\code{NA}) values are permitted as part of the response matrix. These are simply passed over during the fitting process i.e., effectively the action [stats::na.omit()] is taken.
+#'
 #' 
 #' ## Constructing basis functions
 #' 
@@ -303,8 +305,6 @@
 #' 3. Not all (in fact, not many) of the smoothing available that are available in [mgcv::gam.models()] have been fully tested out, so please be aware that some make not work well if at all! 
 #' 
 #' 4. Please note that all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power paameters, analogous to [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; **estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.**
-#'
-#' 5. Missing values are currently not handled in any manner or form in this package (sorry!). If you do have any missing values, then the standard course of action (and which is what functions such as [stats::lm()] and [mgcv::gam()] do as a default; see also \code{options("na.action")}) is to apply [stats::na.omit()] and remove all observational units from your data with one or more missing values. This can of course also be done manually by the practitioner.  
 #'
 #'
 #' @details # CBFM isn't working for my data...WTF?!
@@ -1588,7 +1588,7 @@
 #' @importFrom mgcv betar gam gam.vcomp k.check ldTweedie logLik.gam model.matrix.gam pen.edf predict.gam nb rTweedie Tweedie tw ziplss
 #' @importFrom numDeriv grad
 #' @importFrom parallel detectCores
-#' @importFrom stats fitted dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix optim nlminb residuals 
+#' @importFrom stats fitted dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix na.omit optim nlminb residuals 
 #' @importFrom TMB MakeADFun
 #' @importFrom utils capture.output
 #' @md
@@ -1659,7 +1659,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      ## Form covariate model matrix B
      formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
      tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(data, response = y[,1]), fit = TRUE, control = list(maxit = 1))
+     nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
      rownames(X) <- rownames(y)
@@ -1746,26 +1746,26 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
                
-               init_pi <- mean(y[,j] == 0) # Initial weights/posterior probabilities of being in zero-inflation component
-               init_lambda <- mean(y[,j])
+               init_pi <- mean(y[,j] == 0, na.rm = TRUE) # Initial weights/posterior probabilities of being in zero-inflation component
+               init_lambda <- mean(y[,j], na.rm = TRUE)
                w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
                fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = "poisson", gamma = gamma)
                MM <- model.matrix(fit0)
-               cw_inner_logL <- .dzipoisson_log(y = y[,j], eta = MM %*% fit0$coefficients + cw_offset, zeroinfl_prob = init_pi) 
+               cw_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = init_pi) 
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
-               
+
                inner_err <- Inf
                inner_counter <- 0
                while(inner_err > 1e-4) {
                     if(inner_counter > 20)
                          break;
                     
-                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, lambda = exp(MM %*% fit0$coefficients + cw_offset))), 0) # Posterior probabilities of being in zero-inflation component
-                    init_pi <- mean(w + 1e-4)
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = offset[,j], method = control$gam_method, family = "poisson", gamma = gamma), silent = TRUE)
+                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, lambda = exp(MM %*% fit0$coefficients + fit0$offset))), 0) # Posterior probabilities of being in zero-inflation component
+                    init_pi <- mean(w + 1e-4, na.rm = TRUE)
+                    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = "poisson", gamma = gamma), silent = TRUE)
                     if(inherits(fit0, "try-error"))
                          break;
-                    new_inner_logL <- .dzipoisson_log(y = y[,j], eta = MM %*% fit0$coefficients + cw_offset, zeroinfl_prob = init_pi)
+                    new_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = init_pi)
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -1780,12 +1780,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
                
-               init_pi <- mean(y[,j] == 0) # Initial weights/posterior probabilities of being in zero-inflation component
-               init_lambda <- mean(y[,j])
+               init_pi <- mean(y[,j] == 0, na.rm = TRUE) # Initial weights/posterior probabilities of being in zero-inflation component
+               init_lambda <- mean(y[,j], na.rm = TRUE)
                w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = init_lambda, size = 1/0.2)), 0)
                fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = nb(), gamma = gamma)
                MM <- model.matrix(fit0)
-               cw_inner_logL <- .dzinegativebinomial_log(y = y[,j], eta = MM %*% fit0$coefficients + cw_offset, zeroinfl_prob = init_pi, phi = 1/fit0$family$getTheta(TRUE))
+               cw_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = init_pi, phi = 1/fit0$family$getTheta(TRUE))
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
@@ -1794,12 +1794,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     if(inner_counter > 20)
                          break;
 
-                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = exp(MM %*% fit0$coefficients + cw_offset), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
-                    init_pi <- mean(w + 1e-4)
+                    w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = exp(MM %*% fit0$coefficients + fit0$offset), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
+                    init_pi <- mean(w + 1e-4, na.rm = TRUE)
                     fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = nb(), gamma = gamma), silent = TRUE)
                     if(inherits(fit0, "try-error"))
                          break;
-                    new_inner_logL <- .dzinegativebinomial_log(y = y[,j], eta = MM %*% fit0$coefficients + cw_offset, zeroinfl_prob = init_pi, phi = 1/fit0$family$getTheta(TRUE))
+                    new_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = init_pi, phi = 1/fit0$family$getTheta(TRUE))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -1818,10 +1818,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                
                fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), gamma = gamma)
                if(!inherits(fit0, "try-error")) {
-                    MM <- model.matrix(fit0)[1:num_units,,drop=FALSE]
+                    MM <- model.matrix(fit0)
+                    MM <- MM[1:(nrow(MM)-10),,drop=FALSE]
                     MM <- MM[, -ncol(MM), drop=FALSE]
                     fit0$coefficients <- fit0$coefficients[1:ncol(MM)] 
-                    fit0$logLik <- .dztpois(y[,j], lambda = exp(MM %*% fit0$coefficients + cw_offset), log = TRUE) # .dztpois y = 0 values to -Inf; because offset is in formula, then offset is contained in linear.predictors
+                    fit0$logLik <- .dztpois(na.omit(y[,j]), lambda = exp(MM %*% fit0$coefficients + fit0$offset[[1]][1:(length(fit0$offset)-10)]), log = TRUE) # .dztpois y = 0 values to -Inf; because offset is in formula, then offset is contained in linear.predictors
                     fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])
                     rm(MM)
                     }
@@ -1831,8 +1832,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
 
-               find_nonzeros <- which(y[,j] > 0)
-               init_lambda <- mean(y[,j])
+               find_nonzeros <- which(y[,j] > 0) # This automatically excludes NA values
+               init_lambda <- mean(y[,j], na.rm = TRUE)
                initw <- dnbinom(0, mu = init_lambda, size = 1/0.2) / (1-dnbinom(0, mu = init_lambda, size = 1/0.2))
                w1 <- c(rep(1,num_units))
                w1[which(y[,j]==0)] <- 0
@@ -1867,7 +1868,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
                     inner_counter <- inner_counter + 1
-                    print(new_inner_logL)
+                    #print(new_inner_logL)
                     }
                
                fit0$logLik <- new_inner_logL
@@ -2084,8 +2085,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          
                     CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                     
-                    new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
-                         lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
+                    new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr, lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
                     # Dampen Xbeta component and run it again...it is kind of ad-hoc but has been shown to be helpful especially with GAM fits to extremely overdispersed counts 
                     if(inherits(new_fit_CBFM, "try-error")) {
                          if(length(control$subsequent_betas_dampen) == 1)
@@ -2180,8 +2180,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          if(control$ridge == 0)
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
                                           weights = 1-getweights[,j], family = "poisson", select = select, gamma = gamma)
-                         fit0$logLik <- sum(.dzipoisson_log(y = y[,j], eta = X %*% fit0$coefficients + new_offset, 
-                                                            zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j])))
+                         fit0$logLik <- sum(.dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j])))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("zinegative.binomial")) { # M-step
@@ -2191,8 +2190,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          if(control$ridge == 0)
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method,
                                           weights = 1-getweights[,j], family = nb(), select = select, gamma = gamma)
-                         fit0$logLik <- sum(.dzinegativebinomial_log(y = y[,j], eta = X %*% fit0$coefficients + new_offset, zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]),
-                                                                     phi = 1/fit0$family$getTheta(TRUE)))
+                         fit0$logLik <- sum(.dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = plogis(new_fit_CBFM_ptest$zeroinfl_prob_intercept[j]), phi = 1/fit0$family$getTheta(TRUE)))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("ztpoisson")) {
@@ -2205,7 +2203,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), select = select, gamma = gamma)
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset 
-                         fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois y = 0 values to -Inf
+                         fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])                               
                          }
                     if(family$family %in% c("ztnegative.binomial")) { # Do EM here to update betas
@@ -2229,22 +2227,19 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                               w <- c(w1, w2)
                               rm(w2)
                               if(control$ridge > 0) {
-                                   fit0 <- try(gam(tmp_formula, 
-                                               data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                               offset = new_offset[c(1:num_units,1:num_units)], method = control$gam_method, 
-                                               weights = w, H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
+                                   fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                                   offset = new_offset[c(1:num_units,1:num_units)], method = control$gam_method, 
+                                                   weights = w, H = Hmat, family = nb(), select = select, gamma = gamma), silent = TRUE)
                                    }
                               if(control$ridge == 0) {
-                                   fit0 <- try(gam(tmp_formula, 
-                                               data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                               offset = new_offset[c(1:num_units,1:num_units)], method = control$gam_method, 
-                                               weights = w, family = nb(), select = select, gamma = gamma), silent = TRUE)
+                                   fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                                   offset = new_offset[c(1:num_units,1:num_units)], method = control$gam_method,
+                                                   weights = w, family = nb(), select = select, gamma = gamma), silent = TRUE)
                                    }
                               if(inherits(fit0, "try-error"))
                                    break;
                               
-                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(X[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + new_offset[find_nonzeros]), 
-                                                        size = fit0$family$getTheta(TRUE), log = TRUE) 
+                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(X[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + new_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE), log = TRUE) 
                               new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)]) 
                               inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                               cw_inner_logL <- new_inner_logL
@@ -2391,7 +2386,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
 
           
-          params_diff <- suppressWarnings(new_params - cw_params) # Needed because in first iteration cw_params is longer than new_params 
+          params_diff <- suppressWarnings(new_params - cw_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
           if(control$convergence_type == "parameters")
                diff <- mean((params_diff)^2) 
           if(control$convergence_type == "parameters_relative")
@@ -2415,7 +2410,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           #message("Iteration: ", counter, "\t Relative change in PQL values: ", round(abs(new_logLik/cw_logLik-1) + 1e6*as.numeric(counter == 0),5))
           cw_params <- new_params
           cw_logLik <- new_logLik
-          #cw_linpred <- new_fit_CBFM_ptest$linear_predictors
           counter <- counter + 1
           }
      toc <- proc.time()
@@ -2548,6 +2542,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      #out_CBFM$partitioned_beta <- out_CBFM$betas + tcrossprod(out_CBFM$basis_effects_mat, B) %*% OLSmatrix_transpose
      #rm(OLSmatrix_transpose)
 
+     out_CBFM$linear_predictors[is.na(out_CBFM$y)] <- NA
+
      if(!(family$family %in% c("zipoisson","zinegative.binomial","ztpoisson","ztnegative.binomial"))) 
           out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictors)
      if(family$family %in% c("zipoisson","zinegative.binomial"))
@@ -2645,10 +2641,16 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                                         trial_size = trial_size, domore = TRUE)
           if(family$family[1] %in% c("ztpoisson", "ztnegative.binomial"))
                weights_mat$out[is.na(weights_mat$out)] <- 0
-          if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
+          if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
                weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
-          if(family$family[1] %in% c("zipoisson","zinegative.binomial"))
+               weights_mat[is.na(out_CBFM$y)] <- 0
+               }
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
+               weights_mat_betabeta[is.na(out_CBFM$y)] <- 0
+               weights_mat$out_zeroinflzeroinfl[is.na(out_CBFM$y)] <- 0
+               weights_mat$out_zeroinflbetas[is.na(out_CBFM$y)] <- 0
+               }
           
           # Bottom right of covariance matrix
           D1minusCAinvB_fn <- function(j) {                
@@ -2724,10 +2726,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           rm(all_AinvandB, AinvBDminusCAinvB_inv, AinvandB_fn, DminusCAinvB_inv)
                     
                     
-          # ## All matrices are dense. But to save memory and because only certain components of the matrices are needed later on, extract relevant principle submatrices only. This is now abandoned
-          #out_CBFM$covar_components$topright <- foreach(j = 1:num_spp) %dopar% .extractcovarblocks_topright(j = j, Q = out_CBFM$covar_components$topright)               
-          #out_CBFM$covar_components$bottomright <- foreach(j = 1:num_spp) %dopar% .extractcovarblocks_bottomright(j = j, Q = out_CBFM$covar_components$bottomright)
-               
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                rownames(out_CBFM$covar_components$topleft) <- colnames(out_CBFM$covar_components$topleft) <- rownames(out_CBFM$covar_components$topright) <-
                     apply(as.data.frame.table(t(out_CBFM$betas))[,1:2],1,function(x) paste(x, collapse = ":"))

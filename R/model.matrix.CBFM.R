@@ -90,7 +90,7 @@ model.matrix.CBFM <- function(object, ...) {
 
         
         tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-        nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,1], object$data), fit = TRUE, control = list(maxit = 1))
+        nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
 
         MM <- predict.gam(nullfit, type = "lpmatrix", ...)
         return(MM)

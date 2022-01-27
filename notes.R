@@ -17,9 +17,13 @@ LinkingTo:
 ##--------------------------------------
 ## Random testing jazz
 ##-------------------------------------
+simy_train[sample(1:prod(dim(simy_train)), 1000)] <- NA
+
+
 
 y = simy_train
-useformula <- ~ s(temp) + s(depth) + ti(temp, depth)
+y[sample(1:prod(dim(y)), 1000)] <- NA
+useformula <- ~ s(temp) + depth + chla + O2
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions

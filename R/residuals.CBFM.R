@@ -22,6 +22,8 @@
 #' 
 #' For \code{type = "dunnsmyth"}, this returns the Dunn-Smyth residuals that are also used in [boral::ds.residuals()] and[gllvm::residuals.gllvm()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard normal distribution (Dunn and Smyth, 1996). Note there is a level of jitting used in producing the Dunn-Smyth residuals.
 #' 
+#' Note if there are missing values in the response matrix, then one or more warnings maybe outputted (and mostly likely can be safely ignored) when calculating residuals.
+#' 
 #' @return A matrix of residuals.
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak

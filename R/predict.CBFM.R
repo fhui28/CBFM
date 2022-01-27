@@ -88,7 +88,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                 }
         if(is.null(manualX)) {
                 tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-                nullfit <- gam(tmp_formula, data = data.frame(response = rnorm(nrow(object$data)), object$data), fit = TRUE, control = list(maxit = 1))
+                nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
                 if(is.null(newdata))
                         new_X <- predict.gam(nullfit, type = "lpmatrix")
                 if(!is.null(newdata))

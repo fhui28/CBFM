@@ -49,7 +49,7 @@ zipoisson <- function() {
         logp <- log(1-zeroinfl_prob) + dpois(y, lambda = exp(eta), log=TRUE)
         logp[y == 0] <- log(exp(logp[y == 0]) + zeroinfl_prob)
         
-        return(sum(logp))
+        return(sum(logp, na.rm = TRUE))
         }
 
 ## Adapted from the VGAM package, and acknowledgement goes to its authors

@@ -58,7 +58,7 @@ ztpoisson <- function() {
     if(log)
         rval
         else
-                exp(rval)
+            exp(rval)
         }
 
 
