@@ -41,7 +41,7 @@
 )
 }
 \arguments{
-\item{object}{An object of class \code{CBFM}.}
+\item{object}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
 \item{newdata}{A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula_X}.}
 
@@ -107,7 +107,7 @@ Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows e
 Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} this is also known as the linear predictor matrix.
 }
 \details{
-The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior to, the estimated parameters. This construction is similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
+The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior distribution of the parameters. This construction is similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
 
 The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
 }
