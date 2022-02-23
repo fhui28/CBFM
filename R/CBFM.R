@@ -1,7 +1,5 @@
 ##----------------------
 ## Community-level Basis Function Model (CBFM): Estimation done using PQL, plus maximum Laplace approximated (restricted) log-likelihood estimation for the covariance matrices
-
-## See Github issues but also notes for TODO
 ##----------------------
 
 #' @title Community-level basis function models (CBFMs)
