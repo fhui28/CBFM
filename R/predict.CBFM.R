@@ -96,7 +96,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                 rm(tmp_formula, nullfit)
                 }
         if(ncol(new_X) != ncol(object$betas))
-                stop("Number of columns in new_X should match the number of columns in new_X.")
+                stop("Number of columns in new_X should match the number of columns in object$betas.")
 
         new_B <- NULL
         if(!is.null(new_B_space)) {
