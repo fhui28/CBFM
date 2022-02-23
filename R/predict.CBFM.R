@@ -215,7 +215,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                         }
 
                 if(need_sim) {
-                        message("Simulation required for prediction uncertainty intervals. This could take a while...enjoy a cup of matcha latte and some mochi while you're waiting uwu")
+                        message("Simulation required for prediction uncertainty intervals. This could take a while...grab some mochi while you're waiting uwu")
                         mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$basis_effects_mat)))
                         bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                                           cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
