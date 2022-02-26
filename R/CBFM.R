@@ -1,13 +1,9 @@
-##----------------------
-## Community-level Basis Function Model (CBFM): Estimation done using PQL, plus maximum Laplace approximated (restricted) log-likelihood estimation for the covariance matrices
-##----------------------
-
 #' @title Community-level basis function models (CBFMs)
 #' 
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Fits CBFMs to spatio-temporal multivariate abundance data, where the basis functions are used to account for spatio-temporal correlation within and between-species. Three types of basis functions can supplied and included in conjunction with each other: 1) spatial basis fnuctions; 2) temporal basis functions; 3) spatio-temporal basis functions. For the part of the mean model corresponding to the measured covariates, CBFM currently permits both parametric terms and/or smoothing terms, where the latter makes use are included in a similar manner to [mgcv::gam()]. Estimation and inference for CBFM is based on a maximum penalized quasi-likelihood (PQL) estimation approach.
+#' Fits CBFMs to spatio-temporal multivariate abundance data, where the basis functions are used to account for spatio-temporal correlation within and between-species. Three types of basis functions can supplied and included in conjunction with each other: 1) spatial basis functions; 2) temporal basis functions; 3) spatio-temporal basis functions. For the part of the mean model corresponding to the measured covariates, CBFM currently permits both parametric terms and/or smoothing terms, where the latter makes use are included in a similar manner to [mgcv::gam()]. Estimation and inference for CBFM is based on a maximum penalized quasi-likelihood (PQL) estimation approach.
 #'
 #' @param y A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to the species.
 #' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see [mgcv::formula.gam()], [mgcv::gam.models()], [mgcv::smooth.terms()], and [mgcv::s()] for more details. 
@@ -99,80 +95,81 @@
 #' }
 #'
 #'
+#'
 #' @details 
+#' Community-level basis function models (CBFMs) are a class of joint species distribution models for spatio-temporal multivariate abundance data, which builds on the ideas of fixed rank kriging (FRK, Cressie and Johannesson, 2008; Zammit-Mangion and Cressie, 2017) and multivariate spatio-temporal mixed models (e.g., Bradley et al., 2018) and adapts them specifically for spatio-temporal multivariate abundance data in community ecology. CBFMs are a (closely connected) alternative to the popular spatio-temporal latent variable models (LVMs) approach for joint species distribution modeling, as available in a number of packages such as [Hmsc::Hmsc-package()] (Tikhonov et al., 2020), [gllvm::gllvm()] (Niku et al., 2019), and [boral::boral()] (Hui, 2016); see also Warton et al., (2015a,b), Thorson et al. (2016) and Ovaskainen and Abrego (2020) among others for general introductions to the use of LVMs in community ecology.  The key difference between LVMs and CBFMs is that rather than using a small number of latent variables (which are assumed to be random across observational units), CBFMs use a larger number of spatial and/or temporally-indexed basis functions that are specified \emph{a-priori} and remain fixed throughout the model fitting process (Hefley et al., 2017; Cressie et al., 2021). The randomness instead comes from species-specific regression coefficients related to these basis functions, which in turn induce spatio-temporal correlations within and between-species. 
+#' 
+#' In using a basis function approach, CBFMs can thus be framed as a type of generalized additive model (GAM, Guisan et al., 2002; Wood, 2017) . This in turn means CBFMs can leverage from the plethora of techniques that have been already developed for GAMs, with one notable benefit being that computationally, CBFMs tend to more efficient and scale better than many existing implementations of spatio-temporal LVMs (at least, at the time of writing).
+#' 
 #'
-#' Community-level basis function models (CBFMs) are a class of spatio-temporal joint species distribution models for multivariate abundance data, which builds on the ideas of fixed rank kriging (FRK, Cressie and Johannesson, 2008; Zammit-Mangion and Cressie, 2017) and multivariate spatio-temporoal mixed models (Bradley et al., 2018) and adapts them specifically for multivariate abundance data in community ecology. CBFMs provide an alternative and not necessarily superior approach to the increasingly popular latent variable models (LVMs) approach for joint species distribution modeling, as available in a number of packages such as [Hmsc::Hmsc-package()] (Tikhonov et al., 2020), [gllvm::gllvm()] (Niku et al., 2019), and [boral::boral()] (Hui, 2016); see also Warton et al., (2015a,b), Thorson et al. (2016) and Ovaskainen and Abrego (2020) among others for introductions to the use of LVMs in community ecology.  The key difference between LVMs and CBFMs is that rather than using a small number of latent variables which are assumed to be random across observational units to induce spatio-temporal correlations within and between-species, CBFMs use a larger number of spatially, temporal, and/or spatio-temporal basis functions that are specified \emph{a-priori} and remain fixed in the model. The randomness instead comes from species-specific regression coefficients related to these basis functions, which in turn induce spatio-temporal correlations within and between-species. 
-#' 
-#' In using a basis function approach, CBFMs can thus be considered both as a type of generalized additive model (GAM, Guisan et al., 2002; Wood, 2017) and a generalized linear mixed model (GLMM, Bolker et al., 2009; Brooks et al., 2017). This in turn means CBFMs can leverage from the plethora of techniques that have been already developed for such methods, with one notable benefit being that computationally, CBFMs tend to more efficient and scale better than many existing implementations of LVMs. 
-#' 
-#'
-#' ## Some more mathematics
-#' 
-#' Turning to more mathematical details, for the purposes of the package the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
+#' ## Some mathematics
+#' Turning to some mathematical details, the CBFM in this package is characterized by the following mean regression model. For observational unit \eqn{i=1,\ldots,N} (e.g., with a corresponding space-time coordinate) and species \eqn{j=1,\ldots,m}, we have
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit \eqn{i}, and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. 
 #' 
-#' In the function, the vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details. These may be included, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are *not* random row effects as found in packages such as [boral::boral()] and [gllvm::gllvm()]. 
+#' The vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are *not* random row effects as found in packages such as [boral::boral()] and [gllvm::gllvm()], and also are currently are not designed to draw the slopes from a common distribution as in [Hmsc::Hmsc-package()] or Pollock et al., (2014), say.  
 #' 
-#' When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we must warn the practitioner that **some of the smoothers that \code{mgcv} e.g., [mgcv::linear.functional.terms()] has available have not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
+#' When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we warn the user that **some of the smoothers available as part of \code{mgcv} e.g., [mgcv::linear.functional.terms()], has not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
 #' 
-#' Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions which are included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
+#' Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be written as:
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,space}^\top a_{j,space} + b_{i,time}^\top a_{j,time},}
 #'
-#' where \eqn{b_i = (b_{i,space}, b_{i,time})} and \eqn{a_j = (a_{j,space}, a_{j,time})}. If purely spatial or temporal multivariate abundance data is recorded, then one should only supply \code{B_space} and \code{B_time}, respectively, ahd the mean regression model is simplified accordingly. 
+#' where \eqn{b_i = (b_{i,space}, b_{i,time})} and \eqn{a_j = (a_{j,space}, a_{j,time})}. If purely spatial or temporal multivariate abundance data is recorded, then one should only supply \code{B_space} and \code{B_time}, respectively, and the above mean regression model is simplified accordingly. 
 #' 
-#' As another example, suppose we wish to include spatio-temporal basis functions (which are formed from a tensor-product). Then only \code{B_spacetime} should be supplied, in which case the mean regression model for the CBFM can be rewritten as:
+#' As another example, suppose we wish to include spatio-temporal basis functions (which are formed from a tensor-product). Then only \code{B_spacetime} should be supplied, in which case the mean regression model for the CBFM can be written as:
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,spacetime}^\top a_{j,spacetime},}
 #'
-#' where \eqn{b_i = b_{i,spacetime}} and \eqn{a_j = a_{j,spacetime}}. More details and recommendations on how to construct this basis functions (including the tensor-product mentioned above) are provided later on. 
+#' where \eqn{b_i = b_{i,spacetime}} and \eqn{a_j = a_{j,spacetime}}. More details and recommendations on how to construct this basis functions, including the tensor-product mentioned above, are provided later on. 
 #' 
-#' Note that for zero-inflated distributions, it is the *mean of the non-zero inflated component that is modeled and not the mean of the entire distribution.*
+#' Note for zero-inflated distributions, it is the *mean of the non-zero inflated component that is modeled and not the mean of the entire distribution.*
 #' 
-#' ** Remark on flavors and choices of CBFMs:** It is up to the practitioner as to what 'flavor' of CBFM that wish to fit, depending on interpretation and question of interests. For instance, with spatio-temporal multivariate abundance data, one may want the separate sets of spatial and temporal basis functions to be included in an additive manner (as seen above, which in analogous to an LVM where separate spatial LVs and temporal LVMs are added together), or have a single set of spatio-temporal basis functions formed from a tensor-product say (also as seen above, which in analogous to an LVM with a set of spatio-temporal LVs), or have a combination of the two where (say) the basis functions included in \code{B_space} and \code{B_time} are accounting for correlations on a course scale while the basis functions included in \code{B_spacetime} are accounting for resolutions on a fine scale. We refer the interested reader to Thorson et al., (2016) and Thorson (2019) for examples of similar kinds of constructs and flavors within the LVM framework. 
 #' 
-#' We also point out that this package only implements one possible version of a wider class of CBFMs; other potentially superior versions e.g., spatial basis functions with temporally varying corresponding regressions coefficients, are possible under the CBFM framework, but are far outside the scope of this package (sorry!).      
+#' ** Remark on flavors and choices of CBFMs:** 
+#' For spatio-temporal multivariate abundance data, we have found that the above two examples are usually the two most appropriate "flavors" CBFM to apply, although the precise form should of course depend upon the precise interpretation and question/s of interest. As seen above, we may want the separate sets of spatial and temporal basis functions to be included in an additive manner (this is analogous to an LVM where separate spatial LVs and temporal LVMs are added together), or have a single set of spatio-temporal basis functions formed from a tensor-product say (this is analogous to an LVM with one set of spatio-temporal LVs), or have a combination of the two where (say) the basis functions included in \code{B_space} and \code{B_time} are accounting for correlations on a coarse scale while the basis functions included in \code{B_spacetime} are accounting for resolutions on a fine scale. We refer the interested reader to Thorson et al., (2016) and Thorson (2019) for examples of similar kinds of constructs and flavors within the LVM framework. 
+#' 
+# #' We also point out that this package only implements one possible version of a wider class of CBFMs; other potentially superior versions e.g., spatial basis functions with temporally varying corresponding regressions coefficients, are possible under the CBFM framework, but are far outside the scope of this package (sorry!).      
 #'    
-#' In principle, it is also possible to employ a more data-driven approach such as cross-validation or information criteria to choose the "flavor" of CBFM for a particular data set, although this is not currently not explicitly implemented in the package (sorry again!). The same discourse also applies to choosing the number of basis functions to include in the arguments \code{B_space/B_time/B_spacetime}, similar to choosing the number of latent variables in a LVM, although this choice is also heavily dependent on the type of basis functions used. We refer the reader to [mgcv::choose.k()] as some of the advice provided there may be applicable to CBFMs e.g., using residual analysis to informally check whether an increase the number of spatial and/or temporal basis functions is required. Furthermore, we echo a sentiment written there (while acknowledging things are more tricky with spatial and/or temporal basis functions, as well as for discrete responses!): 
+#' In principle, it is possible to employ a more data-driven approach such as cross-validation or information criteria to choose which type of and/or the number of basis functions to include in the arguments \code{B_space/B_time/B_spacetime}. This similar to choosing the number of latent variables in a LVM. We refer the reader to [mgcv::choose.k()] as some of the advice provided there may be applicable to CBFMs e.g., using residual analysis to informally check whether an increase the number of spatial and/or temporal basis functions is required, and echo a sentiment written there (while acknowledging things are more tricky with spatial and/or temporal basis functions, and for discrete responses!): 
 #' 
 #' *"So, exact choice of \eqn{k} (the number of basis functions in our situation) is not generally critical: it should be chosen to be large enough that you are reasonably sure of having enough degrees of freedom to represent the underlying 'truth' reasonably well, but small enough to maintain reasonable computational efficiency. Clearly 'large' and 'small' are dependent on the particular problem being addressed."* 
 #' 
 #' 
-#' In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. Specifically, in this package we assume follow a multivariate normal distribution as follows:
+#' In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout the fitting process. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. In this package, we assume follow a multivariate normal distribution as follows:
 #'   
 #' \deqn{(a_1,\ldots,a_m) \sim N(0, kronecker(G, \Sigma)),} 
 #' 
-#' where \eqn{G} is a so-called baseline between-species correlation matrix, \eqn{\Sigma} is the community-level covariance matrix for the basis function regression coefficients, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. When multiple sets of basis functions are included, then this carries over. For instance, in the example above involving a CBFM with spatial and temporal basis functions, with only \code{B_space} and \code{B_time} supplied, then we have
+#' where \eqn{G} is a so-called baseline between-species correlation matrix, \eqn{\Sigma} is the community-level covariance matrix for the basis function regression coefficients, and \eqn{kronecker(\cdot)} is the Kronecker product operator. When multiple sets of basis functions are included, then this carries over. For instance, in the example above involving a CBFM with separate spatial and temporal basis functions, with only \code{B_space} and \code{B_time} supplied, we have
 #'   
 #' \deqn{(a_{1,space},\ldots,a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
 #' and
 #' \deqn{(a_{1,time},\ldots,a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time})).} 
 #' 
-#' Furthermore, to reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is adopted in both (inspired and similar to that of LVMs). Specifically, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimenson \eqn{m}. The quantity \eqn{d_G << m} is tha rank, and similar to LVMs the larger the rank the more flexible this structure is at capturing the baseline between-species correlations (at the cost of more parameters). Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly. 
+#' To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly. 
 #'
-#' The ranks \eqn{d_G} and \eqn{d_{\Sigma}} should be smaller than the number of species and basis functions respecitvely included in the model, and generally speaking provided the rank/s is large enough then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite. Moreover they have the interpretation of adjusting for the relative strength of correlation between species, say. 
+#' The ranks \eqn{d_G} and \eqn{d_{\Sigma}} are chosen generally to be smaller than the number of species and basis functions, respectively. Generally speaking, provided the rank/s is large enough then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite and generally a bit more stable. They can also have the interpretation of adjusting for the relative strength of correlation between species, say (Shirota, 2019).
 #' 
 #'
 #' ## Distributions
 #' 
-#' Currently the following response distributions are permitted: 
+#' Te following response distributions are permitted: 
 #' \describe{
-#' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{binomial(link = "logit")}: }{Binomial distribution, noting only the logit link is permitted. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)} where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
+#' \item{\code{binomial(link = "logit")}: }{Binomial distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)}, where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
 
-#' \item{\code{Gamma(link = "log")}: }{Gamma distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{Gamma(link = "log")}: }{Gamma distribution using a log link. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{gaussian(link = "identity")}: }{Gaussian or normal distribution, noting only the identity link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi}, where \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{gaussian(link = "identity")}: }{Gaussian or normal distribution using an identity link. The corresponding mean-variance relationship is given by \eqn{V = \phi}, where \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
+#' \item{\code{poisson(link = "log")}: }{Poisson distribution using a log link. The corresponding mean-variance relationship is given by \eqn{V = \mu}, where \eqn{\mu} denotes the mean.}
 
-#' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{\code{nb2()}: }{Negative binomial distribution with the log link. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
+#' \item{\code{tweedielogfam()}: }{Tweedie distribution using log link. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}}, where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
 
 #' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 
@@ -190,11 +187,11 @@
 #' 
 #' ## Constructing basis functions
 #' 
-#' The CBFM approach relies on the inclusion of the \emph{pre-specified} spatial, temporal, and/or spatio-temporal basis functions to account for spatio-temporal correlations within and between species (see Hefley et al., 2017, for a general overview of using basis functions to model autocorrelation in ecological data). Currently, the package does not provide default arguments to use for this, and this is deliberately the case as we wish to compel the practitioner to work and think a bit harder on designing the right basis functions for use when CBFMs to their particular analysis.
+#' The CBFM approach relies on the inclusion of the \emph{pre-specified} spatial, temporal, and/or spatio-temporal basis functions to account for spatio-temporal correlations within and between species (see Hefley et al., 2017, for a general overview of using basis functions to model autocorrelation in ecological data). Currently, the package does not provide default arguments to use for this, and this is deliberately the case as we wish to compel the user to work and think a bit harder on designing the right basis functions for use when CBFMs to their particular analysis.
 #' 
 #' At the same time, it would be remiss not to at least provide some brief recommendations based on previous experience, and we do so below. Please also see the examples later on for some more concrete applications.
 #' \describe{
-#' \item{\code{B_space}: }{We have found that the multi-resolution thin-plate spline basis functions (Tzeng and Huang, 2018), as implemented in [autoFRK::mrts()], work fairly well here as spatial basis functions. They are simple to use and require the practitioner to only supply the number of basis functions, which itself is tied to the resolution at which the practitioner wants to model their spatial correlations. For spatial multivariate abundance data we have usually found that 50 or less spatial basis functions of such type are required.
+#' \item{\code{B_space}: }{We have found that the multi-resolution thin-plate spline basis functions (Tzeng and Huang, 2018), as implemented in [autoFRK::mrts()], work fairly well here as spatial basis functions. They are simple to use and require the user to only supply the number of basis functions, which itself is tied to the resolution at which the user wants to model their spatial correlations. For spatial multivariate abundance data we have usually found that 50 or less spatial basis functions of such type are required.
 #' 
 #' Another option for spatial basis functions is to use [FRK::auto_basis()], which produces basis functions that are sparse in design but consequently require \emph{many} more in number compared to the multi-resolution thin-plate splines mentioned above. This approach is more customizable however, with the choice of resolutions, basis function centers, and aperture among other choices; please see Zammit-Mangion and Cressie (2017) and Wilke et al. (2019) for more details.}
 #' \item{\code{B_time}: }{Both of the approaches mentioned above for \code{B_space} can also be applied here, although with temporal basis functions we have generally found the approach implemented in [FRK::auto_basis()] to work satisfactorily in many cases, given their customizability and sparsity (local support). The multi-resolution thin-plate spline basis functions approach, when applied solely in the 1-D temporal dimension, can produce long-term temporal trends that may be undesirable.}
@@ -326,8 +323,6 @@
 #'
 #'
 #' @references
-#' Bolker, B. M., Brooks, M. E., Clark, C. J., Geange, S. W., Poulsen, J. R., Stevens, M. H. H., and White, J. S. S. (2009). Generalized linear mixed models: a practical guide for ecology and evolution. Trends in Ecology & Evolution, 24, 127-135.
-#'  
 #' Bradley, J. R., Holan, S. H., and Wikle, C. K. (2018). Computationally efficient multivariate spatio-temporal models for high-dimensional count-valued data (with discussion). Bayesian Analysis, 13, 253-310.
 #' 
 #' Breslow, N. E., and Clayton, D. G. (1993). Approximate inference in generalized linear mixed models. Journal of the American statistical Association, 88, 9-25.
@@ -350,6 +345,10 @@
 #' 
 #' Ovaskainen, O., and Abrego, N. (2020). Joint species distribution modelling: with applications in R. Cambridge University Press.
 #'
+#' Pollock, L. J., Tingley, R., Morris, W. K., Golding, N., O'Hara, R. B., Parris, K. M., Vesk, P. A., and McCarthy, M. A. (2014). Understanding co‐occurrence by modelling species simultaneously with a Joint Species Distribution Model (JSDM). Methods in Ecology and Evolution, 5, 397-406.
+#' 
+#' Shirota, S., Gelfand, A. E., & Banerjee, S. (2019). Spatial joint species distribution modeling using Dirichlet processes. Statistica Sinica, 29, 1127-1154.
+#' 
 #' Thorson, J. T., Ianelli, J. N., Larsen, E. A., Ries, L., Scheuerell, M. D., Szuwalski, C., and Zipkin, E. F. (2016). Joint dynamic species distribution models: a tool for community ordination and spatio-temporal monitoring. Global Ecology and Biogeography, 25, 1144-1158.
 #'
 #' Thorson, J. T. (2019). Guidance for decisions using the Vector Autoregressive Spatio-Temporal (VAST) package in stock, ecosystem, habitat and climate assessments. Fisheries Research, 210, 143-161.
@@ -370,6 +369,7 @@
 #' 
 #' Zammit-Mangion, A., and Cressie, N. (2017). FRK: An R package for spatial and spatio-temporal prediction with large datasets. arXiv preprint arXiv:1705.08105.
 #'
+#' Cressie, N., Sainsbury-Dale, M., and Zammit-Mangion, A. (2021). Basis-Function Models in Spatial Statistics. Annual Review of Statistics and Its Application, 9.
 #'
 #' @seealso [corX()] for calculating between-species (cross-)correlations due to measured covariates, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions, [fitted.CBFM()] for extracting the fitted values from a CBFM fit, [influence.CBFM()] for calculating some basic influence measures from a CBFM fit, [ordinate.CBFM()] for an *ad-hoc* approach to constructing spatio-temporal ordinations from a CBFM fit, [plot.CBFM()] for basic residual diagnostics from a CBFM fit, [predict.CBFM()] for constructing predictions from a CBFM fit, [residuals.CBFM()] for calculating residuals from a CBFM fit, [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit, [summary.CBFM()] for summaries including standard errors and confidence intervals, and [varpart()] for variance partitioning of a CBFM fit.
 #' 
@@ -436,7 +436,7 @@
 #' fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # We will also use this basis functions in some later examples
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -524,7 +524,7 @@
 #' ## It is purely for illustration purposes. 
 #' ## Please note this will take a while to run...get a cup of tea and stretch your legs! 
 #' ##------------------------------
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as Example 1a
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -604,7 +604,7 @@
 #' data = dat_train)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as examples above
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -693,7 +693,7 @@
 #' data = dat_train)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as examples above
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -797,7 +797,7 @@
 #' }
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as examples above
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -907,7 +907,7 @@
 #' }
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as examples above
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -1013,7 +1013,7 @@
 #' })
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as examples above
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -1116,7 +1116,7 @@
 #' }
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # This is the same set up as examples above
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions
@@ -1217,7 +1217,7 @@
 #' fitstacked <- manylm(all.data$Y ~ X.categorical + X.covariate, data = all.data$X.data)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 20 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(all.data$xy, num_basisfunctions) %>% 
 #' as.matrix %>%
@@ -1291,7 +1291,7 @@
 #' family = binomial())
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 20 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(all.data$xy, num_basisfunctions) %>% 
 #' as.matrix %>%
@@ -1420,7 +1420,7 @@
 #' fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_space_basisfunctions <- 20 # Number of spatial basis functions to use
 #' # Training set basis functions
 #' train_space_basisfunctions <- mrts(dat_train[,c("x","y")], num_space_basisfunctions) %>% 
