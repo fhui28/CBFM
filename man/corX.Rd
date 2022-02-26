@@ -18,7 +18,7 @@ corX(
 
 \item{newdata}{A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula_X}.}
 
-\item{newdata2}{A second data frame containing the values of the covariates at which cross-correlations are to be calculated. If this is supplied, then \code{newdata} must also be supplied, as the function assumes then the user desires calculation of cross-correlations. If \code{newdata2} is provided, then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula_X}.}
+\item{newdata2}{A second data frame containing the values of the covariates at which cross-correlations are to be calculated. If this is supplied, then \code{newdata} must also be supplied, as the function assumes then the user desires calculation of cross-correlations.}
 
 \item{coverage}{The coverage probability of the uncertainty intervals for the correlations. Defaults to 0.95, which corresponds to 95\% uncertainty intervals.}
 
@@ -35,18 +35,20 @@ A list with the following components is returned:
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Takes a fitted \code{CBFM} object calculates the between-species correlation matrix due to the measured covariates, along with corresponding uncertainty intervals. Both are constructed via simulation. Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different set of covariates to those used to actually fit the model. Additionally, the user can supplied two sets of covariates (model matrices), in which case the function calculates cross-correlations (between and within species) between these two sets of covariates.
+Takes a fitted \code{CBFM} object calculates the between-species correlation matrix due to the measured covariates, along with corresponding uncertainty intervals. Both are constructed via a simulation-based approach. Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different sets of covariates to those used to actually fit the model. Additionally, the user can supplied two sets of covariates (data frames), in which case the function calculates cross-correlations (between and within species) between these two sets of covariates.
 }
 \details{
-This function is adapted from and behaves somewhat similarly to \code{\link[boral:get.enviro.cor]{boral::get.enviro.cor()}}, in calculating a between-species correlation matrix due to the measured covariates i.e., shared environmental response, along with corresponding uncertainty intervals. Recall the mean regression model for the CBFM is given by
+This function is adapted from and behaves somewhat similarly to \code{\link[boral:get.enviro.cor]{boral::get.enviro.cor()}}, in calculating a between-species correlation matrix due to the measured covariates i.e., shared environmental response, along with corresponding uncertainty intervals. Recall the general form of the mean regression model for the CBFM is given by
 
-\deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,space}^\top a_{j,space} + b_{i,time}^\top a_{j,time}.}
+\deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
-The covariance and hence correlation between two species \eqn{j} and \eqn{j'} that can be attributed to the measured covariates is then based on examining the components \eqn{x_i^\top\beta_j} and \eqn{x_i^\top\beta_{j'}} across the observational units; see equation 4 in Pollock et al., (2014) for the precise formula, as well as Warton et al., (2015) and Hui (2016) among others. Both the point estimate and the uncertainty intervals for the correlation are constructed by simulation. Specifically, species-specific regression coefficients are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see \code{\link[=CBFM]{CBFM()}} and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}), after which a point estimate of the correlations is obtained by taking the sample average, while uncertainty intervals are based on taking sample quantiles.
+where \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}.
+
+The covariance and hence correlation between two species \eqn{j} and \eqn{j'} that can be attributed to the measured covariates is then based on examining the components \eqn{x_i^\top\beta_j} and \eqn{x_i^\top\beta_{j'}} across the observational units; see equation 4 in Pollock et al., (2014) for the precise formula, as well as Warton et al., (2015) and Hui (2016) among others. Both the point estimate and the uncertainty intervals for the correlation are constructed by simulation. Specifically, species-specific regression coefficients \eqn{\beta_j} are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see \code{\link[=CBFM]{CBFM()}} and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}), after which a point estimate of the correlations is obtained by taking the sample average, while uncertainty intervals are based on taking sample quantiles.
 
 Note that because this function calculates correlations as based on component of the linear predictor \eqn{x_i^\top\beta_j}, then it can not be applied to  \code{CBFM_hurdle} object (which by construction contains two linear predictors, so the user has to decide which component of the hurdle model they are interested in).
 
-With the above definition of the between-species correlation, note that the predictors on which the correlations are constructed need not be the same those used in fitting the original CBFM i.e., the \eqn{x_i}'s can be different to those of \code{object$data}. This is handled via the \code{newdata} argument. Additionally, it is possible to calculate within and between species \emph{cross-correlations} across two different sets of measured predictors. That is, correlations are calculated between \eqn{x_i^\top\beta_j} and \eqn{x_{i2}^\top\beta_{j'}}, where \eqn{x_i} and \eqn{x_{i2}} can be different sets of measured predictors. This is handled by supplying both \code{newdata} and \code{newdata2} arguments simultaneously. Cross-correlations may be useful, say, if the two sets of measurement predictors reflect two different sets of sampling units, and we are interested in how similar (or lack of) the species communities are across these two sets (Ovakainen et al., 2017). Another example if is the same set of observational units are visited at two different time points, and we are interested in how similarity (or lack of) the environmental responses within and between species are between these two time points.
+With the above definition of the between-species correlation, note that the predictors on which the correlations are constructed need not be the same those used in fitting the original CBFM i.e., the \eqn{x_i}'s can be different to those of \code{object$data}. This is handled via the \code{newdata} argument. Additionally, it is possible to calculate within and between species \emph{cross-correlations} across two different sets of measured predictors. That is, correlations are calculated between \eqn{x_i^\top\beta_j} and \eqn{x_{i2}^\top\beta_{j'}}, where \eqn{x_i} and \eqn{x_{i2}} can be different sets of measured predictors. This is handled by supplying both \code{newdata} and \code{newdata2} arguments simultaneously. Cross-correlations may be useful, say, if the two sets of measurement predictors reflect two different sets of sampling units, and we are interested in how similar (or lack of) the species communities are in terms of their environmental response across these two sets (Ovakainen et al., 2017). Another example if is the same set of observational units are visited at two different time points, and we are interested in how similarity (or lack of) the environmental responses within and between species are between these two time points.
 
 NOTE: A cross-correlation matrix is not going to be a standard correlation matrix in the sense of having the ones alone the diagonal. This is because even for the same species \eqn{j = j'}, the correlation is not guaranteed to be equal to one as the covariates being considered can be different.
 }
@@ -109,7 +111,7 @@ rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
 
 
 
-# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# Set up spatial basis functions for CBFM -- Most users will start here! 
 # We will also use this basis functions in some later examples
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 # Training set basis functions
@@ -158,7 +160,7 @@ Pollock, L. J., Tingley, R., Morris, W. K., Golding, N., O'Hara, R. B., Parris, 
 Warton, D. I., Blanchet, F. G., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2015). So many variables: joint modeling in community ecology. Trends in Ecology and Evolution, 30, 766-779.
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, and \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

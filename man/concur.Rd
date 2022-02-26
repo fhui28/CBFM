@@ -20,7 +20,7 @@ A data frame providing the species-specific values of the two concurvity measure
 Calculates measures of concurvity from a fitted \code{CBFM} object. The measures are adapted from those found in \code{\link[mgcv:concurvity]{mgcv::concurvity()}}, and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.
 }
 \details{
-As explained in \code{\link[mgcv:concurvity]{mgcv::concurvity()}}, the concurvity can be viewed as a generalization of multicollinearity sometimes/often seen in parametric regression models, where smooth terms in a model could be approximated by one or more of the other smooth terms in the model. Like collinearity, concurvity \strong{may} lead to issues in terms of interpretation of response-covariate relationship, and potentially make estimates unstable with potentially inflated standard errors. It is important to emphasize the "\strong{may}": depending on the scientific question/s of interest and the type/s of inference the practitioner is interested in, concurvity like collineatity may or may not be an issue.
+As explained in \code{\link[mgcv:concurvity]{mgcv::concurvity()}}, the concurvity can be viewed as a generalization of multicollinearity sometimes/often seen in parametric regression models, where smooth terms in a model could be approximated by one or more of the other smooth terms in the model. Like collinearity, concurvity \strong{may} lead to issues in terms of interpretation of response-covariate relationship, and potentially make estimates unstable with potentially inflated standard errors. It is important to emphasize the "\strong{may}": depending on the scientific question/s of interest and the type/s of inference the user is interested in, concurvity like collineatity may or may not be an issue.
 
 Concurvity is something that is perhaps particularly worth keeping in mind in the context of CBFMs: many of the measured covariates included are likely to be spatially and/or temporally indexed, in which case their inclusion (whether as a smooth or parametric) maybe exhibit concurvity with the "smooths" resulting from the spatial and/or temporal basis functions also included to account for residual spatio-temporal correlations both between- and within-species. Again however, we stress the \strong{perhaps}, as extreme concurvity may be something to think/worry about but otherwise it may not be something to stress over depending on the goal of the CBFM. Concurvity is also closely related (I suspect?!) to the issue of spatial confounding (Hodges et al., 2010, Hanks et al., 2015; Lany et al., 2020)
 
@@ -87,7 +87,7 @@ prob = binomial()$linkinv(eta)), nrow = num_sites)
 rm(X, mm, spp_loadings, true_lvs, xy, eta)
 
 
-# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# Set up spatial basis functions for CBFM -- Most users will start here! 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) \%>\% 
 as.matrix \%>\%
@@ -108,7 +108,7 @@ concur(fitcbfm)
 ## It is purely for illustration purposes. 
 ## Please note this will take a while to run...get a cup of tea and stretch your legs! 
 ##------------------------------
-# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# Set up spatial basis functions for CBFM -- Most users will start here! 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) \%>\% 
 as.matrix \%>\%
