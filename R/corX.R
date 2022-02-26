@@ -186,7 +186,6 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
         if(is.null(newdata2))
                 new_X2 <- new_X
         if(!is.null(newdata2)) {
-                message("Cross-correlations will be calculated...")
                 new_X2 <- predict.gam(nullfit, newdata = data.frame(newdata2), type = "lpmatrix")
                 }
         rm(tmp_formula, nullfit)
