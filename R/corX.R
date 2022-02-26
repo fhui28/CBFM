@@ -201,6 +201,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
         ##----------------------
         num_spp <- nrow(object$betas)
         num_X <- ncol(object$betas)
+        num_basisfunctions <- ncol(object$basis_effects_mat)
 
         if(object$stderrors == FALSE)
                 stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.")
@@ -225,7 +226,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
                 
         innersim_etafn <- function(j) {
                 parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
-                betas_sim <- parameters_sim[,(ncol(parameters_sim) - num_X + 1):ncol(parameters_sim), drop=FALSE]
+                betas_sim <- parameters_sim[,(ncol(parameters_sim)-num_basisfunctions-num_X+1):(ncol(parameters_sim)-num_basisfunctions), drop=FALSE]
                 rm(parameters_sim) # The above could be simplified since I only need to simulate betas, but whatever...
 
                 eta1 <- as.matrix(tcrossprod(new_X, betas_sim))
