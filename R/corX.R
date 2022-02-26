@@ -175,7 +175,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
                 }
         
         ##--------------------------------
-        ## Construct new_X and new_X2 
+        ## Construct new_X and new_X2, if appropriate.
         ##--------------------------------
         tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
         nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
