@@ -144,8 +144,9 @@
 #' # This may be useful, for example, if the training and external data were the same sites visited 
 #' # at two points in time, and the user is interested in the similarity (or lack of) 
 #' # of the environmental responses within and between species are between these two time points. 
-#' # Note the resulting cross-correlations is not a correlation matrix in the sense of having
-#' # ones on the diagonals. All elements, including diagonals, will lie between -1 and 1.  
+#' # Note the resulting cross-correlation matrix is not strictly a correlation matrix 
+#' # in the sense of having ones on the diagonals; all elements, including diagonals, 
+#' # will lie between -1 and 1.  
 #' getcrosscor <- corX(fitcbfm, newdata = dat_train, newdata2 = dat_external)
 #' corrplot(getcrosscor$corr, method = "square", type = "lower", is.corr = FALSE)
 #' }
@@ -244,6 +245,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
         rownames(ptcor) <- rownames(alllower) <- rownames(alllower) <- colnames(object$y)
         colnames(ptcor) <- colnames(alllower) <- colnames(alllower) <- colnames(object$y)
         rm(allcors)
+        gc()
         
         return(list(correlation = ptcor, lower = alllower, upper = allupper))
         }
