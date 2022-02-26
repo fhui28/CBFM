@@ -33,7 +33,7 @@ For modeling count data, a hurdle regression model comprises two independent, co
 
 As the name suggests, this class of models therefore separately models the probability of overcoming the "hurdle" i.e., being present, and then distribution of the counts conditional on overcoming the hurdle i.e., the observed count conditional on the counts being positive; we refer to Cragg (1971) for the original hurdle regression model idea, and Welsh et al., (1996); Barry and Welsh (2002); Potts and Elith (2006); Cantoni et al., (2017); Sadykova et al., (2017); Smith et al., (2019) among many others for their use in (potentially spatial and/or temporal) species distribution modeling in ecology. Two well established packages used to two hurdle regressions include \code{\link[pscl:hurdle]{pscl::hurdle()}}, and zero-altered distributions available \code{\link[gamlss:gamlss]{gamlss::gamlss()}}. Also, motivated strongly by fisheries data, the excellent VAST package by Thorson (2019) has hurdle count families available for spatio-temporal joint species distribution modeling, using an latent variable modeling (LVM) framework.
 
-Because a hurdle model consists of two separate models, and assuming that the spatio-temporal fields for the presence-absence and count components are independent of each other, then a hurdle CBFM can be constructed by "simply" fitting a presence-absence CBFM, then a zero-truncated count CBFM, and then linking the two model together. This function's sole aim is to perform the linkage: it creates an object of class "CBFM_hurdle" containing the two CBFMs themselves. This object can be passed downstream for use in selected functions such as \code{\link[=AIC.CBFM_hurdle]{AIC.CBFM_hurdle()}}, \code{\link[=fitted.CBFM_hurdle]{fitted.CBFM_hurdle()}}, and \code{\link[=predict.CBFM_hurdle]{predict.CBFM_hurdle()}}. Note the object still carries the two component CBFMs, so the practitioner can operate on each of the two components using all standard CBFM functions.
+Because a hurdle model consists of two separate models, and assuming that the spatio-temporal fields for the presence-absence and count components are independent of each other, then a hurdle CBFM can be constructed by "simply" fitting a presence-absence CBFM, then a zero-truncated count CBFM, and then linking the two model together. This function's sole aim is to perform the linkage: it creates an object of class "CBFM_hurdle" containing the two CBFMs themselves. This object can be passed downstream for use in selected functions such as \code{\link[=AIC.CBFM_hurdle]{AIC.CBFM_hurdle()}}, \code{\link[=fitted.CBFM_hurdle]{fitted.CBFM_hurdle()}}, and \code{\link[=predict.CBFM_hurdle]{predict.CBFM_hurdle()}}. Note the object still carries the two component CBFMs, so the user can operate on each of the two components using all standard CBFM functions.
 
 Mathematically, and for completeness, the hurdle CBFM is characterized by the following two regression models: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, the presence-absence component CBFM is characterized by
 
@@ -45,7 +45,7 @@ where \eqn{logit(.)} is the logit link function, \eqn{x_{i,pa}} denotes a vector
 
 where a log link function is used and all the covariates, basis functions, and coefficients are defined similarly to the above. For observational unit \eqn{i} and species \eqn{j}, the mean probability of presence is given by \eqn{\mu_{ij,pa}}, while the mean count conditional on the species being presence is given by \eqn{\mu_{ij,count}}.
 
-Note that because the practitioner is "forced" into fitting two components CBFMs separately (yes we purposefully do this!), then different covariates and basis functions are allowed for the two components.
+Note that because the user is "forced" into fitting two components CBFMs separately (yes we purposefully do this!), then different covariates and basis functions are allowed for the two components.
 }
 \section{Warning}{
 Just because a hurdle CBFM is available does not necessarily mean you should always use it! It is a relatively sophisticated model with a large number of parameters, and when appropriate it may be better to adopt a simpler model such as the negative binomial CBFM instead; please see \code{\link[=CBFM]{CBFM()}} for other families for handling spatio-temporal multivariate count data.
@@ -126,7 +126,7 @@ xy, simy, dat, ztpR)
 
 
 
-# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# Set up spatial basis functions for CBFM -- Most users will start here! 
 # We will use this basis functions in both CBFM fits
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 # Training set basis functions
@@ -304,7 +304,7 @@ xy, simy, dat, ztNBR)
 
 
 
-# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# Set up spatial basis functions for CBFM -- Most users will start here! 
 # We will use this basis functions in both CBFM fits
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 # Training set basis functions

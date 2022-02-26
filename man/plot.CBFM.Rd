@@ -81,7 +81,7 @@ As basic residual diagnostics, these plots should behave a follows:
 If the above does not occur then it may suggest one or more modeling assumptions such as the assumed response distribution, or the model used for the measured covariates, may ot sufficiently satisfied. 
 
 # Warning:
-This function only provides basic diagnostic plots. For spatio-temporal data, there are also more specialized methods and plots for assessing the assumptions made in relation to the spatial and/or temporal correlation, and the practitioner is encouraged to examine these. Basic plots may include plotting the residuals as a function of the spatio-temporal coordinates, and constructing autocorrelation plots and covariograms of the residuals; see for example Li (2003), Hyndman and Athanasopoulos (2018), Plant (2018), and Wilke et al. (2019) for some *general* references which contain sections on residual analysis for spatial and time-series data. There are also more (currently) bespoke methods e.g., Bose et al., (2018), although they may be hard to implement and may also not be too useful for the CBFM approach to analyzing spatio-temporal data in general.
+This function only provides basic diagnostic plots. For spatio-temporal data, there are also more specialized methods and plots for assessing the assumptions made in relation to the spatial and/or temporal correlation, and the user is encouraged to examine these. Basic plots may include plotting the residuals as a function of the spatio-temporal coordinates, and constructing autocorrelation plots and covariograms of the residuals; see for example Li (2003), Hyndman and Athanasopoulos (2018), Plant (2018), and Wilke et al. (2019) for some *general* references which contain sections on residual analysis for spatial and time-series data. There are also more (currently) bespoke methods e.g., Bose et al., (2018), although they may be hard to implement and may also not be too useful for the CBFM approach to analyzing spatio-temporal data in general.
 }
 \examples{
 \donttest{
@@ -132,7 +132,7 @@ prob = binomial()$linkinv(eta)), nrow = num_sites)
 rm(X, mm, spp_loadings, true_lvs, xy, eta)
 
 
-# Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+# Set up spatial basis functions for CBFM -- Most users will start here! 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) \%>\% 
 as.matrix \%>\%

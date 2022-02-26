@@ -5,9 +5,9 @@
 \alias{print.CBFM_hurdle}
 \title{Print a (hurdle) CBFM object}
 \usage{
-\method{print}{CBFM}(x, ...)
+print.CBFM(x, ...)
 
-\method{print}{CBFM_hurdle}(x, ...)
+print.CBFM_hurdle(x, ...)
 }
 \arguments{
 \item{x}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
