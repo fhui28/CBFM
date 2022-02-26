@@ -24,7 +24,7 @@
 #'
 #' The scores and loadings and thus ordinations can also be constructed at a new set of observational units. This is achieved by supplying the values of \code{new_B_space/new_B_time/new_B_spacetime} as appropriate, similar to how [predict.CBFM()] functions. Ordinations at new observational units are often desired for spatial temporal ordinations e.g., if the ordination is to be constructed and visualized on a grid of spatial locations, and potentially over time.
 #'
-#' Please note the current implementation does *not* produce plots automatically: it only returns the scores and loadings, which the practitioner then has to manually use to construct plots. Future versions of the package may change this! 
+#' Please note the current implementation does *not* produce plots automatically: it only returns the scores and loadings, which the user then has to manually use to construct plots. Future versions of the package may change this! 
 #'
 #' @return A list with the following items:
 #' \item{scores: }{A matrix of observational unit-specific scores.}
@@ -97,7 +97,7 @@
 #' rm(X, mm, spp_loadings, true_lvs, xy, eta)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
 #' as.matrix %>%

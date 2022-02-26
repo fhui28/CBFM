@@ -9,7 +9,7 @@
 #' @param nsim A positive integer specifying the number of simulated datasets. Defaults to 1.
 #' @param seed An integer to set seed number. Defaults to a random seed number.
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
-#' @param conditional If \code{conditional = TRUE}, the data are simulated conditional on the estimated species-specific regression coefficients associated with the basis functions. Otherwise if \code{conditional = FALSE} then new species-specific regression coefficients are generated from the estimated values of the \eqn{\Sigma}'s and \eqn{G}'s, and their corresponding random effects distribution. Please see the details section in [CBFM()] for more details. Note that with CBFM being set up much a like generalized additive model or GAM, then simulating conditionally is generally what most practitioners will required, if they need to simulate.
+#' @param conditional If \code{conditional = TRUE}, the data are simulated conditional on the estimated species-specific regression coefficients associated with the basis functions. Otherwise if \code{conditional = FALSE} then new species-specific regression coefficients are generated from the estimated values of the \eqn{\Sigma}'s and \eqn{G}'s, and their corresponding random effects distribution. Please see the details section in [CBFM()] for more details. Note that with CBFM being set up much a like generalized additive model or GAM, then simulating conditionally is generally what most users will required, if they need to simulate.
 #' @param ... not used.
 #'
 #'
@@ -84,7 +84,7 @@
 #' rm(X, mm, spp_loadings, true_lvs, xy, eta)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
 #' as.matrix %>%

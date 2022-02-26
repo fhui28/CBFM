@@ -16,7 +16,7 @@
 #' 
 #' All measures are obtained on a *per-species basis*. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates. 
 #' 
-#' ** We leave it up to the practitioner to decide how to use the regression diagnostics, if at all.** In a GAM let alone a CBFM for spatio-temporal multivariate abundance data these diagnostics may only be approximate, and so providing rules-of-thumb related to their usage is challenging. Besides, we echo the sentiment provided in Chapter 4.4 of Fox et al., (2019) that cutoffs and rules-of-thumb should not be given too much weight, with more attention placed on graphical displays and assessing *relative influence* of observations.   
+#' ** We leave it up to the user to decide how to use the regression diagnostics, if at all.** In a GAM let alone a CBFM for spatio-temporal multivariate abundance data these diagnostics may only be approximate, and so providing rules-of-thumb related to their usage is challenging. Besides, we echo the sentiment provided in Chapter 4.4 of Fox et al., (2019) that cutoffs and rules-of-thumb should not be given too much weight, with more attention placed on graphical displays and assessing *relative influence* of observations.   
 #'  
 #'  
 #' @return A list containing two elements:
@@ -84,7 +84,7 @@
 #' rm(X, mm, spp_loadings, true_lvs, xy, eta)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
 #' as.matrix %>%

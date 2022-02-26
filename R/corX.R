@@ -112,7 +112,7 @@
 #' 
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' # We will also use this basis functions in some later examples
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' # Training set basis functions

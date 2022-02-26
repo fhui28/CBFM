@@ -81,7 +81,7 @@
 #' rm(X, mm, spp_loadings, true_lvs, xy, eta)
 #' 
 #' 
-#' # Set up spatial basis functions for CBFM -- Most practitioners will start here! 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
 #' basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
 #' as.matrix %>%
