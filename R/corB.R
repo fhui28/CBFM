@@ -1,0 +1,305 @@
+#' @title Construct (cross-)correlations due to basis functions for a CBFM fit
+#' 
+#' @description 
+#' `r lifecycle::badge("experimental")`
+#' 
+#' Takes a fitted \code{CBFM} object calculates the residual between-species correlation matrix due to (all) the spatial and/temporal basis functions, along with corresponding uncertainty intervals. Both are constructed via a simulation-based approach. Similar to [predict.CBFM()], this correlation matrix can be calculated based on a different sets of basis functions to those used to actually fit the model. Additionally, the user can supplied two sets of spatial and/or temporal basis functions, in which case the function calculates cross-correlations (between and within species) between these two sets of basis functions. 
+#' 
+#' 
+#' @param object An object of class \code{CBFM}.
+#' @param new_B_space A new matrix of new spatial basis functions at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original \code{B_space} argument are returned. Please note this should only be supp'lied if \code{B_space} was supplied in the original CBFM fit.  
+#' @param new_B_space2 A second new matrix of new spatial basis functions at which cross-correlations are to be calculated. If this is supplied, then \code{new_B_space} must also be supplied, as the function assumes then the user desires calculation of cross-correlations due to these spatial basis functions.
+#' @param new_B_time A new matrix of temporal basis functions at which calculations are to be calculated. If this is not provided, then correlations corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.  
+#' @param new_B_time2 A second new matrix of temporal basis functions at which cross-calculations are to be calculated.  If this is supplied, then \code{new_B_time} must also be supplied, as the function assumes then the user desires calculation of cross-correlations due to these temporal basis functions.
+#' @param new_B_spacetime A new matrix of spatio-temporal basis functions at which calculations are to be calculated. If this is not provided, then correlations corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.  
+#' @param new_B_spacetime2 A second new matrix of spatio-temporal basis functions at which cross-calculations are to be calculated.  If this is supplied, then \code{new_B_time} must also be supplied, as the function assumes then the user desires calculation of cross-correlations due to these spatio-temporal basis functions.
+#' @param coverage The coverage probability of the uncertainty intervals for the correlations. Defaults to 0.95, which corresponds to 95% uncertainty intervals.
+#' @param ncores To speed up calculation of the uncertainty estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param num_sims The number of Monte-Carlo examples to simulate.
+#' 
+#' 
+#' @details 
+#' This function is somewhat similar to [boral::get.residual.cor()] and [gllvm::getResidualCor()], in calculating a residual between-species correlation matrix due to (all) the basis functions i.e., residual spatio-temporal correlations, along with corresponding uncertainty intervals. Recall the general form of the mean regression model for the CBFM is given by 
+#' 
+#' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
+#' 
+#' where \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit \eqn{i}, and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. So for example, users may choose to use the form \eqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,space}^\top a_{j,space} + b_{i,time}^\top a_{j,time},} where \eqn{b_i = (b_{i,space}, b_{i,time})} and \eqn{a_j = (a_{j,space}, a_{j,time})}; see also the help file for [CBFM()] for more information.
+#' 
+#' One (although by no means the only, see the warning below) approach to thinking about the residual spatio-temporal covariance and hence correlation between two species \eqn{j} and \eqn{j'}, is based on examining the components \eqn{b_i^\top a_j} and \eqn{b_i^\top\beta_{j'}} across the observational units. Both the point estimate and the uncertainty intervals for the residual correlation are constructed by simulation. Specifically, species-specific coefficients corresponding to the basis functions i.e., \eqn{\beta_j}, are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see [CBFM()] and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}), after which a point estimate of the residual correlations is obtained by taking the sample average, while uncertainty intervals are based on taking sample quantiles.
+#' 
+#' Note that because this function calculates correlations as based on component of the linear predictor \eqn{b_i^\top a_j}, then it can not be applied to  \code{CBFM_hurdle} object (which by construction contains two linear predictors, so the user has to decide which component of the hurdle model they are interested in). 
+#' 
+#' With the above definition of the residual between-species spatio-temporal correlation, note that the basis functions on which the correlations are constructed need not be the same those used in fitting the original CBFM i.e., the \eqn{b_i}'s can be different to those of \code{object$B}. This is handled via the \code{new_B_space/new_B_time/new_B_spacetime} arguments. Additionally, it is possible to calculate residual within and between species *cross-correlations* across two different sets of spatio-temporal basis functions. That is, residual correlations are calculated between \eqn{b_i^\top a_j} and \eqn{b_{i2}^\top a_{j'}}, where \eqn{b_i} and \eqn{b_{i2}} can be different sets of basis functions. This is handled by supplying both \code{new_B_space/new_B_time/new_B_spacetime} and \code{new_B_space2/new_B_time2/new_B_spacetime2} arguments simultaneously and as appropriate. Cross-correlations may be useful, say, if the two sets of basis functions reflect two different sets of sampling units, and we are interested in how spatially and/or temporally similar (or lack of) the species communities are across these two sets. Another example if is the same set of observational units are visited at two different time points, and we are interested in how similar (or lack thereof) the spatial correlations within and between species are between these two time points (see Thorson et al., 2016; Thorson, 2019; Ovakainen and Abrego, 2020, for similar ideas). 
+#' 
+#' NOTE: A residual cross-correlation matrix is not going to be a standard residual correlation matrix in the sense of having the ones alone the diagonal. This is because even for the same species \eqn{j = j'}, the correlation is not guaranteed to be equal to one as the covariates being considered can be different.   
+#' 
+#'
+#' @return A list with the following components is returned:
+#' \item{correlation: }{A matrix of residual (cross-)correlation values.}
+
+#' \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the residual correlations.}
+
+#' \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the residual correlations.}
+#' 
+#' 
+#' @details # Warning
+#' The approach this function takes to construct a residual spatio-temporal correlation matrix between species is **by no means the only approach**. Indeed, with CBFMs the approach taken here to construct residual correlations can be seen as a basis-function analogue of equation 4 in Pollock et al., (2014), as well as Warton et al., (2015) and Hui (2016) among others, for calculating correlations due to measured predictors i.e., except we replace the measure predictors with basis functions.
+#' 
+#' An alternative approach, and arguably more in line with how residual correlations are calculated in latent variable models (e.g., Warton et al., 2015; Niku et al., 2017; Ovaskainen et al., 2017, Niku et al., 2019), would be to calculate residual spatio-temporal correlations based directly off the community-level covariance matrices \code{Sigma_space/Sigma_time/Sigma_spacetime} and baseline between-species correlation matrices \code{G_space/G_time/G_spacetime} characterizing the random effects covariance of the species-specific coefficients \eqn{(a_1,\ldots,a_m)}. Such an approach is currently not available in CBFM...sorry!
+#'
+#'
+#' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
+#' 
+#' 
+#' @references
+#' Niku, J., Warton, D. I., Hui, F. K., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological and Environmental Statistics, 22, 498-522.
+#' 
+#' Niku, J., Hui, F. K., Taskinen, S., and Warton, D. I. (2019). gllvm: Fast analysis of multivariate abundance data with generalized linear latent variable models in r. Methods in Ecology and Evolution, 10, 2173-2182.
+#' 
+#' Ovaskainen, O., Tikhonov, G., Norberg, A., Guillaume Blanchet, F., Duan, L., Dunson, D., and Abrego, N. (2017). How to make more out of community data? A conceptual framework and its implementation as models and software. Ecology letters, 20, 561-576.
+#' 
+#' Ovaskainen, O., and Abrego, N. (2020). Joint species distribution modelling: with applications in R. Cambridge University Press.
+#'
+#' Pollock, L. J., Tingley, R., Morris, W. K., Golding, N., O'Hara, R. B., Parris, K. M., Vesk, P. A., and McCarthy, M. A. (2014). Understanding co‐occurrence by modelling species simultaneously with a Joint Species Distribution Model (JSDM). Methods in Ecology and Evolution, 5, 397-406.
+#' 
+#' Thorson, J. T. (2019). Guidance for decisions using the Vector Autoregressive Spatio-Temporal (VAST) package in stock, ecosystem, habitat and climate assessments. Fisheries Research, 210, 143-161.
+#' 
+#' Thorson, J. T., Ianelli, J. N., Larsen, E. A., Ries, L., Scheuerell, M. D., Szuwalski, C., and Zipkin, E. F. (2016). Joint dynamic species distribution models: a tool for community ordination and spatio-temporal monitoring. Global Ecology and Biogeography, 25, 1144-1158.
+#' 
+#' Warton, D. I., Blanchet, F. G., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2015). So many variables: joint modeling in community ecology. Trends in Ecology and Evolution, 30, 766-779.
+#' 
+#' @seealso [CBFM()] for fitting CBFMs, and [corX()] for calculating between-species (cross-)correlations due to measured covariates.
+#' 
+#' @examples
+#' \donttest{
+#' library(autoFRK)
+#' library(FRK)
+#' library(MASS)
+#' library(mvabund)
+#' library(mvtnorm)
+#' library(ROCR)
+#' library(sp)
+#' library(RandomFields)
+#' library(tidyverse)
+#' library(corrplot)
+#' 
+#' ##------------------------------
+#' ## **Example 1: Fitting a CBFM to spatial multivariate presence-absence data** 
+#' ## simulated from a spatial latent variable model
+#' ## Please note the data generation process (thus) differs from CBFM.
+#' ##------------------------------
+#' set.seed(2021)
+#' num_sites <- 1000 # 500 (units) sites for training set + 500 sites for external calculation
+#' num_spp <- 50 # Number of species
+#' num_X <- 4 # Number of regression slopes
+#' 
+#' spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_intercepts <- runif(num_spp, -2, 0)
+#' 
+#' # Simulate spatial coordinates and environmental covariate components
+#' # We will use this information in later examples as well
+#' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
+#' X <- rmvnorm(num_sites, mean = rep(0,4)) 
+#' colnames(X) <- c("temp", "depth", "chla", "O2")
+#' dat <- data.frame(xy, X)
+#' mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) %>% 
+#' scale %>% 
+#' as.matrix
+#' 
+#' # Simulate latent variable component
+#' # We will use this information in later examples as well
+#' true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
+#' x = xy$x, y = xy$y, n = 2)@data %>% 
+#' as.matrix
+#' spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
+#' set.seed(NULL)
+#' 
+#' # Simulate spatial multivariate abundance data (presence-absence)
+#' # We will use this information in later examples as well
+#' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
+#' tcrossprod(true_lvs, spp_loadings)
+#' simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
+#' prob = plogis(eta)), nrow = num_sites)
+#' 
+#' # Form training and test sets
+#' dat_train <- dat[1:500,]
+#' dat_test <- dat[501:1000,]
+#' simy_train <- simy[1:500,]
+#' rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
+#' 
+#' 
+#' 
+#' # Set up spatial basis functions for CBFM -- Most users will start here! 
+#' # We will also use this basis functions in some later examples
+#' num_basisfunctions <- 25 # Number of spatial basis functions to use
+#' # Training set basis functions
+#' train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' as.matrix %>%
+#' {.[,-(1)]} # Remove the first intercept column
+#' # Testing set basis functions
+#' test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>% 
+#' predict(newx = dat_test[,c("x","y")]) %>% 
+#' as.matrix %>%
+#' {.[,-c(1)]} 
+#' 
+#' # Fit CBFM 
+#' tic <- proc.time()
+#' useformula <- ~ temp + depth + chla + O2
+#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
+#' toc <- proc.time()
+#' toc - tic
+#' 
+#' 
+#' # Calculate residuals between-species spatial correlations using training basis functions
+#' getcor <- corB(fitcbfm)
+#' corrplot(getcor$corr, method = "square", type = "lower", order = "hclust")
+#' 
+#' 
+#' # Calculate residual between-species spatial correlations using external (new) basis functions
+#' getcor <- corB(fitcbfm, new_B_space = test_basisfunctions)
+#' corrplot(getcor$corr, method = "square", type = "lower", order = "hclust")
+#' 
+#' 
+#' # Calculate species residual cross-correlations between training and 
+#' # external (new) basis functions.
+#' # This may be useful, for example, if the training and external basis functions correspoind 
+#' # to the same set of sites visited at two points in time, and the user is interested 
+#' # in the similarity (or lack of) in the spatial correlations within and between species between 
+#' # these two time points. 
+#' # Note the resulting residual cross-correlation matrix is not strictly a correlation matrix 
+#' # in the sense of having ones on the diagonals; all elements, including diagonals, 
+#' # will lie between -1 and 1.  
+#' getcrosscor <- corB(fitcbfm, new_B_space = train_basisfunctions, new_B_space2 = test_basisfunctions)
+#' corrplot(getcrosscor$corr, method = "square", type = "lower", is.corr = FALSE)
+#' }
+#' 
+#' 
+#' @export
+#' 
+#' @importFrom foreach foreach %dopar%
+#' @import Matrix
+#' @importFrom abind abind
+#' @importFrom doParallel registerDoParallel
+#' @importFrom parallel detectCores
+#' @importFrom stats qnorm
+#' @md
+
+corB <- function(object, new_B_space = NULL, new_B_space2 = NULL, new_B_time = NULL, new_B_time2 = NULL, new_B_spacetime = NULL, new_B_spacetime2 = NULL, coverage = 0.95, ncores = NULL, num_sims = 500) {
+        if(!inherits(object, "CBFM")) 
+                stop("`object' is not of class \"CBFM\"")
+
+        if(is.null(ncores))
+                registerDoParallel(cores = detectCores()-1)
+        if(!is.null(ncores))
+                registerDoParallel(cores = ncores)
+        
+        if(!is.null(new_B_space2) & is.null(new_B_space)) {
+                stop("If new_B_space2 is supplied, then new_B_space must also be supplied (for calculation of residual cross-correlations) due to basis functions. Both matrices must have the same dimensions.")
+                }
+        if(!is.null(new_B_time2) & is.null(new_B_time)) {
+                stop("If new_B_time2 is supplied, then new_B_time must also be supplied (for calculation of residual cross-correlations) due to basis functions. Both matrices must have the same dimensions.")
+                }
+        if(!is.null(new_B_spacetime2) & is.null(new_B_spacetime)) {
+                stop("If new_B_spacetime2 is supplied, then new_B_spacetime must also be supplied (for calculation of residual cross-correlations) due to basis functions. Both matrices must have the same dimensions.")
+                }
+
+        
+        ##--------------------------------
+        ## Construct new_B and new_B2, if appropriate. 
+        ##--------------------------------
+        new_B <- new_B2 <- NULL
+        if(!is.null(new_B_space)) {
+                if(object$num_B_space != ncol(new_B_space))
+                        stop("The number of columns of new_B_space does not object$num_B_space.")
+                new_B <- cbind(new_B, new_B_space)
+                }
+        if(!is.null(new_B_space2)) {
+                if(object$num_B_space != ncol(new_B_space2))
+                        stop("The number of columns of new_B_space2 does not object$num_B_space.")
+                new_B2 <- cbind(new_B2, new_B_space2)
+                }
+        if(!is.null(new_B_time)) {
+                if(object$num_B_time != ncol(new_B_time))
+                        stop("The number of columns of new_B_time does not object$num_B_time.")
+                new_B <- cbind(new_B, new_B_time)
+                }
+        if(!is.null(new_B_time2)) {
+                if(object$num_B_time != ncol(new_B_time2))
+                        stop("The number of columns of new_B_time2 does not object$num_B_time.")
+                new_B2 <- cbind(new_B2, new_B_time2)
+                }
+        if(!is.null(new_B_spacetime)) {
+                if(object$num_B_spacetime != ncol(new_B_spacetime))
+                        stop("The number of columns of new_B_spacetime does not object$num_B_spacetime.")
+                new_B <- cbind(new_B, new_B_spacetime)
+                }
+        if(!is.null(new_B_spacetime2)) {
+                if(object$num_B_spacetime2 != ncol(new_B_spacetime2))
+                        stop("The number of columns of new_B_spacetime2 does not object$num_B_spacetime.")
+                new_B2 <- cbind(new_B2, new_B_spacetime2)
+                }
+        if(is.null(new_B) & is.null(new_B2))
+                new_B <- new_B2 <- object$B
+        if(!is.null(new_B) & is.null(new_B2))
+                new_B2 <- new_B
+        
+        if(ncol(new_B) != ncol(object$basis_effects_mat))
+                stop("new_B does not contain the same number of columns as the number of columns in object$basis_effects_mat.")
+        if(ncol(new_B2) != ncol(object$basis_effects_mat))
+                stop("new_B2 does not contain the same number of columns as the number of columns in object$basis_effects_mat.")
+
+        
+        ##----------------------
+        ## Construct (cross)-correlations
+        ##----------------------
+        num_spp <- nrow(object$betas)
+        num_basisfunctions <- ncol(object$basis_effects_mat)
+
+        if(object$stderrors == FALSE)
+                stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.")
+
+        eta1 <- as.matrix(tcrossprod(new_B, object$basis_effects_mat))
+        eta2 <- as.matrix(tcrossprod(new_B2, object$basis_effects_mat))
+        colnames(eta2) <- colnames(eta2) <- rownames(object$basis_effects_mat)          
+
+        # if(!se_fit) {
+        #         out <- cor(eta1, eta2)
+        #         return(out)
+        #   }
+     
+        
+        message("Simulation used to calculate for uncertainty intervals for correlations. This could take a while...enjoy a bottle of Calpis while you're waiting uwu")
+        ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
+
+        mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$basis_effects_mat)))
+        bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
+                                          cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
+        bigcholcovar <- t(chol(bigcholcovar))
+        
+        innersim_etafn <- function(j) {
+                parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
+                basiseff_sim <- parameters_sim[,(ncol(parameters_sim)-num_basisfunctions+1):ncol(parameters_sim), drop=FALSE]
+                rm(parameters_sim) # The above could be simplified since I only need to simulate betas, but whatever...
+                
+                eta1 <- as.matrix(tcrossprod(new_B, basiseff_sim))
+                eta2 <- as.matrix(tcrossprod(new_B2, basiseff_sim))
+                return(cor(eta1, eta2))
+                }
+    
+        allcors <- foreach(j = 1:num_sims) %dopar% innersim_etafn(j = j)
+
+        rm(bigcholcovar, mu_vec)
+        allcors <- abind(allcors, along = 3)
+        ptcor <- apply(allcors, c(1,2), mean)
+        alllower <- apply(allcors, c(1,2), quantile, prob = (1-coverage)/2)
+        allupper <- apply(allcors, c(1,2), quantile, prob = coverage + (1-coverage)/2) 
+        rownames(ptcor) <- rownames(alllower) <- rownames(alllower) <- colnames(object$y)
+        colnames(ptcor) <- colnames(alllower) <- colnames(alllower) <- colnames(object$y)
+        rm(allcors)
+        
+        gc()
+        return(list(correlation = ptcor, lower = alllower, upper = allupper))
+        }
+
+
