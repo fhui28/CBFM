@@ -46,7 +46,7 @@
 #' Warton, D. I., Blanchet, F. G., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2015). So many variables: joint modeling in community ecology. Trends in Ecology and Evolution, 30, 766-779.
 #'
 #'
-#' @seealso [CBFM()] for fitting CBFMs, [predict.CBFM()] for constructing predictions from a CBFM fit.
+#' @seealso [CBFM()] for fitting CBFMs, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions, [predict.CBFM()] for constructing predictions from a CBFM fit.
 #' 
 #' @examples
 #' \donttest{

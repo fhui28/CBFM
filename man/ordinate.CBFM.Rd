@@ -144,7 +144,7 @@ van der Veen, B., Hui, F. K. C., Hovstad, K. A., Solbu, E. B., & O'Hara, R. B. (
 Warton, D. I., Blanchet, F. G., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Walker, S. C., and Hui, F. K. C. (2015). So many variables: joint modeling in community ecology. Trends in Ecology and Evolution, 30, 766-779.
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions, \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

@@ -116,7 +116,7 @@ Bjork, J. R., Hui, F. K. C., O'Hara, R. B., and Montoya, J. M. (2018). Uncoverin
 Ovaskainen, O., Tikhonov, G., Norberg, A., Guillaume Blanchet, F., Duan, L., Dunson, D., and Abrego, N. (2017). How to make more out of community data? A conceptual framework and its implementation as models and software. Ecology Letters, 20, 561-576.
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=corX]{corX()}} for calculating between-species (cross-)correlations due to measured covariates, \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

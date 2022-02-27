@@ -43,7 +43,7 @@
 #' 
 #' Ovaskainen, O., Tikhonov, G., Norberg, A., Guillaume Blanchet, F., Duan, L., Dunson, D., and Abrego, N. (2017). How to make more out of community data? A conceptual framework and its implementation as models and software. Ecology Letters, 20, 561-576.
 #' 
-#' @seealso [CBFM()] for fitting CBFMs.
+#' @seealso [CBFM()] for fitting CBFMs, [corX()] for calculating between-species (cross-)correlations due to measured covariates, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions.
 #' 
 #' @examples
 #' \donttest{
