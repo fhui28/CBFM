@@ -1,6 +1,7 @@
 ## Check and fill functions
 ## Hidden and not exported
 
+# Only used to create_CBFM_life
 .check_B_forms <- function(B_space, B_time, B_spacetime, Sigma = NULL, G = NULL, extra_check = FALSE) {
      if(is.null(B_space) & is.null(B_time) & is.null(B_spacetime))
           stop("At least one of B_space/B_time/B_spacetime must be supplied.")
@@ -242,11 +243,12 @@
      }
      
 
-.fill_Sigma_control <- function(control, which_B_used) {
-     if(is.null(control$rank))
+.fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
+    if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(sum(which_B_used) != length(control$rank)) {
-          stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2.")
+          stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2. 
+               Please note ranks still needs to be supplied even when custom Sigmas are used (although the corresponding rank is ignored in such case).")
           }
      if(is.null(control$maxit))
           control$maxit <- 100
@@ -258,7 +260,34 @@
           control$inv_method <- "chol2inv"
      if(is.null(control$trace))
           control$trace <- 0
-          
+    
+     control$which_custom_Sigma_used <- c(0,0,0)
+     if(!is.null(control$custom_space)) {
+        if(which_B_used[1] == 0)
+            stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
+        if(nrow(control$custom_space) != num_spacebasisfns | ncol(control$custom_space) != num_spacebasisfns)
+            stop("control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
+         message("Because Sigma_control$custom_space is supplied, then G_space will be estimated as a covariance instead of a correlation matrix.")
+         control$which_custom_Sigma_used[1] <- 1
+         }
+     if(!is.null(control$custom_time)) {
+         if(which_B_used[2] == 0)
+            stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
+        if(nrow(control$custom_time) != num_timebasisfns | ncol(control$custom_time) != num_timebasisfns)
+            stop("control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
+        message("Because Sigma_control$custom_time is supplied, then G_time will be estimated as a covariance instead of a correlation matrix.")
+        control$which_custom_Sigma_used[2] <- 1
+        }
+     if(!is.null(control$custom_spacetime)) {
+         if(which_B_used[3] == 0) 
+            stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
+        if(nrow(control$custom_spacetime) != num_spacetimebasisfns | ncol(control$custom_spacetime) != num_spacetimebasisfns)
+            stop("control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).") 
+        
+        message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix.")
+        control$which_custom_Sigma_used[3] <- 1
+        }
+
      control$method<- match.arg(control$method, choices = c("LA","simple"))
      #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
 

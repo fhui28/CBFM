@@ -78,7 +78,7 @@
    
    
 ## This function is used specifically when an additive form of the CBFM is used, for use in the construction of the Bayesian posterior covariance matrix for standard errors.
-## For example, given G_space, Sigma_space, G_time, Sigma_time, it forms for covariance matrix for vecttor of the random slopes (a_{space,1},a_{time,1}, a_{space,2},a_{time,2},...a_{space,m},a_{time,m}). 
+## For example, given G_space, Sigma_space, G_time, Sigma_time, it forms for covariance matrix for vector of the random slopes (a_{space,1},a_{time,1}, a_{space,2},a_{time,2},...a_{space,m},a_{time,m}). 
 .kkproduct <- function(G1, G2, G3 = NULL, Sigma1, Sigma2, Sigma3 = NULL, inverse = TRUE) {
      num_spp <- nrow(G1)
      num_basisfns_Sigma1 <- nrow(Sigma1)
@@ -115,9 +115,36 @@
      if(!inverse)
           return(out)
      if(inverse)
-          return(chol2inv(chol(out)))
+          return(.cholthenpinv(out))
      }
 
+
+## A local pseudo-inverse function -- straight from summary.gam in mgcv package. Full credit goes to Simon Wood for this!
+.pinv <- function(V, M, rank.tol = 1e-6) {
+    D <- eigen(V, symmetric = TRUE)
+    M1 <- length(D$values[D$values > rank.tol * D$values[1]])
+    if(M > M1)
+        M<-M1 # avoid problems with zero eigen-values
+    if(M+1 <= length(D$values))
+        D$values[(M+1):length(D$values)]<-1
+    D$values<- 1/D$values
+    if(M+1 <= length(D$values))
+        D$values[(M+1):length(D$values)]<-0
+    res <- D$vectors %*% diag(x = D$values, nrow = length(D$values)) %*% t(D$vectors)
+
+    return(res)
+    }
+
+
+# Tries chol2inv then, which will fail for singular matrices. If it does fail then go to use .pinv. 
+# One could use .pinv directly, but I suspect chol2inv is more scalable (when it works) and so is preferred as a first option?
+.cholthenpinv <- function(V) {
+   out <- try(chol2inv(chol(V)), silent = TRUE)
+   if(inherits(out, "try-error"))
+      out <- .pinv(V = V, M = ncol(V))
+   
+   return(out)
+   }
 
 # schulz_inversion_fn <- function(mat, max_iter = 100) {
 #      diff <- 10

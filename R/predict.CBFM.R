@@ -215,7 +215,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                         }
 
                 if(need_sim) {
-                        message("Simulation required for prediction uncertainty intervals. This could take a while...grab some mochi while you're waiting uwu")
+                        message("Simulation required for prediction uncertainty intervals. This could take a while...grab a cuppa while you're waiting uwu")
                         mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$basis_effects_mat)))
                         bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                                           cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
@@ -298,7 +298,7 @@ predict.CBFM_hurdle <- function(object,
                 }
 
         if(se_fit) {
-                message("Simulation required for prediction uncertainty intervals. This could take a while...enjoy a cup of matcha latte and some mochi while you're waiting uwu")
+                message("Simulation required for prediction uncertainty intervals. This could take a while...grab a cuppa while you're waiting uwu")
                 preds_pa <- predict.CBFM(object$pa_fit, newdata = newdata_pa, manualX = manualX_pa,  
                                          new_B_space = new_B_space_pa, new_B_time = new_B_time_pa, new_B_spacetime = new_B_spacetime_pa,
                                          type = "response", se_fit = TRUE, coverage = coverage, ncores = ncores, num_sims = num_sims, return_internals = TRUE)

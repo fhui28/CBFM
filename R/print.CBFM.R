@@ -41,15 +41,18 @@ print.CBFM <- function(x, ...) {
         message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
         B_names <- c("B_space ", "B_time ", "B_spacetime ")
-        message("Basis functions included: ", B_names[x$which_B_used==1])
+        message("\nBasis functions included: ", B_names[x$which_B_used==1])
         message("Total number of basis functions: ", x$num_B)
      
-        if(x$which_B_used[1])
-                message("B_space:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_space)) 
+        if(sum(x$which_custom_Sigma_used) > 0)
+                message("One or more custom basis function covariance matrices Sigma supplied...")
+        
+        if(x$which_B_used[1]) 
+                message("Spatial component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[1], NA, ncol(x$Loading_Sigma_space))) 
         if(x$which_B_used[2])
-                message("B_time:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_time)) 
+                message("Temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[2], NA, ncol(x$Loading_Sigma_time))) 
         if(x$which_B_used[3])
-                message("B_spacetime:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ncol(x$Loading_Sigma_spacetime)) 
+                message("Spatio-temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[3], NA, ncol(x$Loading_Sigma_spacetime))) 
           
         invisible(x)
         }

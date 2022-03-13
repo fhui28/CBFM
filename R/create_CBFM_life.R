@@ -78,6 +78,9 @@
 #' \item{linear_predictors_B }{The matrix of linear predictors corresponding to the basis functions only i.e., \eqn{b_i^\top a_j}'s.}
 #' }
 #' 
+#' @details # Warning
+#' Note **no** checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
+#'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
 #' @seealso [CBFM()] for fitting CBFMs and [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit.

@@ -106,7 +106,7 @@
 #' ## Since the true model only involves parametric terms, then we do not expect its performance
 #' ## to be as good as assuming the right form for the mean model.
 #' ## It is purely for illustration purposes. 
-#' ## Please note this will take a while to run...get a cup of tea and stretch your legs! 
+#' ## Please note this will take a while to run...get a cuppa and stretch your legs! 
 #' ##------------------------------
 #' # Set up spatial basis functions for CBFM -- Most users will start here! 
 #' num_basisfunctions <- 25 # Number of spatial basis functions to use
