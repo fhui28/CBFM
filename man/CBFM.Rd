@@ -26,7 +26,8 @@ CBFM(
   control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type =
     "parameters", gam_method = "REML", tol = 1e-04, initial_beta_dampen = 1,
     subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0),
-  Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0),
+  Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0,
+    custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
   G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100,
     tol = 1e-04, method = "LA", trace = 0),
   k_check_control = list(subsample = 5000, n.rep = 400)
@@ -279,12 +280,12 @@ Also, the current estimation approach \strong{does not provide uncertainty quant
 \item CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are \strong{not} spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}}, \code{\link[boral:boral]{boral::boral()}}, and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
 \item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
 \item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well, if at all!
-\item As mentined above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}.
+\item As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}.
 }
 }
 
 \section{CBFM isn't working for my data?!}{
-Once you have finished grumbling about the package and its developer, please brew some tea and grab a packet (or two) of senbei...debugging takes a while!
+Once you have finished grumbling about the package and its developer, please brew some tea and turn off your phone...debugging takes a while!
 
 As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
 \itemize{
@@ -1020,12 +1021,45 @@ rm(list = ls())
 library(gamlss)
 library(gamlss.tr)
 gen.trun(0, family = "NBI")
+
+set.seed(2021)
+num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
+num_spp <- 50 # Number of species
+num_X <- 4 # Number of regression slope
+spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_intercepts <- runif(num_spp, -2, 0)
+
+# Simulate spatial coordinates and environmental covariate components
+# We will use this information in later examples as well
+xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
+X <- rmvnorm(num_sites, mean = rep(0,4)) 
+colnames(X) <- c("temp", "depth", "chla", "O2")
+dat <- data.frame(xy, X)
+mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 
+scale \%>\% 
+as.matrix
+
+# Simulate latent variable component
+# We will use this information in later examples as well
+true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
+x = xy$x, y = xy$y, n = 2)@data \%>\% 
+as.matrix
+spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
+set.seed(NULL)
+
+# Simulate spatial multivariate abundance data (presence-absence)
+# We will use this information in later examples as well
+eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
+tcrossprod(true_lvs, spp_loadings)
+
 spp_dispersion <- runif(num_spp)
 # Simulate spatial multivariate abundance data
 simy <- matrix(rNBItr(num_sites * num_spp, mu = exp(eta), sigma = 
 matrix(spp_dispersion, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
 
 # Form training and test sets
+dat_train <- dat[1:500,]
+dat_test <- dat[501:1000,]
 simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
 
@@ -1116,6 +1150,9 @@ geom_point() +
 geom_abline(intercept = 0, slope = 1, linetype = 2) +
 labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 theme_bw()
+
+
+## Please see the makeahurdle function for uses of the above for hurdle count models
 
 
 
@@ -1287,9 +1324,9 @@ rm(list = ls())
 
 ##------------------------------
 ## **Example 3a: Fitting an additive CBFM to spatio-temporal multivariate presence-absence data**
-## simulated from a spatio-temporal latent variable model
+## Simulated from a spatio-temporal latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
-## Also, the additive CBFM might take a while to fit...grab a cup of tea or coffee!
+## The additive CBFM might take a while to fit...grab a cuppa!
 ##------------------------------
 set.seed(2021)
 num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
@@ -1335,8 +1372,7 @@ simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
 dat_train <- dat[1:500,]
 dat_test <- dat[501:1000,]
-rm(X, eta, mm, spp_space_loadings, spp_time_loadings, true_space_lvs, true_time_lvs,
-xy, simy)
+rm(X, eta, xy, simy, true_time_lvs, spp_time_loadings)
 
 
 # Fit stacked GLM as a baseline
@@ -1365,7 +1401,7 @@ train_time_basisfunctions <- time_basisfunctions[1:500,]
 test_time_basisfunctions <- time_basisfunctions[501:1000,] 
 rm(time_basisfunctions, time_knots)
 
-# Fit CBFM with Additive spatial and temporal basis functions 
+# Fit CBFM with additive spatial and temporal basis functions 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
 fitcbfm_additive <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
@@ -1431,11 +1467,136 @@ theme_bw()
 
 
 ##------------------------------
-## **Example 3b: Repeat Example 3a but with tensor product basis functions**
+## **Example 3b: Repeat Example 3a but use a species-specific random intercept for time**
+## Simulated from a spatio-temporal latent variable model with random intercept for time
 ## Please note the data generation process (thus) differs from CBFM.
-## To save some time, and for illustrative purposes, we wil use the fast method estimating
+## The additive CBFM might take a while to fit...grab a cuppa!
+##------------------------------
+# Consider 10 time points, 100 spatial locations sampled per time point
+dat$time <- rep(1:10, each = 100) \%>\% factor
+spp_time_variances <- runif(num_spp, 0.5, 2)
+spp_time_randint <- sapply(spp_time_variances, function(x) rnorm(10, 0, sd = sqrt(x))) \%>\%
+t
+mm_time <- model.matrix(~ time - 1, data = dat)
+
+# Simulate spatial multivariate abundance data (presence-absence)
+# We will also use this information in examples below
+eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
+tcrossprod(true_space_lvs, spp_space_loadings) +
+tcrossprod(mm_time, spp_time_randint)
+simy <- matrix(rbinom(num_sites * num_spp, size = 1, 
+prob = plogis(eta)), nrow = num_sites)
+
+# Form training and test sets
+simy_train <- simy[1:500,]
+simy_test <- simy[501:1000,]
+dat_train <- dat[1:500,]
+dat_test <- dat[501:1000,]
+rm(eta, mm, mm_time, simy, true_space_lvs, spp_space_loadings)
+
+
+# Fit stacked GLM as a baseline
+fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
+
+
+# Set up spatial basis functions for CBFM -- Most users will start here! 
+num_space_basisfunctions <- 20 # Number of spatial basis functions to use
+# Training set basis functions
+train_space_basisfunctions <- mrts(dat_train[,c("x","y")], num_space_basisfunctions) \%>\% 
+as.matrix \%>\%
+{.[,-(1)]} # Remove the first intercept column
+# Testing set basis functions
+test_space_basisfunctions <- mrts(dat_train[,c("x","y")], num_space_basisfunctions) \%>\% 
+predict(newx = dat_test[,c("x","y")]) \%>\% 
+as.matrix \%>\%
+{.[,-c(1)]} 
+
+# Training temporal basis functions. For species-specific random intercepts, 
+# set up the model matrix reflecting a random intercept for time. Then set up a custom Sigma,
+# which in this case will be equal to an identity matrix 
+# (since within each species, the random intercepts are drawn independently; see above)
+dat_train$time <- factor(dat_train$time) # Re-factor so that it now only has five time points
+train_time_basisfunctions <- model.matrix(~ time - 1, data = dat_train)
+custom_Sigma_time <- diag(nrow = ncol(train_time_basisfunctions))
+
+
+# Fit CBFM with additive spatial and temporal basis functions 
+tic <- proc.time()
+useformula <- ~ temp + depth + chla + O2
+fitcbfm_additive <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+B_space = train_space_basisfunctions, B_time = train_time_basisfunctions, family = binomial(), 
+G_control = list(rank = c(5,5)), 
+Sigma_control = list(rank = c(5,1), custom_time = custom_Sigma_time), control = list(trace = 1))
+toc <- proc.time()
+toc - tic
+
+
+# Calculate predictions onto test dataset
+predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
+# Note the test data contains completely different time points to the training data, and
+# so the test set of temporal basis functions is then just a matrix of zeros. This is 
+# analogous to, say, how mgcv handles random effects; see ?smooth.construct.re.smooth.spec
+test_time_basisfunctions <- matrix(0, nrow = 500, ncol = ncol(train_time_basisfunctions))
+predictions_cbfm_additive <- predict(fitcbfm_additive, newdata = dat_test, type = "response", 
+new_B_space = test_space_basisfunctions, new_B_time = test_time_basisfunctions)
+
+
+# Evaluation predictions
+# Tjur R-squared across species
+tjurR2 <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+m1 <- predictions_stacked[which(simy_test[,j] > 0),j] \%>\%
+mean(na.rm = TRUE)
+m0 <- predictions_stacked[which(simy_test[,j] == 0),j] \%>\%
+mean(na.rm = TRUE)
+m1 - m0     
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+m1 <- predictions_cbfm_additive[which(simy_test[,j] > 0),j] \%>\%
+mean(na.rm = TRUE)
+m0 <- predictions_cbfm_additive[which(simy_test[,j] == 0),j] \%>\%
+mean(na.rm = TRUE)
+m1 - m0     
+})
+)
+
+boxplot(tjurR2, main = "Tjur-R2", names = c("Stacked GLM", "CBFM (additive)"))
+
+ggplot(tjurR2, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM (additive)", main = "Tjur-R2") +
+theme_bw()
+
+# AUC across species
+aucs <- data.frame(
+stacked = sapply(1:num_spp, function(j) { 
+pred <- prediction(predictions_stacked[,j], labels = simy_test[,j]) \%>\%
+performance(measure = "auc")  
+pred@y.values[[1]]
+}),
+cbfm = sapply(1:num_spp, function(j) { 
+pred <- prediction(predictions_cbfm_additive[,j], labels = simy_test[,j]) \%>\%
+performance(measure = "auc") 
+pred@y.values[[1]]
+})
+)
+
+boxplot(aucs, main = "AUC", names = c("Stacked GLM", "CBFM (additive)"))
+
+ggplot(aucs, aes(x = stacked, y = cbfm)) +
+geom_point() +
+geom_abline(intercept = 0, slope = 1, linetype = 2) +
+labs(x = "Stacked SDM", y = "CBFM (additive)", main = "AUC") +
+theme_bw()
+
+
+##------------------------------
+## **Example 3c: Repeat Example 3a but with tensor product basis functions**
+## Please note the data generation process (thus) differs from CBFM.
+## To save some time, and for illustrative purposes, we will use the fast method estimating
 ## the covariance matrices
-# Nevertheless, please note this might take quite a while...grab a melonpan!
+# Nevertheless, please note this might take quite a while...grab a big cuppa!
 ##------------------------------
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
