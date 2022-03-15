@@ -221,6 +221,8 @@
 .fill_G_control <- function(control, which_B_used) {
      if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
+     if(length(control$rank) == 1)
+          control$rank <- rep(control$rank, sum(which_B_used))
      if(sum(which_B_used) != length(control$rank))
           stop("G_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$rank should be a vector with length 2.")
      if(is.null(control$nugget_profile))          
@@ -246,6 +248,8 @@
 .fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
     if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
+     if(length(control$rank) == 1)
+          control$rank <- rep(control$rank, sum(which_B_used))
      if(sum(which_B_used) != length(control$rank)) {
           stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2. 
                Please note ranks still needs to be supplied even when custom Sigmas are used (although the corresponding rank is ignored in such case).")
