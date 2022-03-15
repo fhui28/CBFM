@@ -17,18 +17,14 @@ LinkingTo:
 ##--------------------------------------
 ## Random testing jazz
 ##-------------------------------------
-simy_train[sample(1:prod(dim(simy_train)), 1000)] <- NA
-
-
 
 y = simy_train
-y[sample(1:prod(dim(y)), 1000)] <- NA
-useformula <- ~ s(temp) + depth + chla + O2
+useformula <- ~ 1
 formula_X = useformula
 data = dat_train
 B_space = train_basisfunctions
 family =  binomial()
-B_time = NULL
+B_time = mm
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
@@ -40,7 +36,7 @@ select = FALSE
 start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
 control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+Sigma_control = list(rank = c(2,1), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 

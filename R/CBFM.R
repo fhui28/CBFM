@@ -2634,7 +2634,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
           new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
           new_fit_CBFM_ptest$linear_predictors <- sapply(all_update_coefs, function(x) x$linear.predictors)          
-          new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf) # Maybe shoddy for zero-inflated and zero-truncated distributions     
+          new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf) # Maybe shoddy for zero-inflated and zero-truncated distributions 
           new_fit_CBFM_ptest$edf1 <- sapply(all_update_coefs, function(x) x$fit$edf1) # Maybe shoddy for zero-inflated and zero-truncated distributions   
           if(family$family[1] %in% c("ztpoisson")) {
                new_fit_CBFM_ptest$edf <- new_fit_CBFM_ptest$edf[1:num_X,]     
@@ -2721,8 +2721,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$deviance <- -2*out_CBFM$logLik
      out_CBFM$null_deviance <- nulldeviance
      out_CBFM$deviance_explained <- 100*(out_CBFM$null_deviance - out_CBFM$deviance)/out_CBFM$null_deviance
-     out_CBFM$edf <- new_fit_CBFM_ptest$edf
-     out_CBFM$edf1 <- new_fit_CBFM_ptest$edf1
+     out_CBFM$edf <- matrix(new_fit_CBFM_ptest$edf, ncol = num_spp)
+     out_CBFM$edf1 <- matrix(new_fit_CBFM_ptest$edf1, ncol = num_spp)
      out_CBFM$pen_edf <- new_fit_CBFM_ptest$pen_edf
      out_CBFM$k_check <- all_k_check
      out_CBFM$vcomp <- all_vcomp
@@ -2767,7 +2767,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(which_B_used[1]) {
           if(is.null(Sigma_control$custom_space)) {
                out_CBFM$Sigma_space <- new_LoadingnuggetSigma_space$cov
-               out_CBFM$Loading_Sigma_space <- new_LoadingnuggetSigma_space$Loading
+               out_CBFM$Loading_Sigma_space <- as.matrix(new_LoadingnuggetSigma_space$Loading)
                out_CBFM$nugget_Sigma_space <- new_LoadingnuggetSigma_space$nugget
                colnames(out_CBFM$Sigma_space) <- rownames(out_CBFM$Loading_Sigma_space) <- colnames(B_space)
                if(num_spacebasisfns > 2)
@@ -2780,7 +2780,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
           
           out_CBFM$G_space <- new_LoadingnuggetG_space$cov
-          out_CBFM$Loading_G_space <- new_LoadingnuggetG_space$Loading
+          out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
           out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
           rownames(out_CBFM$G_space) <- colnames(out_CBFM$G_space) <- colnames(y)
           if(num_spp > 2)
@@ -2790,7 +2790,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(which_B_used[2]) {
           if(is.null(Sigma_control$custom_time)) {
                out_CBFM$Sigma_time <- new_LoadingnuggetSigma_time$cov
-               out_CBFM$Loading_Sigma_time <- new_LoadingnuggetSigma_time$Loading
+               out_CBFM$Loading_Sigma_time <- as.matrix(new_LoadingnuggetSigma_time$Loading)
                out_CBFM$nugget_Sigma_time <- new_LoadingnuggetSigma_time$nugget
                colnames(out_CBFM$Sigma_time) <- rownames(out_CBFM$Loading_Sigma_time) <- colnames(B_time)
                if(num_timebasisfns > 2)
@@ -2803,7 +2803,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
 
           out_CBFM$G_time <- new_LoadingnuggetG_time$cov
-          out_CBFM$Loading_G_time <- new_LoadingnuggetG_time$Loading
+          out_CBFM$Loading_G_time <- as.matrix(new_LoadingnuggetG_time$Loading)
           out_CBFM$nugget_G_time <- new_LoadingnuggetG_time$nugget
           rownames(out_CBFM$G_time) <- colnames(out_CBFM$G_time) <- colnames(y)
           if(num_spp > 2)
@@ -2813,7 +2813,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(which_B_used[3]) {
           if(is.null(Sigma_control$custom_spacetime)) {
                out_CBFM$Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$cov
-               out_CBFM$Loading_Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$Loading
+               out_CBFM$Loading_Sigma_spacetime <- as.matrix(new_LoadingnuggetSigma_spacetime$Loading)
                out_CBFM$nugget_Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$nugget
                colnames(out_CBFM$Sigma_spacetime) <- rownames(out_CBFM$Loading_Sigma_spacetime) <- colnames(B_spacetime)          
                rm(new_LoadingnuggetSigma_spacetime)
@@ -2826,7 +2826,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                }
 
           out_CBFM$G_spacetime <- new_LoadingnuggetG_spacetime$cov
-          out_CBFM$Loading_G_spacetime <- new_LoadingnuggetG_spacetime$Loading
+          out_CBFM$Loading_G_spacetime <- as.matrix(new_LoadingnuggetG_spacetime$Loading)
           out_CBFM$nugget_G_spacetime <- new_LoadingnuggetG_spacetime$nugget
           rownames(out_CBFM$G_spacetime) <- colnames(out_CBFM$G_spacetime) <- colnames(y)
           if(num_spp > 2)
