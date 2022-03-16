@@ -3,4 +3,5 @@
 ^Meta$
 ^doc$
 ^notes.R
+^additionalpredictfns.R
 ^.github
