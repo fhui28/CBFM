@@ -93,6 +93,7 @@ predict_PA_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space 
                basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
                         
                ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+               ptpred <- as.matrix(ptpred)
                return(ptpred)
                }
                     
