@@ -53,6 +53,9 @@ print.CBFM <- function(x, ...) {
                 message("Temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[2], NA, ncol(x$Loading_Sigma_time))) 
         if(x$which_B_used[3])
                 message("Spatio-temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[3], NA, ncol(x$Loading_Sigma_spacetime))) 
+        
+        if(any(x$which_nonzeromean_B > 0))
+                message("\nOne or more of the normal distributions for the basis effect coefficients had non-zero mean vectors.")
           
         invisible(x)
         }
