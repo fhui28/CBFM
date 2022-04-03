@@ -119,13 +119,11 @@ select = FALSE
 start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
 control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0, nonzeromean_B_time = TRUE)
-Sigma_control = list(rank = c(5,1), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+Sigma_control = list(rank = c(5,"full"), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 G_control = list(rank = c(5,5), nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 
-mm <- model.matrix(~ temp + depth + chla + O2, data = dat_train)[,-1,drop=FALSE]
-useformula <- ~ 1
 # fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,
 # B_space = train_basisfunctions, B_time = mm,
 # family = binomial(), 

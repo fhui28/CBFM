@@ -85,10 +85,16 @@
      if(num_spp <= 2)
           message("rank_G ignored for models containing two or less responses.")
      if(num_spp > 2) {
-          dof <- 0.5 * ((num_spp - rank_G)^2 - num_spp - rank_G)
-          if(dof < 0 | (num_spp <= rank_G)) 
-          stop("rank_G is too many factors for the number of responses.")
-          }
+         # Full rank does nothing
+         
+         if(rank_G != "full") {
+             rank_G <- as.numeric(rank_G)
+         
+             dof <- 0.5 * ((num_spp - rank_G)^2 - num_spp - rank_G)
+             if(dof < 0 | (num_spp <= rank_G)) 
+                stop("rank_G is too many factors for the number of responses.")
+            }
+         }
      
      
      if(num_basisfns <= 2) 
@@ -97,11 +103,18 @@
           message("rank_Sigma ignored for models containing two basis functions.")
           }
      if(num_basisfns > 2) {
-          dof <- 0.5 * ((num_basisfns - rank_Sigma)^2 - num_basisfns - rank_Sigma)
-          if(dof < 0 | (num_basisfns <= rank_Sigma)) 
-               stop("rank_Sigma is too many factors for the number of basis functions.")
-          }
-     }
+         # Full rank does nothing
+         
+         
+         if(rank_Sigma != "full") {
+             rank_Sigma <- as.numeric(rank_Sigma)
+          
+             dof <- 0.5 * ((num_basisfns - rank_Sigma)^2 - num_basisfns - rank_Sigma)
+             if(dof < 0 | (num_basisfns <= rank_Sigma)) 
+                 stop("rank_Sigma is too many factors for the number of basis functions.")
+             }
+         }
+    }
      
 
 .check_ranks2 <- function(num_spp, which_B_used, G_control, vec_num_basisfns, Sigma_control) {
