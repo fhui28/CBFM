@@ -25,7 +25,8 @@ CBFM(
     system.file("executables", package = "CBFM")),
   control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type =
     "parameters", gam_method = "REML", tol = 1e-04, initial_beta_dampen = 1,
-    subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0),
+    subsequent_betas_dampen = 0.25, nonzeromean_B_space = FALSE, nonzeromean_B_time =
+    FALSE, nonzeromean_B_spacetime = FALSE, seed = NULL, ridge = 0, trace = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0,
     custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
   G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100,
@@ -89,14 +90,19 @@ When \code{initial_betas_dampen} is a vector, then the dampening factor can vary
 To elaborate, during the PQL algorithm updates are made to the regression coefficients related to the combined matrix of basis functions, conditional on the regression coefficients corresponding to the model matrix. However, sometimes this updating can fails due to the latter producing non-sensible values to condition on e.g., due to severe overfitting in that component. If this occurs, then an \emph{ad-hoc} second attempt is made, but conditioning instead on a dampened/shrunk set of the regression coefficients corresponding to the model matrix, which can often help. This amount of dampening is controlled by this argument. For instance, setting \code{subsequent_betas_dampen = 0.25} sets the magnitudes of the regression coefficients related to the model matrix to a quarter of their original size, including the intercepts.
 When \code{subsequent_betas_dampen} is a vector, then the dampening factor can vary with species.
 Note that this argument \emph{only} comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. }
+\item{nonzeromean_B_space: }{This is an experimental feature at this point. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
+\item{nonzeromean_B_time: }{This is an experimental feature at this point. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
+\item{nonzeromean_B_spacetime: }{This is an experimental feature at this point. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
 \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
-\item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
 \item{ridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates.}
+\item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
 }}
 
 \item{Sigma_control}{A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the community-level covariance matrices of the basis function regression coefficients. This should be a list with the following arguments:
 \itemize{
-\item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the community-level covariance matrices. The ranks should be at least 2, and not larger than the number of species. Please see details below for more information.}
+\item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single scalar or character string, then it is assumed that the same rank is used for all the community-level covariance matrices.
+
+The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible; please see details below for more information. If the character string "full" is used, then a full-rank (or equivalently, an unstructured) covariance matrix is estimated. }
 \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.}
 \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.}
 \item{method: }{The method by which to update the community-level covariance matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. \emph{The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.}}
@@ -108,7 +114,9 @@ Note that this argument \emph{only} comes into play when the first attempt, whic
 
 \item{G_control}{A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
 \itemize{
-\item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices. The ranks should be at least 2, and not larger than the number of species. Please see details below for more information.}
+\item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices.
+
+The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible; please see details below for more information. If the character string "full" is used, then a full-rank (or equivalently, an unstructured) correlation matrix is estimated. }
 \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.}
 \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.}
 \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.}
@@ -223,9 +231,11 @@ where \eqn{G} is a so-called baseline between-species correlation matrix, \eqn{\
 and
 \deqn{(a_{1,time},\ldots,a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time})).}
 
-To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly.
+To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is by default adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly.
 
-The ranks \eqn{d_G} and \eqn{d_{\Sigma}} are chosen generally to be smaller than the number of species and basis functions, respectively. Generally speaking, provided the rank/s is large enough then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite and generally a bit more stable. They can also have the interpretation of adjusting for the relative strength of correlation between species, say (Shirota, 2019).
+The ranks \eqn{d_G} and \eqn{d_{\Sigma}} are chosen generally to be smaller than the number of species and basis functions, respectively. Generally speaking, provided the rank/s is large enough, then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite and generally a bit more stable. They can also have the interpretation of adjusting for the relative strength of correlation between species, say (Shirota, 2019).
+
+It is also possible to assume full-rank (or equivalently, unstructured) covariance and correlation matrices for the \eqn{G}'s and \eqn{\Sigma}'s, via the character string "full" in \code{G_control$rank} and \code{Sigma_control$rank}.
 
 If is also possible for the user to specific their own custom structures for the community-level basis function covariance matrices \eqn{\Sigma}, through the \code{custom_space/custom_time/custom_spacetime} arguments as part of \code{Sigma_control}. In such a situation, only the \eqn{G}'s are estimated, and note importantly \eqn{G} is now estimated to be a baseline between-species \emph{covariance} matrix instead of correlation matrix (it is no longer constrained to be correlation matrix). Using custom, pre-specified structures for \eqn{\Sigma} may be useful if the corresponding basis functions should be ``equipped" with a particular structure. For example, if one or more sets of basis functions are constructed from, say, the \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}} package (although see later on some defaults for constructing basis functions), then they are usually equipped with a corresponding, fixed penalty (inverse \eqn{\Sigma}) matrix. Perhaps a more common example is, say, if a user wanted to include species-specific random intercepts for time. Then one would set \code{B_time} as a model-matrix formed from treating time as a factor, and set \code{Sigma_control$custom_time} to an identity matrix with dimension equal to \code{ncol(B_time)}; see Example 3b in the help file below. After fitting, the estimated diagonal elements of \eqn{G_{time}} would then be the species-specific variance components for the time random intercept, while the off-diagonal elements may be interpreted as the corresponding between-species covariation.
 }
@@ -382,7 +392,7 @@ as.matrix \%>\%
 # Fit CBFM 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,,
 B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic

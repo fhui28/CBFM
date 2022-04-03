@@ -97,17 +97,18 @@ as.matrix %>%
 fitcbfm_pure <- CBFM(y = simy_train, formula_X = ~ temp + depth + chla + O2, 
                      data = dat_train,
                      B_space = train_basisfunctions, 
-                     family = binomial(), control = list(trace = 1))
+                     family = binomial(), control = list(trace = 1),
+                     G_control = list(rank = "full"), Sigma_control = list(rank = "full"))
 
 
 y = simy_train
-useformula <- ~ 1
-mm <- model.matrix(~ temp + depth + chla + O2, data = dat_train)[,-1,drop=FALSE]
+useformula <- ~ temp + depth + chla + O2
+#mm <- model.matrix(~ temp + depth + chla + O2, data = dat_train)[,-1,drop=FALSE]
 formula_X = useformula
 data = dat_train
 family =  binomial()
 B_space = train_basisfunctions
-B_time = mm
+B_time = NULL
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
@@ -118,9 +119,9 @@ stderrors = TRUE
 select = FALSE
 start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0, nonzeromean_B_time = TRUE)
-Sigma_control = list(rank = c(5,"full"), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
-G_control = list(rank = c(5,5), nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0, nonzeromean_B_time = FALSE)
+Sigma_control = list(rank = c("full"), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+G_control = list(rank = c("full"), nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 
@@ -140,6 +141,11 @@ ggmatplot(spp_slopes, new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1
 (spp_slopes - fitcbfm_pure$betas[,-1]) %>% norm
 (spp_slopes - new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns)]) %>% norm
 
+new_fit_CBFM_ptest$mean_B_time
+colMeans(fitcbfm_pure$betas[,-1])
+
+apply(fitcbfm_pure$betas[,-1], 2, sd)
+new_LoadingnuggetSigma_time$cov %>% diag %>% sqrt
 
 
 
