@@ -38,8 +38,8 @@ num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
 
 #spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-spp_slopes <- cbind(rnorm(num_spp, -0.5, sd = 0.25), rnorm(num_spp, 0.5, sd = 0.25), rnorm(num_spp, -0.25, sd = 0.1), rnorm(num_spp, 0.25, sd = 0.1))
-spp_intercepts <- runif(num_spp, -2, 0)
+spp_slopes <- cbind(rnorm(num_spp, -1, sd = 0.25), rnorm(num_spp, 1, sd = 0.25), rnorm(num_spp, -0.25, sd = 0.1), rnorm(num_spp, 0.25, sd = 0.1))
+spp_intercepts <- rnorm(num_spp, -3, sd = 0.5)
 
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
@@ -94,27 +94,10 @@ as.matrix %>%
 
 
 # Fit CBFM
-mm <- model.matrix(~ temp + depth + chla + O2, data = dat_train)[,-1,drop=FALSE]
-useformula <- ~ 1
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,
-B_space = train_basisfunctions, B_time = mm,
-family = binomial(), 
-control = list(trace = 1, nonzeromean_B_time = TRUE),
-Sigma_control = list(rank = c(5,1))
-)
-
-
 fitcbfm_pure <- CBFM(y = simy_train, formula_X = ~ temp + depth + chla + O2, 
                      data = dat_train,
                      B_space = train_basisfunctions, 
                      family = binomial(), control = list(trace = 1))
-
-
-
-ggmatplot(spp_slopes, fitcbfm_pure$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
-ggmatplot(spp_slopes, fitcbfm$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) + geom_abline(intercept = 0, slope = 1)
-
-
 
 
 y = simy_train
@@ -139,6 +122,27 @@ control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = 
 Sigma_control = list(rank = c(5,1), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 G_control = list(rank = c(5,5), nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
+
+
+mm <- model.matrix(~ temp + depth + chla + O2, data = dat_train)[,-1,drop=FALSE]
+useformula <- ~ 1
+# fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,
+# B_space = train_basisfunctions, B_time = mm,
+# family = binomial(), 
+# control = list(trace = 1, nonzeromean_B_time = TRUE),
+# Sigma_control = list(rank = c(5,1))
+# )
+
+
+
+library(ggmatplot)
+ggmatplot(spp_slopes, fitcbfm_pure$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
+ggmatplot(spp_slopes, new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns)]) + geom_abline(intercept = 0, slope = 1)
+
+(spp_slopes - fitcbfm_pure$betas[,-1]) %>% norm
+(spp_slopes - new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns)]) %>% norm
+
+
 
 
 
