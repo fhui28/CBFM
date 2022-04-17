@@ -2561,12 +2561,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                if(control$nonzeromean_B_time)
                     centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, basis_effects_mat = centered_BF_mat, 
-                    Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
-                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
-                    trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_time))
+                     Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
+                     linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
+                     powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                     trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_time))
                new_LoadingnuggetG_time <- update_LoadingG_fn(G = new_G_time, G_control = G_control, use_rank_element = sum(which_B_used[1:2]), 
-                                                             correlation = is.null(Sigma_control$custom_time))
+                                                              correlation = is.null(Sigma_control$custom_time))
                rm(new_G_time, centered_BF_mat)
                }
           if(which_B_used[3]) {
