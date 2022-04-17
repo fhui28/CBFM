@@ -91,11 +91,11 @@
           }
      
      
-     if(num_basisfns <= 2) 
-        stop("There should be at least two basis functions included in the model.")
-     if(num_basisfns == 2) {
-          message("rank_Sigma ignored for models containing two basis functions.")
-          }
+     #if(num_basisfns <= 2) 
+     #   stop("There should be at least two basis functions included in the model.")
+     #if(num_basisfns == 2) {
+     #     message("rank_Sigma ignored for models containing two basis functions.")
+     #     }
      if(num_basisfns > 2) {
           dof <- 0.5 * ((num_basisfns - rank_Sigma)^2 - num_basisfns - rank_Sigma)
           if(dof < 0 | (num_basisfns <= rank_Sigma)) 
