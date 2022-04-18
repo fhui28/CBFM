@@ -82,7 +82,7 @@ ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fi
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ##------------------------------
-set.seed(2021)
+set.seed(2022)
 num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
 num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
@@ -164,34 +164,31 @@ fitcbfm <- CBFM(y = simy_train, formula_X = ~ 1, data = dat_train,
                 family = binomial(),
                 control = list(trace = 1, nonzeromean_B_time = TRUE),
                 Sigma_control = list(rank = c(5,"full")),
-                G_control = list(rank = c(2,"full"))
+                G_control = list(rank = c(2,"full"), custom_time = diag(nrow = num_spp))
                 )
 
 
 library(ggmatplot)
 ggmatplot(spp_slopes, fitcbfm_pure$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(spp_slopes, fitcbfm$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) + geom_abline(intercept = 0, slope = 1)
-ggmatplot(spp_slopes, out_CBFM$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) + geom_abline(intercept = 0, slope = 1)
 
 (spp_slopes - fitcbfm_pure$betas[,-1]) %>% norm("F")
 (spp_slopes - fitcbfm$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) %>% norm("F")
-(spp_slopes - out_CBFM$basis_effects_mat[,out_CBFM$num_B_space+(1:out_CBFM$num_B_time)]) %>% norm("F")
 
 
 colMeans(fitcbfm_pure$betas[,-1])
 fitcbfm$mean_B_time
-out_CBFM$mean_B_time
+
 
 apply(fitcbfm_pure$betas[,-1], 2, sd)
 fitcbfm$Sigma_time %>% diag %>% sqrt
-new_LoadingnuggetSigma_time$cov %>% diag %>% sqrt
 
 
 
 
 # Calculate predictions onto test dataset
 predictions_cbfm_pure <- predict(fitcbfm_pure, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
-predictions_cbfm <- predict(fitcbfm2, newdata = dat_test, type = "response", new_B_space = test_basisfunctions, new_B_time = mm_test, se_fit = FALSE)
+predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", new_B_space = test_basisfunctions, new_B_time = mm_test, se_fit = FALSE)
 
 # Evaluation predictions
 # Tjur R-squared across species
