@@ -105,6 +105,17 @@ basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>%
 as.matrix %>%
 {.[,-(1)]} # Remove the first intercept column
 
+
+
+# Fit CBFM
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat,
+B_space = basisfunctions, B_time = X_year, 
+family = binomial(), control = list(trace = 1),
+Sigma_control = list(rank = c(5,1)),
+G_control = list(rank = c(5,5))
+)
+
  
 y = simy
 useformula <- ~ temp + depth + chla + O2
@@ -132,11 +143,11 @@ k_check_control = list(subsample = 5000, n.rep = 400)
 
 
 library(ggmatplot)
-ggmatplot(spp_slopes, out_CBFM$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
-qplot(spp_intercepts, out_CBFM$betas[,1]) + geom_abline(intercept = 0, slope = 1)
-qplot(spp_gear, out_CBFM$basis_effects_mat[,25]) + geom_abline(intercept = 0, slope = 1)
-out_CBFM$basis_effects_mat[,25] %>% summary
-out_CBFM$basis_effects_mat[,25] %>% sd
-out_CBFM$G_time
-out_CBFM$Sigma_time
+ggmatplot(spp_slopes, fitcbfm$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
+qplot(spp_intercepts, fitcbfm$betas[,1]) + geom_abline(intercept = 0, slope = 1)
+qplot(spp_gear, fitcbfm$basis_effects_mat[,25]) + geom_abline(intercept = 0, slope = 1)
+fitcbfm$basis_effects_mat[,25] %>% summary
+fitcbfm$basis_effects_mat[,25] %>% sd
+fitcbfm$G_time
+fitcbfm$Sigma_time
 
