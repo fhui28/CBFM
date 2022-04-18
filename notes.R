@@ -135,26 +135,6 @@ rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
 fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
 
 
-# # Fit HMSC (gold standard) -- Apply to probit data only
-# library(Hmsc)
-# studyDesign = data.frame(sample = factor(rownames(dat_train)))
-# rL.nngp = HmscRandomLevel(sData = dat_train %>% dplyr::select(x:y), sMethod = 'NNGP', nNeighbours = 20)
-# rL.nngp = setPriors(rL.nngp, nfMin = 2, nfMax = 2) # Note Hmsc scales really poorly with increasing number of latent variables!
-# m.nngp = Hmsc(Y = simy_train, XData = dat_train, XScale = FALSE, XFormula = ~ temp + depth + chla + O2, 
-#               studyDesign = studyDesign, ranLevels = list("sample" = rL.nngp), distr = "probit")
-# 
-# m.nngp <- sampleMcmc(m.nngp, thin = 10, samples = 100, transient = 100, nChains = 3, updater = list(GammaEta=FALSE), nParallel = 3)  
-# 
-# est_coefs <- getPostEstimate(m.nngp, parName = "Beta")$mean %>% 
-#     t %>% 
-#     {.[,-1]}
-# 
-# 
-# ggmatplot(spp_slopes, est_coefs) + geom_abline(intercept = 0, slope = 1)
-# 
-# (spp_slopes - est_coefs) %>% norm
-
-
 # Set up spatial basis functions for CBFM -- Most users will start here!
 # We will also use this basis functions in some later examples
 num_basisfunctions <- 25 # Number of spatial basis functions to use
@@ -304,77 +284,4 @@ dispparam = new_fit_CBFM_ptest$dispparam
 powerparam = new_fit_CBFM_ptest$powerparam
 zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept
 return_correlation = TRUE
-
-
-#-----------------------------
-#-----------------------------
-library(autoFRK)
-library(FRK)
-library(MASS)
-library(mvtnorm)
-library(sp)
-library(RandomFields)
-library(tidyverse)
-library(gamlss.tr)
-library(gamlss.add)
- 
-set.seed(2021)
-num_sites <- 500 # 500 (units) sites 
-num_spp <- 50 # Number of species
-num_X <- 4 # Number of regression slopes
- 
-# Simulate spatial coordinates and environmental covariate components
-xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4)) 
-colnames(X) <- c("temp", "depth", "chla", "O2")
-dat <- data.frame(xy, X)
-useformula <- ~ temp + depth + chla + O2
- 
-# Set up spatial basis functions for CBFM 
-num_basisfunctions <- 25 # Number of spatial basis functions to use
-basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>% 
-as.matrix %>%
-{.[,-(1)]} # Remove the first intercept column
-
-
-spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -0.5, 0.5), nrow = num_spp)
-#spp_basis_effects_mat_ztnb <- matrix(runif(num_spp * (num_basisfunctions-1), -0.5, 0.5), nrow = num_spp)
-#spp_basis_effects_mat_ztnb[,15:19] <- 0
-spp_intercepts_ztnb <- runif(num_spp, -2, 0)
- 
-true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
-true_G_space_ztnb <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>% cov2cor
-spp_dispersion <- runif(num_spp, 0, 5)
-
- 
-simy_count <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
-                              B_space = basisfunctions, betas = cbind(spp_intercepts_ztnb, spp_slopes_ztnb),
-                              G = list(space = true_G_space_ztnb), Sigma = list(space = true_Sigma_space_ztnb),
-                              dispparam = spp_dispersion,  max_resp = 20000) 
-
-
-
-# Now fit a zero-truncated count distribution, and CBFM has to ignore the zeros in the data
-y = simy_count$y
-useformula <- ~ temp + depth + chla + O2
-formula_X = useformula
-data = dat
-B_space = basisfunctions
-family =  ztnb2()
-B_time = NULL
-B_spacetime = NULL
-offset = NULL
-ncores = NULL
-gamma = 1
-trial_size = 1
-dofit = TRUE
-stderrors = TRUE
-select = FALSE
-start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
-TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, initial_betas_dampen = 0.05, seed = NULL, trace = 1, ridge = 0) 
-Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0)
-G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
-k_check_control = list(subsample = 5000, n.rep = 400)
-
 

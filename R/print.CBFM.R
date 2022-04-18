@@ -47,6 +47,9 @@ print.CBFM <- function(x, ...) {
         if(sum(x$which_custom_Sigma_used) > 0)
                 message("One or more custom basis function covariance matrices Sigma supplied.")
         
+        if(sum(x$which_custom_G_used) > 0)
+                message("One or more custom between species correlation matrices G supplied.")
+
         # if(x$which_B_used[1]) 
         #         message("Spatial component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[1], NA, ncol(x$Loading_Sigma_space))) 
         # if(x$which_B_used[2])
