@@ -256,8 +256,6 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
 	
 
 update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element) {
-     if(!(use_rank_element %in% c(1,2)))
-          stop("use_rank_element must equal either 1 or 2.")
      num_basisfns <- nrow(Sigma)
      num_rank <- Sigma_control$rank[use_rank_element]
      
