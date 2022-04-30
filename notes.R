@@ -88,8 +88,8 @@ num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
 
 #spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-#spp_slopes <- cbind(rnorm(num_spp, -1, sd = 0.25), rnorm(num_spp, 1, sd = 0.25), rnorm(num_spp, -0.25, sd = 0.1), rnorm(num_spp, 0.25, sd = 0.1))
-spp_slopes <- cbind(rnorm(num_spp, 1, sd = 0.25))
+spp_slopes <- cbind(rnorm(num_spp, -1, sd = 0.25), rnorm(num_spp, 1, sd = 0.25), rnorm(num_spp, -0.25, sd = 0.1), rnorm(num_spp, 0.25, sd = 0.1))
+#spp_slopes <- cbind(rnorm(num_spp, 1, sd = 0.25))
 # true_G_betas <- rWishart(1, num_spp, diag(num_spp))[,,1] %>% cov2cor 
 # true_Sigma_betas <- diag(x = c(0.5,0.5,0.1,0.1))
 # true_mean_betas <- c(-1,1,-0.25,0.25)
@@ -101,16 +101,16 @@ spp_intercepts <- rnorm(num_spp, -3, sd = 0.5)
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-#X <- rmvnorm(num_sites, mean = rep(0,4))
-#colnames(X) <- c("temp", "depth", "chla", "O2")
-X <- matrix(rep(c(0,1), num_sites*c(0.4,0.6)), ncol = 1)
-colnames(X) <- "gear"
+X <- rmvnorm(num_sites, mean = rep(0,4))
+colnames(X) <- c("temp", "depth", "chla", "O2")
+# X <- matrix(rep(c(0,1), num_sites*c(0.4,0.6)), ncol = 1)
+# colnames(X) <- "gear"
 dat <- data.frame(xy, X)
-# mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) %>%
-    # scale %>%
-    # as.matrix
-mm <- model.matrix(~ gear - 1, data = dat) %>%
-     as.matrix
+mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) %>%
+scale %>%
+as.matrix
+# mm <- model.matrix(~ gear - 1, data = dat) %>%
+#      as.matrix
 
 # Simulate latent variable component
 # We will use this information in later examples as well
@@ -137,8 +137,8 @@ rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
 
 #-----------------------------------------
 # Fit stacked GLM as a baseline
-#fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
-fitstacked <- manyglm(simy_train ~ gear, family = binomial(), data = dat_train)
+fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
+#fitstacked <- manyglm(simy_train ~ gear, family = binomial(), data = dat_train)
 
 
 # Set up spatial basis functions for CBFM -- Most users will start here!
@@ -159,26 +159,37 @@ as.matrix %>%
 
 # Fit CBFMs
 fitcbfm_pure <- CBFM(y = simy_train, 
-                     #formula_X = ~ temp + depth + chla + O2, 
-                     formula_X = ~ gear, 
+                     formula_X = ~ s(temp) + depth + chla + O2, 
+                     #formula_X = ~ gear, 
                      data = dat_train,
                      B_space = train_basisfunctions, 
                      family = binomial(), control = list(trace = 1),
-                     G_control = list(rank = 2), Sigma_control = list(rank = 5))
+                     Sigma_control = list(rank = 5), 
+                     G_control = list(rank = 2))
 
 
-fitcbfm <- CBFM(y = simy_train, formula_X = ~ 1, data = dat_train,
+fit0 <- gam(resp ~  s(temp), family = binomial(), data = data.frame(dat_train, resp = simy_train[,1]))
+mm_train <- model.matrix(fit0)[,-1]
+Sinv <- .cholthenpinv(fit0$smooth[[1]]$S[[1]])
+Sinv[9,9] <- Sinv[,]
+rm(fit0)
+
+fitcbfm <- CBFM(y = simy_train, formula_X = ~ depth + chla + O2, data = dat_train,
                 B_space = train_basisfunctions, B_time = mm_train,
                 family = binomial(),
-                control = list(trace = 1, nonzeromean_B_time = TRUE),
-                Sigma_control = list(rank = c(5,"full")),
-                G_control = list(rank = c(2,"full"), custom_time = diag(nrow = num_spp))
-                )
+                control = list(trace = 1),
+                #control = list(trace = 1, nonzeromean_B_time = TRUE),
+                Sigma_control = list(rank = c(5,"full"), custom_time = Sinv),
+                G_control = list(rank = c(2,"full"))
+               )
 
 
 library(ggmatplot)
 ggmatplot(spp_slopes, fitcbfm_pure$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(spp_slopes, fitcbfm$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) + geom_abline(intercept = 0, slope = 1)
+
+(fitcbfm_pure$betas[,-c(1:4)]-fitcbfm$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) %>% summary
+
 
 (spp_slopes - fitcbfm_pure$betas[,-1]) %>% norm("F")
 (spp_slopes - fitcbfm$basis_effects_mat[,fitcbfm$num_B_space+(1:fitcbfm$num_B_time)]) %>% norm("F")
