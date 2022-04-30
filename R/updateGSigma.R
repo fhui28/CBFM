@@ -250,7 +250,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                
                         new_Sigma <- matrix(0, nrow = num_basisfns, ncol = num_basisfns)
                         new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
-                        new_Sigma <- new_Sigma + t(new_Sigma) - diag(diag(new_Sigma))
+                        new_Sigma <- new_Sigma + t(new_Sigma) - diag(x = diag(new_Sigma), nrow = num_basisfns)
                         new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
                         new_Sigma <- Matrix::forceSymmetric(new_Sigma) 
                

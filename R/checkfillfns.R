@@ -6,6 +6,19 @@
      if(is.null(B_space) & is.null(B_time) & is.null(B_spacetime))
           stop("At least one of B_space/B_time/B_spacetime must be supplied.")
      
+     if(!is.null(B_space)) {
+          if(!is.matrix(B_space))
+               stop("B_space must be a matrix.")
+          }
+     if(!is.null(B_time)) {
+          if(!is.matrix(B_time))
+               stop("B_time must be a matrix.")
+     }
+     if(!is.null(B_spacetime)) {
+          if(!is.matrix(B_spacetime))
+               stop("B_spacetime must be a matrix.")
+     }
+     
      if(extra_check) {
           if(!is.list(Sigma))
                stop("Sigma should be a list containing at least one of following three elements: 1) space, which is the covariance matrix for the random slopes corresponding to B_space; 2) time, which is the analogous covariance matrix corresponding to B_time; 3) spacetime, which is the analogous covariance matrix corresponding to B_spacetime.")
