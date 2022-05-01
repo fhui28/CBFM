@@ -38,7 +38,7 @@ num_X <- 4 # Number of regression slopes
  
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- runif(num_spp, -2, 0)
-spp_gear <- rnorm(num_spp, mean = 1.5, sd = 0.2)
+#spp_gear <- rnorm(num_spp, mean = 1.5, sd = 0.2)
 
 # Simulate spatial coordinates and environmental covariate components
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
@@ -99,12 +99,6 @@ num_X <- 4 # Number of regression slopes
 #spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_slopes <- cbind(rnorm(num_spp, -1, sd = 0.25), rnorm(num_spp, 1, sd = 0.25), rnorm(num_spp, -0.25, sd = 0.1), rnorm(num_spp, 0.25, sd = 0.1))
 #spp_slopes <- cbind(rnorm(num_spp, 1, sd = 0.25))
-# true_G_betas <- rWishart(1, num_spp, diag(num_spp))[,,1] %>% cov2cor 
-# true_Sigma_betas <- diag(x = c(0.5,0.5,0.1,0.1))
-# true_mean_betas <- c(-1,1,-0.25,0.25)
-# true_mean_betas <- rep(true_mean_betas, num_spp)
-# spp_slopes <- rmvnorm(n = 1, mean = true_mean_betas, sigma = kronecker(true_G_betas, true_Sigma_betas)) %>% 
-#     matrix(nrow = num_spp, byrow = TRUE)
 spp_intercepts <- rnorm(num_spp, -3, sd = 0.5)
 
 # Simulate spatial coordinates and environmental covariate components
@@ -164,12 +158,9 @@ as.matrix %>%
 {.[,-c(1)]}
 
 
-
-
 # Fit CBFMs
 fitcbfm_pure <- CBFM(y = simy_train, 
-                     formula_X = ~ s(temp) + depth + chla + O2, 
-                     #formula_X = ~ gear, 
+                     formula_X = ~ s(temp) + depth + s(chla) + O2, 
                      data = dat_train,
                      B_space = train_basisfunctions, 
                      family = binomial(), control = list(trace = 1),
@@ -177,11 +168,31 @@ fitcbfm_pure <- CBFM(y = simy_train,
                      G_control = list(rank = 2))
 
 
-fit0 <- gam(resp ~  s(temp), family = binomial(), data = data.frame(dat_train, resp = simy_train[,1]))
-mm_train <- model.matrix(fit0)[,-1]
-Sinv <- .cholthenpinv(fit0$smooth[[1]]$S[[1]])
-Sinv[9,9] <- Sinv[,]
-rm(fit0)
+fitcbfm_pure$all_parametric_effects$response <- fitcbfm_pure$all_parametric_effects$response %>% 
+     fct_inorder()
+ggplot(fitcbfm_pure$all_parametric_effects, aes(x = value, y = partial, group = response, color = response)) +
+     geom_line() +
+     facet_wrap(. ~ term, nrow = 2) +
+     geom_rug(data = fitcbfm_pure$all_parametric_effects %>% dplyr::filter(response == "response1"), 
+              aes(x = value, y = partial), sides = "b", alpha = 0.2, color = "black") +
+     theme_bw() +
+     theme(legend.position = "bottom")
+
+
+fitcbfm_pure$all_smooth_estimates$response <- fitcbfm_pure$all_smooth_estimates$response %>% 
+     fct_inorder()
+ggplot(fitcbfm_pure$all_smooth_estimates %>% dplyr::filter(smooth == "s(temp)"), 
+       aes(x = temp, y = est, group = response, color = response)) +
+     geom_line() +
+     theme_bw() +
+     theme(legend.position = "bottom")
+ggplot(fitcbfm_pure$all_smooth_estimates %>% dplyr::filter(smooth == "s(chla)"), 
+       aes(x = chla, y = est, group = response, color = response)) +
+     geom_line() +
+     theme_bw() +
+     theme(legend.position = "bottom")
+
+
 
 fitcbfm <- CBFM(y = simy_train, formula_X = ~ depth + chla + O2, data = dat_train,
                 B_space = train_basisfunctions, B_time = mm_train,
@@ -270,14 +281,16 @@ theme_bw()
 
 
 
-
+##----------------------------------
+## Custom testing
+##----------------------------------
 y = simy_train
 useformula <- ~ 1
-formula_X = useformula
+formula_X = ~ temp + depth + chla + O2
 data = dat_train
 family =  binomial()
 B_space = train_basisfunctions
-B_time = mm_train
+B_time = NULL
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
@@ -288,9 +301,9 @@ stderrors = TRUE
 select = FALSE
 start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0, nonzeromean_B_time = TRUE)
-Sigma_control = list(rank = c(5,"full"), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
-G_control = list(rank = c(2,"full"), nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0)
+control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+Sigma_control = list(rank = c(5), trace = 0)
+G_control = list(rank = c(2), trace = 0)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 
