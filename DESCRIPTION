@@ -2,7 +2,7 @@ Package: CBFM
 Type: Package
 Title: Community-level Basis Function Modeling (CBFM)
 Version: 1.0
-Date: 2022-01-01
+Date: 2022-06-01
 Authors@R: c(person(given = "Francis K.C.",
                     family = "Hui", 
                     role = c("aut", "cre"), 
@@ -24,6 +24,7 @@ Imports:
     gamlss.dist,
     gamlss.tr,
     graphics,
+    gratia,
     grDevices,
     lifecycle,
     MASS,
@@ -38,7 +39,7 @@ Imports:
     tweedie,
 Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 NeedsCompilation: no
 URL: https://github.com/fhui28/CBFM
 BugReports: https://github.com/fhui28/CBFM/issues
