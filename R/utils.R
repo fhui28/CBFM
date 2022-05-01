@@ -59,7 +59,7 @@
    num_Smatrices_per_smooth <- sapply(fit_gam$smooth, function(x) length(x$S)) # The sum of this should equal length(fit_gam$sp)
    sp_index <- split(1:length(fit_gam$sp), rep(1:num_smooth_terms, num_Smatrices_per_smooth)) # Because te and ti smooths have multiple S and smoothing parameters, then this tells you how many S/sp's are within each smooth term  
    rm(num_Smatrices_per_smooth)
-   num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) x$df)) # Acoording to ?smooth.construct, this is the degrees of freedom associated with this term when unpenalized and unconstrained
+   num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) x$df)) # According to ?smooth.construct, this is the degrees of freedom associated with this term when unpenalized and unconstrained
    num_parametric_cols <- num_X - num_smooth_cols
 
    subS <- lapply(1:num_smooth_terms, function(j) {

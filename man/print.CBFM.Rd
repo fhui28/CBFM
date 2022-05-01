@@ -20,7 +20,7 @@
 The default print method for a \code{CBFM} or \code{CBFM_hurdle} object.
 }
 \details{
-Print out details such as the function call, assumed family/response distribution, number of observational units and species, response-environment relationship fitted as given by the formula, which sets of basis functions are used, and the ranks.`
+Print out details such as the function call, assumed family/response distribution, number of observational units and species, response-environment relationship fitted as given by the formula, and which sets of basis functions are used.`
 
 For a hurdle CBFM, details are provided for both of the component CBFMs separately.
 }

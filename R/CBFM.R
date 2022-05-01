@@ -55,15 +55,24 @@
 #' When \code{subsequent_betas_dampen} is a vector, then the dampening factor can vary with species.
 #' Note that this argument *only* comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. } 
 
+#' \item{nonzeromean_B_space: }{This is an experimental feature at this point. *Please leave it as it as at the moment i.e., set to \code{FALSE}!*}
+
+#' \item{nonzeromean_B_time: }{This is an experimental feature at this point. *Please leave it as it as at the moment i.e., set to \code{FALSE}!*}
+
+#' \item{nonzeromean_B_spacetime: }{This is an experimental feature at this point. *Please leave it as it as at the moment i.e., set to \code{FALSE}!*}
+
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
+
+#' \item{ridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates.}
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
 
-#' \item{ridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates.}
 #' }
 #' @param Sigma_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the community-level covariance matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \itemize{
-#' \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the community-level covariance matrices. The ranks should be at least 2, and not larger than the number of species. Please see details below for more information.} 
+#' \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single scalar or character string, then it is assumed that the same rank is used for all the community-level covariance matrices. 
+#' 
+#' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible; please see details below for more information. If the character string "full" is used, then a full-rank (or equivalently, an unstructured) covariance matrix is estimated. } 
 
 #' \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.} 
 
@@ -73,7 +82,7 @@
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
-#' \item{custom_space: }{A custom, pre-specified community-level covariance matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+#' \item{custom_space: }{A custom, pre-specified community-level matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 
 #' \item{custom_time: }{A custom, pre-specified community-level covariance matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 
@@ -81,7 +90,9 @@
 #' }
 #' @param G_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \itemize{
-#' \item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a scalar, or a vector with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices. The ranks should be at least 2, and not larger than the number of species. Please see details below for more information.} 
+#' \item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices. 
+#' 
+#' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible; please see details below for more information. If the character string "full" is used, then a full-rank (or equivalently, an unstructured) correlation matrix is estimated. } 
 
 #' \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.} 
 
@@ -92,6 +103,12 @@
 #' \item{method: }{The method by which to update the correlation matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
+
+#' \item{custom_space: }{A custom, pre-specified baseline between-species correlation matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+
+#' \item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+
+#' \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 #' }
 #' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula_X}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
 #' \itemize{
@@ -144,7 +161,8 @@
 #' *"So, exact choice of \eqn{k} (the number of basis functions in our situation) is not generally critical: it should be chosen to be large enough that you are reasonably sure of having enough degrees of freedom to represent the underlying 'truth' reasonably well, but small enough to maintain reasonable computational efficiency. Clearly 'large' and 'small' are dependent on the particular problem being addressed."* 
 #' 
 #' 
-#' In the CBFM, basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout the fitting process. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. In this package, we assume follow a multivariate normal distribution as follows:
+#' ## Basis function coefficients
+#' In the CBFM, the basis functions \eqn{b_i} are specified \emph{a-priori} and remain fixed throughout the fitting process. Instead, it is the associated species-specific regression coefficients \eqn{a_j} which are assumed to be random. In this package, we assume follow a multivariate normal distribution as follows:
 #'   
 #' \deqn{(a_1,\ldots,a_m) \sim N(0, kronecker(G, \Sigma)),} 
 #' 
@@ -154,12 +172,18 @@
 #' and
 #' \deqn{(a_{1,time},\ldots,a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time})).} 
 #' 
-#' To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly. 
+#' To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is by default adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly. 
 #'
-#' The ranks \eqn{d_G} and \eqn{d_{\Sigma}} are chosen generally to be smaller than the number of species and basis functions, respectively. Generally speaking, provided the rank/s is large enough then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite and generally a bit more stable. They can also have the interpretation of adjusting for the relative strength of correlation between species, say (Shirota, 2019).
+#' The ranks \eqn{d_G} and \eqn{d_{\Sigma}} are chosen generally to be smaller than the number of species and basis functions, respectively. Generally speaking, provided the rank/s is large enough, then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite and generally a bit more stable. They can also have the interpretation of adjusting for the relative strength of correlation between species, say (Shirota, 2019).
 #' 
-#' If is also possible for the user to specific their own custom structures for the community-level basis function covariance matrices \eqn{\Sigma}, through the \code{custom_space/custom_time/custom_spacetime} arguments as part of \code{Sigma_control}. In such a situation, only the \eqn{G}'s are estimated, and note importantly \eqn{G} is now estimated to be a baseline between-species *covariance* matrix instead of correlation matrix (it is no longer constrained to be correlation matrix). Using custom, pre-specified structures for \eqn{\Sigma} may be useful if the corresponding basis functions should be ``equipped" with a particular structure. For example, if one or more sets of basis functions are constructed from, say, the [mgcv::smooth.terms()] package (although see later on some defaults for constructing basis functions), then they are usually equipped with a corresponding, fixed penalty (inverse \eqn{\Sigma}) matrix. Perhaps a more common example is, say, if a user wanted to include species-specific random intercepts for time. Then one would set \code{B_time} as a model-matrix formed from treating time as a factor, and set \code{Sigma_control$custom_time} to an identity matrix with dimension equal to \code{ncol(B_time)}; see Example 3b in the help file below. After fitting, the estimated diagonal elements of \eqn{G_{time}} would then be the species-specific variance components for the time random intercept, while the off-diagonal elements may be interpreted as the corresponding between-species covariation.  
+#' It is also possible to assume full-rank (or equivalently, unstructured) covariance and correlation matrices for the \eqn{G}'s and \eqn{\Sigma}'s, via the character string "full" in \code{G_control$rank} and \code{Sigma_control$rank}. 
 #' 
+#' Finally, if is also possible for the user to specific their own custom matrices for the community-level basis function covariance matrices \eqn{\Sigma} and/or the baseline between-species correlation matrices \eqn{G}. These are supplied through the \code{custom_space/custom_time/custom_spacetime} arguments as part of \code{Sigma_control} and \code{G_control}, respectively. In \eqn{\Sigma} is supplied, then only the corresponding \eqn{G} is estimated, and note importantly that the corresponding \eqn{G} is now estimated to be a baseline between-species *covariance* matrix instead of correlation matrix (it is no longer constrained to be correlation matrix). Conversely, if \eqn{G} is supplied, then only the corresponding \eqn{\Sigma} is estimated. There is rarely any reason why one wish to supply both \eqn{\Sigma} and \eqn{G} simultaneously.
+#' 
+#' Using custom, pre-specified structures for \eqn{\Sigma} may be useful if the corresponding basis functions should be ``equipped" with a particular structure. For example, if one or more sets of basis functions are constructed from, say, the [mgcv::smooth.terms()] package (although see later on some defaults for constructing basis functions), then they are usually equipped with a corresponding, fixed penalty (inverse \eqn{\Sigma}) matrix. Perhaps a more common example is, say, if a user wanted to include species-specific random intercepts for time. Then one would set \code{B_time} as a model-matrix formed from treating time as a factor, and set \code{Sigma_control$custom_time} to an identity matrix with dimension equal to \code{ncol(B_time)}; see Example 3b in the help file below. After fitting, the estimated diagonal elements of \eqn{G_{time}} would then be the species-specific variance components for the time random intercept, while the off-diagonal elements may be interpreted as the corresponding between-species covariation.  
+#' 
+#' Why would you wish to supply a custom \eqn{G}? This is TBA =P
+#'
 #'
 #' ## Distributions
 #' 
@@ -281,15 +305,15 @@
 
 #' \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied. Note if \code{Sigma_control$custom_space} was supplied, then \code{Sigma_space} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
 
-#' \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between-species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied. Note if \code{Sigma_control$custom_space} was supplied, then a covariance matrix is estimated instead.}
+#' \item{G_space/Loading_G_space/nugget_G_space: }{The estimated baseline between-species correlation matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied. Note if \code{Sigma_control$custom_space} was supplied, then a covariance matrix is estimated instead. Note if \code{G_control$custom_space} was supplied, then \code{G_space} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
 
 #' \item{Sigma_time/Loading_Sigma_time/nugget_Sigma_time: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied. Note if \code{Sigma_control$custom_time} was supplied, then \code{Sigma_time} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
 
-#' \item{G_time/Loading_G_time/nugget_G_time: }{The estimated baseline between-species correlation matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied. Note if \code{Sigma_control$custom_tiem} was supplied, then a covariance matrix is estimated instead.}
+#' \item{G_time/Loading_G_time/nugget_G_time: }{The estimated baseline between-species correlation matrix/loadings/nugget effect associated with the temporal basis functions, if \code{B_time} is supplied. Note if \code{Sigma_control$custom_tiem} was supplied, then a covariance matrix is estimated instead. Note if \code{G_control$custom_time} was supplied, then \code{G_time} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
 
 #' \item{Sigma_spacetime/Loading_Sigma_spacetime/nugget_Sigma_spacetime: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied. Note if \code{Sigma_control$custom_spacetime} was supplied, then \code{Sigma_spacetime} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
 
-#' \item{G_spacetime/Loading_G_spacetime/nugget_G_spacetime: }{The estimated baseline between-species correlation matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied. Note if \code{Sigma_control$custom_spacetime} was supplied, then a covariance matrix is estimated instead.}
+#' \item{G_spacetime/Loading_G_spacetime/nugget_G_spacetime: }{The estimated baseline between-species correlation matrix/loadings/nugget effect associated with the spatio-temporal basis functions, if \code{B_spacetime} is supplied. Note if \code{Sigma_control$custom_spacetime} was supplied, then a covariance matrix is estimated instead. Note if \code{G_control$custom_spacetime} was supplied, then \code{G_spacetime} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
 
 #' \item{stderrors: }{The supplied argument for \code{stderrors} i.e., whether standard errors were calculated.}
 
@@ -463,7 +487,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,,
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1767,9 +1791,11 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, gamma = 1,
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", gam_method = "REML", tol = 1e-4, initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, seed = NULL, trace = 0, ridge = 0), 
+     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", gam_method = "REML", tol = 1e-4, initial_beta_dampen = 1,
+                    subsequent_betas_dampen = 0.25, nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
+                    seed = NULL, ridge = 0, trace = 0), 
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
-     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0),
+     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
      k_check_control = list(subsample = 5000, n.rep = 400)
      ) { 
      
@@ -1822,14 +1848,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
 
      B <- cbind(B_space, B_time, B_spacetime)
      B <- Matrix(B, sparse = TRUE)
-     #if(is.null(rownames(B)))
-     #     rownames(B) <- paste0("units", 1:nrow(B_space))
-          
-     
-     control <- .fill_control(control = control, num_spp = ncol(y))
+
+     control <- .fill_control(control = control, num_spp = ncol(y), which_B_used = which_B_used)
      Sigma_control <- .fill_Sigma_control(control = Sigma_control, which_B_used = which_B_used, 
                                           num_spacebasisfns = num_spacebasisfns, num_timebasisfns = num_timebasisfns, num_spacetimebasisfns = num_spacetimebasisfns)
-     G_control <- .fill_G_control(control = G_control, which_B_used = which_B_used)
+     G_control <- .fill_G_control(control = G_control, which_B_used = which_B_used, num_spp = ncol(y))
+     which_nonzeromean_B <- 1*c(control$nonzeromean_B_space, control$nonzeromean_B_time, control$nonzeromean_B_spacetime)
 
      ## Form covariate model matrix B
      formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
@@ -1856,6 +1880,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      num_basisfns <- ncol(B)
      .check_ranks2(num_spp = num_spp, which_B_used = which_B_used, G_control = G_control, 
                    vec_num_basisfns = c(num_spacebasisfns,num_timebasisfns,num_spacetimebasisfns), Sigma_control = Sigma_control)
+     
      
      ##----------------
      ## Compile TMB C++ files
@@ -2074,10 +2099,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     start_params$dispparam <- 0.5 * colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
           if(family$family[1] %in% c("negative.binomial")) 
                start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/theta.mm(y = y[,j], mu = exp(X%*%start_params$betas[j,] + B%*%start_params$basis_effects_mat[j,]), dfr = num_units - num_X - num_basisfns))
-          if(family$family[1] %in% c("ztnegative.binomial")) # Experimental?                        
+          if(family$family[1] %in% c("ztnegative.binomial", "zinegative.binomial"))
                start_params$dispparam <- rep(0.2, num_spp)
-          if(family$family[1] %in% c("zinegative.binomial"))                        
-               start_params$dispparam <- rep(0.2, num_spp)        
           if(family$family[1] %in% c("Beta")) 
                start_params$dispparam <- rep(0.5, num_spp)          
           }
@@ -2099,8 +2122,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                start_params$Sigma_space <- NULL
                new_LoadingnuggetSigma_space <- list(covinv = .cholthenpinv(V = Sigma_control$custom_space))
                }
-          start_params$G_space <- diag(1, nrow = num_spp)
-          new_LoadingnuggetG_space <- list(covinv = start_params$G_space)
+          if(is.null(G_control$custom_space)) {
+               start_params$G_space <- diag(1, nrow = num_spp)
+               new_LoadingnuggetG_space <- list(covinv = start_params$G_space)
+               }
+          if(!is.null(G_control$custom_space)) {
+               start_params$G_space <- NULL
+               new_LoadingnuggetG_space <- list(covinv = .cholthenpinv(V = G_control$custom_space))
+               }
+          start_params$mean_B_space <- numeric(num_spacebasisfns)
           }
      if(which_B_used[2]) {
           if(is.null(Sigma_control$custom_time)) {
@@ -2111,8 +2141,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                start_params$Sigma_time <- NULL
                new_LoadingnuggetSigma_time <- list(covinv = .cholthenpinv(V = Sigma_control$custom_time))
                }
-          start_params$G_time <- diag(1, nrow = num_spp)
-          new_LoadingnuggetG_time <- list(covinv = start_params$G_time)
+          if(is.null(G_control$custom_time)) {
+               start_params$G_time <- diag(1, nrow = num_spp)
+               new_LoadingnuggetG_time <- list(covinv = start_params$G_time)
+               }
+          if(!is.null(G_control$custom_time)) {
+               start_params$G_time <- NULL
+               new_LoadingnuggetG_time <- list(covinv = .cholthenpinv(V = G_control$custom_time))
+               }
+          start_params$mean_B_time <- numeric(num_timebasisfns)
           }
      if(which_B_used[3]) {
           if(is.null(Sigma_control$custom_spacetime)) {
@@ -2123,8 +2160,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                start_params$Sigma_spacetime <- NULL
                new_LoadingnuggetSigma_spacetime <- list(covinv = .cholthenpinv(V = Sigma_control$custom_spacetime))
                }
-          start_params$G_spacetime <- diag(1, nrow = num_spp)
-          new_LoadingnuggetG_spacetime <- list(covinv = start_params$G_spacetime)
+          if(is.null(G_control$custom_spacetime)) {
+               start_params$G_spacetime <- diag(1, nrow = num_spp)
+               new_LoadingnuggetG_spacetime <- list(covinv = start_params$G_spacetime)
+               }
+          if(!is.null(G_control$custom_spacwtime)) {
+               start_params$G_spacetime <- NULL
+               new_LoadingnuggetG_spacetime <- list(covinv = .cholthenpinv(V = G_control$custom_spacetime))
+               }
+          start_params$mean_B_spacetime <- numeric(num_spacetimebasisfns)
           }
      start_params$logLik <- -Inf
      
@@ -2196,13 +2240,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     dispparam = start_params$dispparam,
                     powerparam = start_params$powerparam,
                     zeroinfl_prob_intercept = start_params$zeroinfl_prob_intercept,
+                    mean_B_space = start_params$mean_B_space, # NULL if which_B_used[1] == 0
+                    mean_B_time = start_params$mean_B_time, # NULL if which_B_used[2] == 0
+                    mean_B_spacetime = start_params$mean_B_spacetime, # NULL if which_B_used[3] == 0
                     logLik = start_params$logLik
                     )
                     
                cw_params <- as.vector(unlist(new_fit_CBFM_ptest))
                cw_params <- cw_params[-length(cw_params)] # Get rid of the logLik term
                cw_logLik <- new_fit_CBFM_ptest$logLik
-               #cw_linpred <- Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
                rm(start_params)
                }
           if(counter > 0) {          
@@ -2213,7 +2259,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           inner_err <- 100
           inner_counter <- 0
           if(control$trace > 0)
-               message("Updating all coefficients and dispersion/power parameters (also running inner EM algorithm if appropriate)...")         
+               message("Updating all coefficients and dispersion/power parameters (also running inner EM algorithm if appropriate).")         
           while(inner_err > 1e-3) {
                if(inner_counter > 10)
                     break;
@@ -2246,33 +2292,45 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     tidbits_data$powerparam <- new_fit_CBFM_ptest$powerparam[j]
                     tidbits_data$estep_weights <- as.vector(getweights[,j])
                     tidbits_data$offset <- offset[,j]
-                    if(sum(which_B_used) == 1)
-                         tidbits_data$other_basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
+                    if(sum(which_B_used) == 1) {
+                         tidbits_data$mean_basis_effects <- c(new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime)
+                         tidbits_data$other_centered_basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat - matrix(tidbits_data$mean_basis_effects, nrow = num_spp, ncol = num_basisfns, byrow = TRUE)
+                         }
                     if(sum(which_B_used) == 2) {
                          if(identical(which_B_used, c(1,1,0))) { 
-                              tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
-                              tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
+                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_space
+                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_time
+                              tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                              tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                               }
                          if(identical(which_B_used, c(1,0,1))) { 
-                              tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
-                              tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
+                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_space
+                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_spacetime
+                              tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                              tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                               }
                          if(identical(which_B_used, c(0,1,1))) { 
-                              tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
-                              tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
+                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_time
+                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_spacetime
+                              tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                              tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                               }
                          }
                     if(sum(which_B_used) == 3) {
-                         tidbits_data$other_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
-                         tidbits_data$other_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE]
-                         tidbits_data$other_basis_effects_mat_B3 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE]
+                         tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_space
+                         tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_time
+                         tidbits_data$mean_basis_effects_B3 <- new_fit_CBFM_ptest$mean_B_spacetime
+                         tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                         tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                         tidbits_data$other_centered_basis_effects_mat_B3 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                          }
                     
                     tidbits_data$spp_ind <- j
                     tidbits_data$family <- .family_to_counter(family = family)
                     tidbits_data$trial_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units, family = family)
      
-                    tidbits_constraints <- list(lower = rep(control$optim_lower, sum(sapply(tidbits_parameters, length))),
+                    tidbits_constraints <- list(
+                         lower = rep(control$optim_lower, sum(sapply(tidbits_parameters, length))),
                          upper = rep(control$optim_upper, sum(sapply(tidbits_parameters, length)))
                          )
                          
@@ -2285,6 +2343,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                               tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen 
                          if(length(control$subsequent_betas_dampen) == num_spp)
                               tidbits_data$Xbeta <- tidbits_data$Xbeta * matrix(control$subsequent_betas_dampen, nrow = num_units, ncol = num_spp, byrow = TRUE)
+                         
                          CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                          new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
                               lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
@@ -2485,42 +2544,82 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           
           
           ##-------------------------
+          ## Update mean vector for normal distribution of basis functions coefficients, if required 
+          ##-------------------------
+          if(sum(which_nonzeromean_B) > 0)
+               message("Updating all non-zero mean vectors in the distribution of the basis effect coefficients.")
+          if(control$nonzeromean_B_space) {
+               onemIq <- kronecker(matrix(1, nrow = num_spp, ncol = 1), Diagonal(n = num_spacebasisfns))
+               MM <- crossprod(onemIq, kronecker(new_LoadingnuggetG_space$covinv, new_LoadingnuggetSigma_space$covinv))       
+               rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE])) 
+               new_fit_CBFM_ptest$mean_B_space <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
+               rm(rhs, MM, onemIq)
+               }
+          if(control$nonzeromean_B_time) {
+               onemIq <- kronecker(matrix(1, nrow = num_spp, ncol = 1), Diagonal(n = num_timebasisfns))
+               MM <- crossprod(onemIq, kronecker(new_LoadingnuggetG_time$covinv, new_LoadingnuggetSigma_time$covinv))       
+               rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE])) 
+               new_fit_CBFM_ptest$mean_B_time <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
+               rm(rhs, MM, onemIq)
+               }
+          if(control$nonzeromean_B_spacetime) {
+               onemIq <- kronecker(matrix(1, nrow = num_spp, ncol = 1), Diagonal(n = num_spacetimebasisfns))
+               MM <- crossprod(onemIq, kronecker(new_LoadingnuggetG_spacetime$covinv, new_LoadingnuggetSigma_spacetime$covinv))       
+               rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE])) 
+               new_fit_CBFM_ptest$mean_B_spacetime <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
+               rm(rhs, MM, onemIq)
+               }
+
+          
+          ##-------------------------
           ## Update between spp correlation matrix G. First assume unstructured, then cov2cor, then update loading and nugget. 
           ##-------------------------
           if(control$trace == 1)
                message("Updating between response correlaton (covariance) matrices, G.")
           if(which_B_used[1]) {
-               new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol, 
-                    Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
-                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
-                    trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_space))
-               new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1,
-                                                              correlation = is.null(Sigma_control$custom_space))
-               rm(new_G_space)
+               if(is.null(G_control$custom_space)) {
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol
+                    if(control$nonzeromean_B_space)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                    new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, basis_effects_mat = centered_BF_mat, 
+                         Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
+                         linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
+                         powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                         trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_space))
+                    new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1,
+                                                                   correlation = is.null(Sigma_control$custom_space))
+                    rm(new_G_space, centered_BF_mat)
+                    }
                }
           if(which_B_used[2]) {
-               new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+G_control$tol, 
-                    Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
-                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
-                    trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_time))
-               new_LoadingnuggetG_time <- update_LoadingG_fn(G = new_G_time, G_control = G_control, use_rank_element = sum(which_B_used[1:2]), 
-                                                             correlation = is.null(Sigma_control$custom_time))
-               rm(new_G_time)
+               if(is.null(G_control$custom_time)) {
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+G_control$tol
+                    if(control$nonzeromean_B_time)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                    new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, basis_effects_mat = centered_BF_mat, 
+                          Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
+                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
+                          powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                          trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_time))
+                    new_LoadingnuggetG_time <- update_LoadingG_fn(G = new_G_time, G_control = G_control, use_rank_element = sum(which_B_used[1:2]), 
+                                                                   correlation = is.null(Sigma_control$custom_time))
+                    rm(new_G_time, centered_BF_mat)
+                    }
                }
           if(which_B_used[3]) {
-               new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, 
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+G_control$tol, 
-                    Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
-                    linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
-                    powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
-                    trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_spacetime))
-               new_LoadingnuggetG_spacetime <- update_LoadingG_fn(G = new_G_spacetime, G_control = G_control, use_rank_element = sum(which_B_used[1:3]),
-                                                                  correlation = is.null(Sigma_control$custom_spacetime))
-               rm(new_G_spacetime)
+               if(is.null(G_control$custom_spacetime)) {
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+G_control$tol
+                    if(control$nonzeromean_B_spacetime)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+                    new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, basis_effects_mat = centered_BF_mat, 
+                         Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
+                         linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
+                         powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                         trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_spacetime))
+                    new_LoadingnuggetG_spacetime <- update_LoadingG_fn(G = new_G_spacetime, G_control = G_control, use_rank_element = sum(which_B_used[1:3]),
+                                                                       correlation = is.null(Sigma_control$custom_spacetime))
+                    rm(new_G_spacetime, centered_BF_mat)
+                    }
                }
                
      
@@ -2532,60 +2631,77 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                message("Updating covariance matrices for basis functions, Sigma, if required.")
           if(which_B_used[1]) {
                if(is.null(Sigma_control$custom_space)) {
-                    new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, 
-                         basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+Sigma_control$tol, 
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+Sigma_control$tol
+                    if(control$nonzeromean_B_space)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                    new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, basis_effects_mat = centered_BF_mat, 
                          Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                     new_LoadingnuggetSigma_space <- update_LoadingSigma_fn(Sigma = new_Sigma_space, Sigma_control = Sigma_control, use_rank_element = 1)
-                    rm(new_Sigma_space)
+                    rm(new_Sigma_space, centered_BF_mat)
                     }
                }
           if(which_B_used[2]) {
                if(is.null(Sigma_control$custom_time)) {
-                    new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, 
-                         basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+Sigma_control$tol, 
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+Sigma_control$tol
+                    if(control$nonzeromean_B_time)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                    new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, basis_effects_mat = centered_BF_mat, 
                          Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                     new_LoadingnuggetSigma_time <- update_LoadingSigma_fn(Sigma = new_Sigma_time, Sigma_control = Sigma_control, use_rank_element = sum(which_B_used[1:2]))
-                    rm(new_Sigma_time)
+                    rm(new_Sigma_time, centered_BF_mat)
                     }
                }
           if(which_B_used[3]) {
                if(is.null(Sigma_control$custom_spacetime)) {
-                    new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, 
-                         basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+Sigma_control$tol, 
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+Sigma_control$tol
+                    if(control$nonzeromean_B_spacetime)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+                    new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, basis_effects_mat = centered_BF_mat, 
                          Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                     new_LoadingnuggetSigma_spacetime <- update_LoadingSigma_fn(Sigma = new_Sigma_spacetime, Sigma_control = Sigma_control, 
                          use_rank_element = sum(which_B_used[1:3]))
-                    rm(new_Sigma_spacetime)
+                    rm(new_Sigma_spacetime, centered_BF_mat)
                     }
                }
      
 
           ##-------------------------
-          ## Finish iteration
+          ## Finish iteration 
           ##-------------------------
-          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), new_fit_CBFM_ptest$zeroinfl_prob_intercept) # Stop checking log(new_fit_CBFM_ptest$dispparam), new_fit_CBFM_ptest$powerparam?
+          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), new_fit_CBFM_ptest$zeroinfl_prob_intercept, 
+                          new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) # Stop checking log(new_fit_CBFM_ptest$dispparam), new_fit_CBFM_ptest$powerparam?
           new_logLik <- new_fit_CBFM_ptest$logLik
-          if(which_B_used[1])
-               new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
-                    Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
-          if(which_B_used[2])
-               new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
-                    Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
-          if(which_B_used[3])
-               new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-                    basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE], 
-                    Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
+          if(which_B_used[1]) {
+               centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
+               if(control$nonzeromean_B_space)
+                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+               new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
+                                                                              Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
+               }
+          if(which_B_used[2]) {
+               centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]
+               if(control$nonzeromean_B_time)
+                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+               new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
+                                                                              Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
+               }
+          if(which_B_used[3]) {
+               centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]
+               if(control$nonzeromean_B_spacetime)
+                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+               new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat,
+                                                                              Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
+               }
+          rm(centered_BF_mat)
 
           
           params_diff <- suppressWarnings(new_params - cw_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
@@ -2682,26 +2798,36 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      gc()
      
      
-     # Calculate deviance, null deviance etc...note deviance calculation excludes the quadratic term in the PQL
+     # Calculate deviance, null deviance etc...note deviance calculation **excludes** the quadratic term in the PQL
      nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = ~ 1)
      nulldeviance <- sum(sapply(nulldeviance, function(x) -2*x$logLik))
      rm(initfit_fn)
      
      new_logLik <- new_fit_CBFM_ptest$logLik
-     if(which_B_used[1])
-          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-               basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE], 
-               Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
-     if(which_B_used[2])
-          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-               basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE], 
-               Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
-     if(which_B_used[3])
-          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(
-               basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE],
-               Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
-     
-     
+     if(which_B_used[1]) {
+          centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
+          if(control$nonzeromean_B_space)
+               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
+                                                                             Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
+          }
+     if(which_B_used[2]) {
+          centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]
+          if(control$nonzeromean_B_time)
+               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
+                                                                             Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
+          }
+     if(which_B_used[3]) {
+          centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]
+          if(control$nonzeromean_B_time)
+               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+          new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat,
+                                                                             Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
+          }
+     rm(centered_BF_mat)
+
+
      ##-----------------
      ## Format output
      ##-----------------
@@ -2716,6 +2842,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$B <- B
      out_CBFM$which_B_used <- which_B_used
      out_CBFM$which_custom_Sigma_used <- Sigma_control$which_custom_Sigma_used
+     out_CBFM$which_custom_G_used <- Sigma_control$which_custom_G_used
+     out_CBFM$which_nonzeromean_B <- which_nonzeromean_B
      out_CBFM$num_B_space <- num_spacebasisfns
      out_CBFM$num_B_time <- num_timebasisfns
      out_CBFM$num_B_spacetime <- num_spacetimebasisfns
@@ -2737,6 +2865,9 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
      out_CBFM$powerparam <- new_fit_CBFM_ptest$powerparam
      out_CBFM$zeroinfl_prob_intercept <- new_fit_CBFM_ptest$zeroinfl_prob_intercept
+     out_CBFM$mean_B_space <- new_fit_CBFM_ptest$mean_B_space
+     out_CBFM$mean_B_time <- new_fit_CBFM_ptest$mean_B_time
+     out_CBFM$mean_B_spacetime <- new_fit_CBFM_ptest$mean_B_spacetime
      out_CBFM$linear_predictors <- new_fit_CBFM_ptest$linear_predictors
      rm(new_fit_CBFM_ptest, getweights, converged, all_k_check)
 
@@ -2772,11 +2903,14 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(which_B_used[1]) {
           if(is.null(Sigma_control$custom_space)) {
                out_CBFM$Sigma_space <- new_LoadingnuggetSigma_space$cov
-               out_CBFM$Loading_Sigma_space <- as.matrix(new_LoadingnuggetSigma_space$Loading)
-               out_CBFM$nugget_Sigma_space <- new_LoadingnuggetSigma_space$nugget
-               colnames(out_CBFM$Sigma_space) <- rownames(out_CBFM$Loading_Sigma_space) <- colnames(B_space)
-               if(num_spacebasisfns > 2)
-                    colnames(out_CBFM$Loading_Sigma_space) <- paste0("Loading", 1:Sigma_control$rank[1])
+               rownames(out_CBFM$Sigma_space) <- colnames(out_CBFM$Sigma_space) <- colnames(B_space)
+               if(Sigma_control$rank[1] != "full") {
+                    out_CBFM$Loading_Sigma_space <- as.matrix(new_LoadingnuggetSigma_space$Loading)
+                    out_CBFM$nugget_Sigma_space <- new_LoadingnuggetSigma_space$nugget
+                    rownames(out_CBFM$Loading_Sigma_space) <- colnames(B_space)
+                    if(num_spacebasisfns > 2)
+                         colnames(out_CBFM$Loading_Sigma_space) <- paste0("Loading", 1:Sigma_control$rank[1])
+                    }
                rm(new_LoadingnuggetSigma_space)
                }
           if(!is.null(Sigma_control$custom_space)) {
@@ -2784,22 +2918,37 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                out_CBFM$Loading_Sigma_space <- out_CBFM$nugget_Sigma_space <- NULL
                }
           
-          out_CBFM$G_space <- new_LoadingnuggetG_space$cov
-          out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
-          out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
-          rownames(out_CBFM$G_space) <- colnames(out_CBFM$G_space) <- colnames(y)
-          if(num_spp > 2)
-               colnames(out_CBFM$Loading_G_space) <- paste0("Loading", 1:G_control$rank[1])
-          rm(new_LoadingnuggetG_space)
+          if(is.null(G_control$custom_space)) {
+               out_CBFM$G_space <- new_LoadingnuggetG_space$cov
+               rownames(out_CBFM$G_space) <- colnames(out_CBFM$G_space) <- colnames(y)
+               if(G_control$rank[1] != "full") {
+                    out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
+                    out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
+                    if(num_spp > 2)
+                         colnames(out_CBFM$Loading_G_space) <- paste0("Loading", 1:G_control$rank[1])
+                    rownames(out_CBFM$Loading_G_space) <- colnames(y)
+                    }
+               rm(new_LoadingnuggetG_space)
+               }
+          if(!is.null(G_control$custom_space)) {
+               out_CBFM$G_space <- G_control$custom_space
+               out_CBFM$Loading_G_space <- out_CBFM$nugget_G_space <- NULL
+               }
+          
+          if(control$nonzeromean_B_space)
+               names(out_CBFM$mean_B_space) <- colnames(B_space)
           }          
      if(which_B_used[2]) {
           if(is.null(Sigma_control$custom_time)) {
                out_CBFM$Sigma_time <- new_LoadingnuggetSigma_time$cov
-               out_CBFM$Loading_Sigma_time <- as.matrix(new_LoadingnuggetSigma_time$Loading)
-               out_CBFM$nugget_Sigma_time <- new_LoadingnuggetSigma_time$nugget
-               colnames(out_CBFM$Sigma_time) <- rownames(out_CBFM$Loading_Sigma_time) <- colnames(B_time)
-               if(num_timebasisfns > 2)
-                    colnames(out_CBFM$Loading_Sigma_time) <- paste0("Loading", 1:Sigma_control$rank[sum(which_B_used[1:2])])
+               rownames(out_CBFM$Sigma_time) <- colnames(out_CBFM$Sigma_time) <- colnames(B_time)
+               if(Sigma_control$rank[sum(which_B_used[1:2])] != "full") {
+                    out_CBFM$Loading_Sigma_time <- as.matrix(new_LoadingnuggetSigma_time$Loading)
+                    out_CBFM$nugget_Sigma_time <- new_LoadingnuggetSigma_time$nugget
+                    rownames(out_CBFM$Loading_Sigma_time) <- colnames(B_time)
+                    if(num_timebasisfns > 2)
+                         colnames(out_CBFM$Loading_Sigma_time) <- paste0("Loading", 1:Sigma_control$rank[sum(which_B_used[1:2])])
+                    }
                rm(new_LoadingnuggetSigma_time)
                }
           if(!is.null(Sigma_control$custom_time)) {
@@ -2807,36 +2956,62 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                out_CBFM$Loading_Sigma_time <- out_CBFM$nugget_Sigma_time <- NULL
                }
 
-          out_CBFM$G_time <- new_LoadingnuggetG_time$cov
-          out_CBFM$Loading_G_time <- as.matrix(new_LoadingnuggetG_time$Loading)
-          out_CBFM$nugget_G_time <- new_LoadingnuggetG_time$nugget
-          rownames(out_CBFM$G_time) <- colnames(out_CBFM$G_time) <- colnames(y)
-          if(num_spp > 2)
-               colnames(out_CBFM$Loading_G_time) <- paste0("Loading", 1:G_control$rank[sum(which_B_used[1:2])])
-          rm(new_LoadingnuggetG_time)
+          if(is.null(G_control$custom_time)) {
+               out_CBFM$G_time <- new_LoadingnuggetG_time$cov
+               rownames(out_CBFM$G_time) <- colnames(out_CBFM$G_time) <- colnames(y)
+               if(G_control$rank[sum(which_B_used[1:2])] != "full") {
+                    out_CBFM$Loading_G_time <- as.matrix(new_LoadingnuggetG_time$Loading)
+                    out_CBFM$nugget_G_time <- new_LoadingnuggetG_time$nugget
+                    rownames(out_CBFM$Loading_G_time) <- colnames(y)
+                    if(num_spp > 2)
+                         colnames(out_CBFM$Loading_G_time) <- paste0("Loading", 1:G_control$rank[sum(which_B_used[1:2])])
+                    }
+               rm(new_LoadingnuggetG_time)
+               }
+          if(!is.null(G_control$custom_time)) {
+               out_CBFM$G_time <- G_control$custom_time
+               out_CBFM$Loading_G_time <- out_CBFM$nugget_G_time <- NULL
+               }
+          
+          if(control$nonzeromean_B_time)
+               names(out_CBFM$mean_B_time) <- colnames(B_time)
           }
      if(which_B_used[3]) {
           if(is.null(Sigma_control$custom_spacetime)) {
                out_CBFM$Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$cov
-               out_CBFM$Loading_Sigma_spacetime <- as.matrix(new_LoadingnuggetSigma_spacetime$Loading)
-               out_CBFM$nugget_Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$nugget
-               colnames(out_CBFM$Sigma_spacetime) <- rownames(out_CBFM$Loading_Sigma_spacetime) <- colnames(B_spacetime)          
+               rownames(out_CBFM$Sigma_spacetime) <- colnames(out_CBFM$Sigma_spacetime) <- colnames(B_spacetime)          
+               if(Sigma_control$rank[sum(which_B_used[1:3])] != "full") {
+                    out_CBFM$Loading_Sigma_spacetime <- as.matrix(new_LoadingnuggetSigma_spacetime$Loading)
+                    out_CBFM$nugget_Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$nugget
+                    rownames(out_CBFM$Loading_Sigma_spacetime) <- colnames(B_spacetime)          
+                    if(num_spacetimebasisfns > 2)
+                         colnames(out_CBFM$Loading_Sigma_spacetime) <- paste0("Loading", 1:Sigma_control$rank[sum(which_B_used[1:3])])
+                    }
                rm(new_LoadingnuggetSigma_spacetime)
-               if(num_spacetimebasisfns > 2)
-                    colnames(out_CBFM$Loading_Sigma_spacetime) <- paste0("Loading", 1:Sigma_control$rank[sum(which_B_used[1:3])])
                }
           if(!is.null(Sigma_control$custom_spacetime)) {
                out_CBFM$Sigma_spacetime <- Sigma_control$custom_spacetime
                out_CBFM$Loading_Sigma_spacetime <- out_CBFM$nugget_Sigma_spacetime <- NULL
                }
-
-          out_CBFM$G_spacetime <- new_LoadingnuggetG_spacetime$cov
-          out_CBFM$Loading_G_spacetime <- as.matrix(new_LoadingnuggetG_spacetime$Loading)
-          out_CBFM$nugget_G_spacetime <- new_LoadingnuggetG_spacetime$nugget
-          rownames(out_CBFM$G_spacetime) <- colnames(out_CBFM$G_spacetime) <- colnames(y)
-          if(num_spp > 2)
-               colnames(out_CBFM$Loading_G_spacetime) <- paste0("Loading", 1:G_control$rank[sum(which_B_used[1:3])])
-          rm(new_LoadingnuggetG_spacetime)
+          
+          if(is.null(G_control$custom_spacetime)) {
+               out_CBFM$G_spacetime <- new_LoadingnuggetG_spacetime$cov
+               rownames(out_CBFM$G_spacetime) <- colnames(out_CBFM$G_spacetime) <- colnames(y)
+               if(G_control$rank[sum(which_B_used[1:3])] != "full") {
+                    out_CBFM$Loading_G_spacetime <- as.matrix(new_LoadingnuggetG_spacetime$Loading)
+                    out_CBFM$nugget_G_spacetime <- new_LoadingnuggetG_spacetime$nugget
+                    if(num_spp > 2)
+                         colnames(out_CBFM$Loading_G_spacetime) <- paste0("Loading", 1:G_control$rank[sum(which_B_used[1:3])])
+                    }
+               rm(new_LoadingnuggetG_spacetime)
+               }
+          if(!is.null(G_control$custom_spacetime)) {
+               out_CBFM$G_spacetime <- G_control$custom_spacetime
+               out_CBFM$Loading_G_spacetime <- out_CBFM$nugget_G_spacetime <- NULL
+               }
+          
+          if(control$nonzeromean_B_spacetime)
+               names(out_CBFM$mean_B_spacetime) <- colnames(B_spacetime)
           }
 
      rownames(out_CBFM$betas) <- rownames(out_CBFM$basis_effects_mat) <- colnames(out_CBFM$linear_predictors) <- colnames(out_CBFM$fitted) <- colnames(y)
@@ -2970,6 +3145,13 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           out_CBFM$powerparam <- NULL
      if(!(family$family %in% c("zipoisson","zinegative.binomial")))                        
           out_CBFM$zeroinfl_prob_intercept <- NULL
+     if(!control$nonzeromean_B_space)
+          out_CBFM$mean_B_space <- NULL
+     if(!control$nonzeromean_B_time)
+          out_CBFM$mean_B_time <- NULL
+     if(!control$nonzeromean_B_spacetime)
+          out_CBFM$mean_B_spacetime <- NULL
+          
      
      out_CBFM$time_taken <- toc[3] - tic[3] 
      class(out_CBFM) <- "CBFM"

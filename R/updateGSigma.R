@@ -89,13 +89,24 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
 update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRUE) {
      num_spp <- nrow(G)
      num_rank <- G_control$rank[use_rank_element]
+     if(num_rank != "full")
+             num_rank <- as.numeric(num_rank)
+     
      if(correlation) {
           if(any(G_control$nugget_profile < 0) || any(G_control$nugget_profile > 1))
                stop("All values in nugget_profile should be between 0 and 1.")
           }
-     if(num_spp <= 2)
-          return(list(Loading = NULL, nugget = NULL, cov = G))
+     if(num_spp <= 2) {
+        out <- list(Loading = NULL, nugget = NULL, cov = G)
+        out$covinv <- chol2inv(chol(out$cov))
+        return(out)
+        }
      
+     if(num_rank == "full") {
+        out <- list(Loading = NULL, nugget = NULL, cov = G)
+        out$covinv <- chol2inv(chol(out$cov))
+        return(out)
+        }     
      
      if(correlation) {
           min_err <- Inf
@@ -239,7 +250,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                
                         new_Sigma <- matrix(0, nrow = num_basisfns, ncol = num_basisfns)
                         new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
-                        new_Sigma <- new_Sigma + t(new_Sigma) - diag(diag(new_Sigma), nrow = num_basisfns)
+                        new_Sigma <- new_Sigma + t(new_Sigma) - diag(x = diag(new_Sigma), nrow = num_basisfns)
                         new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
                         new_Sigma <- Matrix::forceSymmetric(new_Sigma) 
                
@@ -259,11 +270,18 @@ update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element) {
      num_basisfns <- nrow(Sigma)
      num_rank <- Sigma_control$rank[use_rank_element]
      
+     if(num_rank == "full") {
+        out <- list(Loading = NULL, nugget = NULL, cov = Sigma)
+        out$covinv <- chol2inv(chol(out$cov))
+        return(out)
+        }
+     
      min_err <- Inf
      counter <- 0
      diff <- 10
      err <- Inf
      cw_nugget <- min(diag(Sigma))*0.1
+     num_rank <- as.numeric(num_rank)
      while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
           Sigmatilde <- Sigma - diag(x = cw_nugget, nrow = num_basisfns)
           

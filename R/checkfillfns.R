@@ -6,6 +6,19 @@
      if(is.null(B_space) & is.null(B_time) & is.null(B_spacetime))
           stop("At least one of B_space/B_time/B_spacetime must be supplied.")
      
+     if(!is.null(B_space)) {
+          if(!is.matrix(B_space))
+               stop("B_space must be a matrix.")
+          }
+     if(!is.null(B_time)) {
+          if(!is.matrix(B_time))
+               stop("B_time must be a matrix.")
+     }
+     if(!is.null(B_spacetime)) {
+          if(!is.matrix(B_spacetime))
+               stop("B_spacetime must be a matrix.")
+     }
+     
      if(extra_check) {
           if(!is.list(Sigma))
                stop("Sigma should be a list containing at least one of following three elements: 1) space, which is the covariance matrix for the random slopes corresponding to B_space; 2) time, which is the analogous covariance matrix corresponding to B_time; 3) spacetime, which is the analogous covariance matrix corresponding to B_spacetime.")
@@ -82,26 +95,38 @@
 
         
 .check_ranks <- function(num_spp, rank_G, num_basisfns, rank_Sigma) {
-     if(num_spp <= 2)
-          message("rank_G ignored for models containing two or less responses.")
+     #if(num_spp <= 2)
+     #     message("rank_G ignored for models containing two or less responses.")
      if(num_spp > 2) {
-          dof <- 0.5 * ((num_spp - rank_G)^2 - num_spp - rank_G)
-          if(dof < 0 | (num_spp <= rank_G)) 
-          stop("rank_G is too many factors for the number of responses.")
-          }
+         # Full rank does nothing
+         
+         if(rank_G != "full") {
+             rank_G <- as.numeric(rank_G)
+         
+             dof <- 0.5 * ((num_spp - rank_G)^2 - num_spp - rank_G)
+             if(dof < 0 | (num_spp <= rank_G)) 
+                stop("rank_G is too many factors for the number of responses.")
+            }
+         }
      
      
      #if(num_basisfns <= 2) 
      #   stop("There should be at least two basis functions included in the model.")
-     #if(num_basisfns == 2) {
-     #     message("rank_Sigma ignored for models containing two basis functions.")
-     #     }
-     if(num_basisfns > 2) {
-          dof <- 0.5 * ((num_basisfns - rank_Sigma)^2 - num_basisfns - rank_Sigma)
-          if(dof < 0 | (num_basisfns <= rank_Sigma)) 
-               stop("rank_Sigma is too many factors for the number of basis functions.")
+     if(num_basisfns == 2) {
+          message("rank_Sigma ignored for models containing two basis functions.")
           }
-     }
+     if(num_basisfns > 2) {
+         # Full rank does nothing
+         
+         if(rank_Sigma != "full") {
+             rank_Sigma <- as.numeric(rank_Sigma)
+          
+             dof <- 0.5 * ((num_basisfns - rank_Sigma)^2 - num_basisfns - rank_Sigma)
+             if(dof < 0 | (num_basisfns <= rank_Sigma)) 
+                 stop("rank_Sigma is too many factors for the number of basis functions.")
+             }
+         }
+    }
      
 
 .check_ranks2 <- function(num_spp, which_B_used, G_control, vec_num_basisfns, Sigma_control) {
@@ -181,7 +206,7 @@
      return(family_counter)
      }
           
-.fill_control <- function(control, num_spp) {
+.fill_control <- function(control, num_spp, which_B_used) {
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$optim_lower))
@@ -203,6 +228,20 @@
             stop("control$subsequent_betas_dampen should either be a scalar or a vector equal to the number of species i.e., ncol(y).")
         }
      
+     if(is.null(control$nonzeromean_B_space))
+         control$nonzeromean_B_space <- FALSE
+     if(is.null(control$nonzeromean_B_time))
+         control$nonzeromean_B_time <- FALSE
+     if(is.null(control$nonzeromean_B_spacetime))
+         control$nonzeromean_B_spacetime <- FALSE
+     
+     if(control$nonzeromean_B_space == TRUE & which_B_used[1] == 0)
+         stop("If B_space is not supplied, then control$nonzeromean_B_space can not be set to TRUE.")
+     if(control$nonzeromean_B_time == TRUE & which_B_used[2] == 0)
+         stop("If B_time is not supplied, then control$nonzeromean_B_time can not be set to TRUE.")
+     if(control$nonzeromean_B_spacetime == TRUE & which_B_used[3] == 0)
+         stop("If B_spacetime is not supplied, then control$nonzeromean_B_spacetime can not be set to TRUE.")
+     
      if(is.null(control$convergence_type))
           control$convergence_type <- "parameters"
      if(is.null(control$gam_method))
@@ -218,13 +257,14 @@
      }
      
      
-.fill_G_control <- function(control, which_B_used) {
+.fill_G_control <- function(control, which_B_used, num_spp) {
      if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
           control$rank <- rep(control$rank, sum(which_B_used))
      if(sum(which_B_used) != length(control$rank))
-          stop("G_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$rank should be a vector with length 2.")
+          stop("G_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$rank should be a vector with length 2.
+               Please note ranks still needs to be supplied even when custom Gs are used (although the corresponding rank is ignored in such case).")
      if(is.null(control$nugget_profile))          
           control$nugget_profile = seq(0.05, 0.95, by = 0.05)
      if(is.null(control$maxit))
@@ -238,11 +278,34 @@
      if(is.null(control$trace))
           control$trace <- 0
           
-     control$method<- match.arg(control$method, choices = c("LA","simple"))
-     #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
+     control$which_custom_G_used <- c(0,0,0)
+     if(!is.null(control$custom_space)) {
+        if(which_B_used[1] == 0)
+            stop("Please do not supply G_control$custom_space if B_space is also not supplied.")
+        if(nrow(control$custom_space) != num_spp | ncol(control$custom_space) != num_spp)
+            stop("G_control$custom_space should be a square matrix with the same dimensions as ncol(y).") 
+         control$which_custom_G_used[1] <- 1
+         }
+     if(!is.null(control$custom_time)) {
+         if(which_B_used[2] == 0)
+            stop("Please do not supply G_control$custom_time if B_time is also not supplied.")
+        if(nrow(control$custom_time) != num_spp | ncol(control$custom_time) != num_spp)
+            stop("G_control$custom_time should be a square matrix with the same dimensions as ncol(y).") 
+        control$which_custom_G_used[2] <- 1
+        }
+     if(!is.null(control$custom_spacetime)) {
+         if(which_B_used[3] == 0) 
+            stop("Please do not supply G_control$custom_spacetime if B_spacetime is also not supplied.")
+        if(nrow(control$custom_spacetime) != num_spp | ncol(control$custom_spacetime) != num_spp)
+            stop("G_control$custom_spacetime should be a square matrix with the same dimensions as ncol(y).") 
+        control$which_custom_G_used[3] <- 1
+        }
+
+    control$method<- match.arg(control$method, choices = c("LA","simple"))
+    #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
      
-     return(control)
-     }
+    return(control)
+    }
      
 
 .fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
@@ -270,25 +333,24 @@
         if(which_B_used[1] == 0)
             stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
         if(nrow(control$custom_space) != num_spacebasisfns | ncol(control$custom_space) != num_spacebasisfns)
-            stop("control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
-         message("Because Sigma_control$custom_space is supplied, then G_space will be estimated as a covariance instead of a correlation matrix.")
+            stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
+         message("Because Sigma_control$custom_space is supplied, then G_space will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
          control$which_custom_Sigma_used[1] <- 1
          }
      if(!is.null(control$custom_time)) {
          if(which_B_used[2] == 0)
             stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
         if(nrow(control$custom_time) != num_timebasisfns | ncol(control$custom_time) != num_timebasisfns)
-            stop("control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
-        message("Because Sigma_control$custom_time is supplied, then G_time will be estimated as a covariance instead of a correlation matrix.")
+            stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
+        message("Because Sigma_control$custom_time is supplied, then G_time will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
         control$which_custom_Sigma_used[2] <- 1
         }
      if(!is.null(control$custom_spacetime)) {
          if(which_B_used[3] == 0) 
             stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
         if(nrow(control$custom_spacetime) != num_spacetimebasisfns | ncol(control$custom_spacetime) != num_spacetimebasisfns)
-            stop("control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).") 
-        
-        message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix.")
+            stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).") 
+        message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
         control$which_custom_Sigma_used[3] <- 1
         }
 

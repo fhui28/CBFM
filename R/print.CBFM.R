@@ -9,7 +9,7 @@
 #' @param ... Not used.
 #'
 #' @details 
-#' Print out details such as the function call, assumed family/response distribution, number of observational units and species, response-environment relationship fitted as given by the formula, which sets of basis functions are used, and the ranks.`
+#' Print out details such as the function call, assumed family/response distribution, number of observational units and species, response-environment relationship fitted as given by the formula, and which sets of basis functions are used.`
 #'
 #' For a hurdle CBFM, details are provided for both of the component CBFMs separately. 
 #' 
@@ -45,14 +45,20 @@ print.CBFM <- function(x, ...) {
         message("Total number of basis functions: ", x$num_B)
      
         if(sum(x$which_custom_Sigma_used) > 0)
-                message("One or more custom basis function covariance matrices Sigma supplied...")
+                message("One or more custom basis function covariance matrices Sigma supplied.")
         
-        if(x$which_B_used[1]) 
-                message("Spatial component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[1], NA, ncol(x$Loading_Sigma_space))) 
-        if(x$which_B_used[2])
-                message("Temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[2], NA, ncol(x$Loading_Sigma_time))) 
-        if(x$which_B_used[3])
-                message("Spatio-temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[3], NA, ncol(x$Loading_Sigma_spacetime))) 
+        if(sum(x$which_custom_G_used) > 0)
+                message("One or more custom between species correlation matrices G supplied.")
+
+        # if(x$which_B_used[1]) 
+        #         message("Spatial component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_space), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[1], NA, ncol(x$Loading_Sigma_space))) 
+        # if(x$which_B_used[2])
+        #         message("Temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_time), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[2], NA, ncol(x$Loading_Sigma_time))) 
+        # if(x$which_B_used[3])
+        #         message("Spatio-temporal component:", "\n\tRank of baseline between-response correlation matrix, G: ", ncol(x$Loading_G_spacetime), "\n\tRank of basis function covariance matrix, Sigma: ", ifelse(x$which_custom_Sigma_used[3], NA, ncol(x$Loading_Sigma_spacetime))) 
+        
+        if(any(x$which_nonzeromean_B > 0))
+                message("\nOne or more of the normal distributions for the basis effect coefficients had non-zero mean vectors.")
           
         invisible(x)
         }
