@@ -340,24 +340,29 @@
 #' 3. Not all (in fact, not many) of the smoothing available that are available in [mgcv::gam.models()] have been fully tested out, so please be aware that some make not work well, if at all! 
 #' 
 #' 4. As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. 
+#' 
+#' 5. The returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be *very* large data frames!
+#' 
 # #' Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; **estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.**
 #'
 #'
 #' @details # CBFM isn't working for my data?!
-#' Once you have finished grumbling about the package and its developer, please brew some tea and turn off your phone...debugging takes a while!
+#' Once you have finished grumbling about the package and its developer, please brew some tea and make yourself comfy...debugging takes a while!
 #' 
 #' As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
 #' 
 #' * Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
 #' 
-#' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a good way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
+#' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 #' ```
 #' manygam <- foreach::foreach(j = 1:num_spp) %dopar%
 #'     gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
 #' start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
 #' ```
 #' 
-#' If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on [CBFM Github page](https://github.com/fhui28/CBFM) *if* you think there is a genuine bug in the package. Otherwise, you can email the authors of this package on potential general statistical modeling questions, although we may not be able to get to them soon let along have the time to get to them at all (we are paid to be statistical consultants...apologies in advance!). Please do not post general statistical modeling issues on Github issues, as they will likely be ignored or deleted without prior consent.    
+#' * Analogously, the argument \code{control$subsequent_betas_dampen} can be used to dampen the values obtained for the species-specific regression coefficients during subsequent running of the PQL estimation algorithm. Basically, it is an *ad-hoc* solution to when updates potentially fail due to e.g., overfitting causing coefficients to become extremely large in magnitude.  
+#' 
+#' * If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on [CBFM Github page](https://github.com/fhui28/CBFM) *if* you think there is a genuine bug in the package. Otherwise, you can email the authors of this package on potential general statistical modeling questions, although we may not be able to get to them soon let along have the time to get to them at all (we are paid to be statistical consultants...apologies in advance!). Please do not post general statistical modeling issues on Github issues, as they will likely be ignored or deleted without prior consent.    
 #'  
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
