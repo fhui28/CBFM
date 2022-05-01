@@ -31,13 +31,14 @@ library(tidyverse)
 ## **Example 0: Fitting a CBFM to data from a spatial CBFM
 ## Estimate betas and basis functions alright, but as expected (although it's worse than I thought) estimation of G and Sigma is pretty poor. It maybe something to do with estimating the scale issue when they are estimated separately
 ##------------------------------
-set.seed(2021)
-num_sites <- 500 # 500 (units) sites
-num_spp <- 20 # Number of species
+set.seed(2022)
+num_sites <- 500 # 500 (units) sites 
+num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
-
+ 
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- runif(num_spp, -2, 0)
+spp_gear <- rnorm(num_spp, mean = 1.5, sd = 0.2)
 
 # Simulate spatial coordinates and environmental covariate components
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
@@ -46,7 +47,7 @@ colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
 useformula <- ~ temp + depth + chla + O2
 
-# Set up spatial basis functions for CBFM
+# Set up spatial basis functions for CBFM 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>%
 as.matrix %>%
@@ -66,6 +67,14 @@ fitcbfm_sp <- CBFM(y = simy$y, formula_X = ~ temp + depth + chla + O2, data = da
                    family = binomial(), control = list(trace = 1),
                    G_control = list(rank = 5), Sigma_control = list(rank = 5, custom_space = true_Sigma_space))
 
+# Fit CBFM
+useformula <- ~ temp + depth + chla + O2
+fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat,
+B_space = basisfunctions, B_time = X_year, 
+family = binomial(), control = list(trace = 1),
+Sigma_control = list(rank = c(5,1)),
+G_control = list(rank = c(5,5))
+)
 
 library(ggmatplot)
 ggmatplot(spp_slopes, fitcbfm_sp$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
@@ -287,9 +296,6 @@ k_check_control = list(subsample = 5000, n.rep = 400)
 
 
 
-
-
-
 Ginv = new_LoadingnuggetG_space$covinv
 basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol
 Sigmainv = new_LoadingnuggetSigma_space$covinv
@@ -300,4 +306,13 @@ dispparam = new_fit_CBFM_ptest$dispparam
 powerparam = new_fit_CBFM_ptest$powerparam
 zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept
 return_correlation = TRUE
+
+library(ggmatplot)
+ggmatplot(spp_slopes, fitcbfm$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
+qplot(spp_intercepts, fitcbfm$betas[,1]) + geom_abline(intercept = 0, slope = 1)
+qplot(spp_gear, fitcbfm$basis_effects_mat[,25]) + geom_abline(intercept = 0, slope = 1)
+fitcbfm$basis_effects_mat[,25] %>% summary
+fitcbfm$basis_effects_mat[,25] %>% sd
+fitcbfm$G_time
+fitcbfm$Sigma_time
 
