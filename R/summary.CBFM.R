@@ -57,6 +57,7 @@
 #' }
 #'
 #' @export
+#' @method summary CBFM
 #' @importFrom foreach foreach %dopar%
 #' @importFrom stats pchisq pf qnorm pnorm plogis
 #' @importFrom mgcv model.matrix.gam

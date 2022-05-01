@@ -24,6 +24,7 @@
 #' }
 #' 
 #' @aliases print.CBFM print.CBFM_hurdle
+#' @method print CBFM 
 #' @export
 #' @md
 
@@ -65,6 +66,7 @@ print.CBFM <- function(x, ...) {
 
 
 #' @rdname print.CBFM
+#' @method print CBFM_hurdle
 #' @export
 print.CBFM_hurdle <- function(x, ...) {
      message("A hurdle count CBFM with the following two components:")

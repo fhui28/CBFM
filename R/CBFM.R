@@ -231,7 +231,7 @@
 
 #' \item{\code{B_spacetime}: }{A general starting point for constructing spatio-temporal basis functions is to make use of a tensor-product form (analogous to [mgcv::te()]). That is, after constructing a set of spatial and a set of temporal basis functions, we can use the [tensorproduct()] function to construct the tensor-product and include them \code{B_spacetime}. 
 #' 
-#' It is recommended that both "ingredient" basis functions used in the tensor-product are sparse in design to facilitate computation e.g., as implemented in [FRK::auto_basis()]; see the [FRK::FRK-package()] package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same "ingredient" basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to model different resolutions/scales of the spatio-temporal correlation.} 
+#' It is recommended that both "ingredient" basis functions used in the tensor-product are sparse in design to facilitate computation e.g., as implemented in [FRK::auto_basis()]; see the \code{FRK} package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same "ingredient" basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to model different resolutions/scales of the spatio-temporal correlation.} 
 #' }
 #' 
 #' 
@@ -506,6 +506,16 @@
 #' summary(fitcbfm) %>% 
 #' str
 #' 
+#' # Example of plotting parametric model terms
+#' fitcbfm$all_parametric_effects$response <- fitcbfm$all_parametric_effects$response %>%
+#' fct_inorder
+#' ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = response)) +
+#' geom_line() +
+#' facet_wrap(. ~ term, nrow = 2) +
+#' labs(x = "Covariate", y = "Effect") +
+#' theme_bw() +
+#' theme(legend.position = "bottom")
+#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -593,6 +603,21 @@
 #' 
 #' summary(fitcbfm_gam) %>% 
 #' str
+#' 
+#' # Example of plotting smooth model terms
+#' fitcbfm_gam$all_smooth_estimates$response <- fitcbfm_gam$all_smooth_estimates$response %>%
+#' fct_inorder
+#' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(temp)"), 
+#' aes(x = temp, y = est, color = response)) +
+#' geom_line(show.legend = FALSE) +
+#' labs(x = "temp", y = "Effect") +
+#' theme_bw()
+#' 
+#' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
+#' aes(x = depth, y = est, color = response)) +
+#' geom_line(show.legend = FALSE) +
+#' labs(x = "depth", y = "Effect") +
+#' theme_bw()
 #' 
 #' 
 #' # Calculate predictions onto test dataset
@@ -2810,7 +2835,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      all_parametric_effects <- NULL
      if(length(attr(all_update_coefs[[1]]$fit$pterms, "term.labels")) > 0) {
           suppressMessages(all_parametric_effects <- lapply(1:num_spp, function(x) { 
-               out <- gratia::parametric_effects(all_update_coefs[[x]]$fit)
+               out <- parametric_effects(all_update_coefs[[x]]$fit)
                out$se <- NULL
                out$response <- colnames(y)[x]
                return(as.data.frame(out))
@@ -2821,7 +2846,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      all_smooth_estimates <- NULL
      if(length(all_update_coefs[[1]]$fit$smooth) > 0) {
           suppressMessages(all_smooth_estimates <- lapply(1:num_spp, function(x) { 
-               out <- gratia::smooth_estimates(all_update_coefs[[x]]$fit)
+               out <- smooth_estimates(all_update_coefs[[x]]$fit)
                out$se <- NULL
                out$response <- colnames(y)[x]
                return(as.data.frame(out))

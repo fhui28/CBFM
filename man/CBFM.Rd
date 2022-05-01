@@ -156,6 +156,9 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula_X}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
 \item{k_check: }{A list resulting from the application of \code{\link[mgcv:k.check]{mgcv::k.check()}}, used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
 \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+\item{all_smooth_estimates: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+\item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is basically constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species, noting no corresponding uncertainty intervals associated with the terms are returne. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+\item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is basically constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species, noting no corresponding uncertainty intervals associated with the terms are returne. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
 \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -286,7 +289,7 @@ Another option for spatial basis functions is to use \code{\link[FRK:auto_basis]
 \item{\code{B_time}: }{Both of the approaches mentioned above for \code{B_space} can also be applied here, although with temporal basis functions we have generally found the approach implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}} to work satisfactorily in many cases, given their customizability and sparsity (local support). The resolution-adaptive thin-plate spline basis functions approach, when applied solely in the 1-D temporal dimension, can produce long-term temporal trends that may be undesirable.}
 \item{\code{B_spacetime}: }{A general starting point for constructing spatio-temporal basis functions is to make use of a tensor-product form (analogous to \code{\link[mgcv:te]{mgcv::te()}}). That is, after constructing a set of spatial and a set of temporal basis functions, we can use the \code{\link[=tensorproduct]{tensorproduct()}} function to construct the tensor-product and include them \code{B_spacetime}.
 
-It is recommended that both "ingredient" basis functions used in the tensor-product are sparse in design to facilitate computation e.g., as implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}}; see the \code{\link[FRK:FRK-package]{FRK::FRK-package()}} package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same "ingredient" basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to model different resolutions/scales of the spatio-temporal correlation.}
+It is recommended that both "ingredient" basis functions used in the tensor-product are sparse in design to facilitate computation e.g., as implemented in \code{\link[FRK:auto_basis]{FRK::auto_basis()}}; see the \code{FRK} package as well as Wilke et al. (2019) for some examples. Also, we recommend you do not use these same "ingredient" basis functions in the \code{B_space} and \code{B_time} arguments, as this may lead to overfitting. Put another way, and as hinted at previously, if \code{B_spacetime} is supplied at the same time as either \code{B_space} and/or \code{B_time} is supplied, then they should generally be constructed to model different resolutions/scales of the spatio-temporal correlation.}
 }
 }
 
@@ -307,22 +310,25 @@ Also, the current estimation approach \strong{does not provide uncertainty quant
 \item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
 \item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well, if at all!
 \item As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}.
+\item The returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be \emph{very} large data frames!
 }
 }
 
 \section{CBFM isn't working for my data?!}{
-Once you have finished grumbling about the package and its developer, please brew some tea and turn off your phone...debugging takes a while!
+Once you have finished grumbling about the package and its developer, please brew some tea and make yourself comfy...debugging takes a while!
 
 As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
 \itemize{
 \item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
-\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a good way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
+\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 }\preformatted{manygam <- foreach::foreach(j = 1:num_spp) \%dopar\%
     gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
 start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
 }
-
-If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on \href{https://github.com/fhui28/CBFM}{CBFM Github page} \emph{if} you think there is a genuine bug in the package. Otherwise, you can email the authors of this package on potential general statistical modeling questions, although we may not be able to get to them soon let along have the time to get to them at all (we are paid to be statistical consultants...apologies in advance!). Please do not post general statistical modeling issues on Github issues, as they will likely be ignored or deleted without prior consent.
+\itemize{
+\item Analogously, the argument \code{control$subsequent_betas_dampen} can be used to dampen the values obtained for the species-specific regression coefficients during subsequent running of the PQL estimation algorithm. Basically, it is an \emph{ad-hoc} solution to when updates potentially fail due to e.g., overfitting causing coefficients to become extremely large in magnitude.
+\item If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on \href{https://github.com/fhui28/CBFM}{CBFM Github page} \emph{if} you think there is a genuine bug in the package. Otherwise, you can email the authors of this package on potential general statistical modeling questions, although we may not be able to get to them soon let along have the time to get to them at all (we are paid to be statistical consultants...apologies in advance!). Please do not post general statistical modeling issues on Github issues, as they will likely be ignored or deleted without prior consent.
+}
 }
 
 \examples{
@@ -411,6 +417,16 @@ toc - tic
 summary(fitcbfm) \%>\% 
 str
 
+# Example of plotting parametric model terms
+fitcbfm$all_parametric_effects$response <- fitcbfm$all_parametric_effects$response \%>\%
+fct_inorder
+ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = response)) +
+geom_line() +
+facet_wrap(. ~ term, nrow = 2) +
+labs(x = "Covariate", y = "Effect") +
+theme_bw() +
+theme(legend.position = "bottom")
+
 
 # Calculate predictions onto test dataset
 predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -498,6 +514,21 @@ toc-tic
 
 summary(fitcbfm_gam) \%>\% 
 str
+
+# Example of plotting smooth model terms
+fitcbfm_gam$all_smooth_estimates$response <- fitcbfm_gam$all_smooth_estimates$response \%>\%
+fct_inorder
+ggplot(fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(temp)"), 
+aes(x = temp, y = est, color = response)) +
+geom_line(show.legend = FALSE) +
+labs(x = "temp", y = "Effect") +
+theme_bw()
+
+ggplot(fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(depth)"), 
+aes(x = depth, y = est, color = response)) +
+geom_line(show.legend = FALSE) +
+labs(x = "depth", y = "Effect") +
+theme_bw()
 
 
 # Calculate predictions onto test dataset
