@@ -80,6 +80,10 @@
 ## This function is used specifically when an additive form of the CBFM is used, for use in the construction of the Bayesian posterior covariance matrix for standard errors.
 ## For example, given G_space, Sigma_space, G_time, Sigma_time, it forms for covariance matrix for vector of the random slopes (a_{space,1},a_{time,1}, a_{space,2},a_{time,2},...a_{space,m},a_{time,m}). 
 .kkproduct <- function(G1, G2, G3 = NULL, Sigma1, Sigma2, Sigma3 = NULL, inverse = TRUE) {
+     G1 <- as.matrix(G1)     
+     G2 <- as.matrix(G2)               
+     Sigma1 <- as.matrix(Sigma1)     
+     Sigma2 <- as.matrix(Sigma2)     
      num_spp <- nrow(G1)
      num_basisfns_Sigma1 <- nrow(Sigma1)
      num_basisfns_Sigma2 <- nrow(Sigma2)
@@ -97,10 +101,12 @@
           }
           
      if(!is.null(G3)) {     
+          G3 <- as.matrix(G3)     
+          Sigma3 <- as.matrix(Sigma3)     
           num_basisfns_Sigma3 <- nrow(Sigma3)
           num_basisfns <- num_basisfns_Sigma1+num_basisfns_Sigma2+num_basisfns_Sigma3
           
-          out <- matrix(0, nrow = num_spp*num_basisfns, ncol = num_spp*num_basisfns)
+          out <- Matrix::Matrix(0, nrow = num_spp*num_basisfns, ncol = num_spp*num_basisfns, sparse = TRUE)
           for(j in 1:num_spp) { for(k in 1:j) {
                sel_rows <- num_basisfns*j - num_basisfns + 1:num_basisfns
                sel_cols <- num_basisfns*k - num_basisfns + 1:num_basisfns
