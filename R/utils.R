@@ -108,7 +108,6 @@
           
           out <- matrix(0, nrow = num_spp*num_basisfns, ncol = num_spp*num_basisfns) # Do not use sparse matrices here as it is much slower making a sparse-matrix non-sparse!
           for(j in 1:num_spp) { for(k in 1:j) {
-               message("working on combination ", j, k)
                sel_rows <- num_basisfns*j - num_basisfns + 1:num_basisfns
                sel_cols <- num_basisfns*k - num_basisfns + 1:num_basisfns
                
