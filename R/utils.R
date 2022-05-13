@@ -106,12 +106,13 @@
           num_basisfns_Sigma3 <- nrow(Sigma3)
           num_basisfns <- num_basisfns_Sigma1+num_basisfns_Sigma2+num_basisfns_Sigma3
           
-          out <- Matrix::Matrix(0, nrow = num_spp*num_basisfns, ncol = num_spp*num_basisfns, sparse = TRUE)
+          out <- matrix(0, nrow = num_spp*num_basisfns, ncol = num_spp*num_basisfns) # Do not use sparse matrices here as it is much slower making a sparse-matrix non-sparse!
           for(j in 1:num_spp) { for(k in 1:j) {
+               message("working on combination ", j, k)
                sel_rows <- num_basisfns*j - num_basisfns + 1:num_basisfns
                sel_cols <- num_basisfns*k - num_basisfns + 1:num_basisfns
                
-               out[sel_rows, sel_cols] <- bdiag(G1[j,k]*Sigma1, G2[j,k]*Sigma2, G3[j,k]*Sigma3)
+               out[sel_rows, sel_cols] <- as.matrix(bdiag(G1[j,k]*Sigma1, G2[j,k]*Sigma2, G3[j,k]*Sigma3))
                } }                    
           
           out <- 0.5*(out + t(out))
