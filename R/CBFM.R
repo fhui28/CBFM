@@ -2901,7 +2901,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$B <- B
      out_CBFM$which_B_used <- which_B_used
      out_CBFM$which_custom_Sigma_used <- Sigma_control$which_custom_Sigma_used
-     out_CBFM$which_custom_G_used <- Sigma_control$which_custom_G_used
+     out_CBFM$which_custom_G_used <- G_control$which_custom_G_used
      out_CBFM$which_nonzeromean_B <- which_nonzeromean_B
      out_CBFM$num_B_space <- num_spacebasisfns
      out_CBFM$num_B_time <- num_timebasisfns
