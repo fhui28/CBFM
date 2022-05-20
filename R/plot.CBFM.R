@@ -209,8 +209,12 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
                         all_ris <- matrix(rnorm(sum(!is.na(qq.x$x)) * envelope_rep, mean = int, sd = slope), ncol = envelope_rep)
                         Ym <- apply(all_ris, 2, sort)
                         rm(all_ris)
-                        #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
-                        cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
+                        cis <- apply(Ym, 1, function(x) { 
+                             out <- try(tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)), silent = TRUE)
+                             if(inherits(out, "try-error"))
+                                  out <- quantile(x, probs = c(0.025, 0.975))
+                             return(out)
+                        })
                         rm(Ym)
                         Xm <- sort(qq.x$x)
 
@@ -348,8 +352,12 @@ plot.CBFM_hurdle <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c
                         all_ris <- matrix(rnorm(sum(!is.na(qq.x$x)) * envelope_rep, mean = int, sd = slope), ncol = envelope_rep)
                         Ym <- apply(all_ris, 2, sort)
                         rm(all_ris)
-                        #cis <- apply(Ym, 1, quantile, probs = c(0.025, 0.975))
-                        cis <- apply(Ym, 1, function(x) { tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)) })
+                        cis <- apply(Ym, 1, function(x) { 
+                             out <- try(tquantile(tdigest(x, 1000), probs = c(0.025, 0.975)), silent = TRUE)
+                             if(inherits(out, "try-error"))
+                                  out <- quantile(x, probs = c(0.025, 0.975))
+                             return(out)
+                             })
                         rm(Ym)
                         Xm <- sort(qq.x$x)
 
