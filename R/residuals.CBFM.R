@@ -101,6 +101,7 @@
 #' @aliases residuals.CBFM residuals.CBFM_hurdle
 #' @export
 #' 
+#' @importFrom gamlss.dist NBI
 #' @importFrom gamlss.tr trun.p
 #' @importFrom stats runif qnorm pbeta pbinom pgamma plogis pnorm ppois pnbinom
 #' @importFrom tweedie ptweedie 
