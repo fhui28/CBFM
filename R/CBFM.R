@@ -5,7 +5,7 @@
 #' 
 #' Fits CBFMs to spatio-temporal multivariate abundance data, where the basis functions are used to account for spatio-temporal correlation within and between-species. Three types of basis functions can supplied and included in conjunction with each other: 1) spatial basis functions; 2) temporal basis functions; 3) spatio-temporal basis functions. For the part of the mean model corresponding to the measured covariates, CBFM currently permits both parametric terms and/or smoothing terms, where the latter makes use are included in a similar manner to [mgcv::gam()]. Estimation and inference for CBFM is based on a maximum penalized quasi-likelihood (PQL) estimation approach.
 #'
-#' @param y A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to the species.
+#' @param y A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to a species.
 #' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see [mgcv::formula.gam()], [mgcv::gam.models()], [mgcv::smooth.terms()], and [mgcv::s()] for more details. 
 #' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument). 
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
@@ -268,15 +268,23 @@
 
 #' \item{converged: }{Indicates whether or not the PQL estimation algorithm converged. Note results may still be outputted (and sensible?!) even if this is \code{FALSE}.}
 
-#' \item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
+#' \item{logLik: }{The value of the log-likelihood (excluding the quadratic penalty term in the PQL) for the fitted model.}
 
-#' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
+#' \item{logLik_perspecies: }{The value of each species' contribution to the log-likelihood (excluding the quadratic penalty term in the PQL) for the fitted model.}
 
 #' \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does *not* include the quadratic term of the PQL.}
 
+#' \item{deviance_perspecies: }{The value of each species' contribution to the deviance of the fitted model. Note the deviance calculation here does *not* include the quadratic term of the PQL.}
+
 #' \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does *not* include the quadratic term of the PQL}
 
-#' \item{deviance_explained: }{The *percentage* of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM.}
+#' \item{null_deviance_perspecies: }{The value of each species' contribution to the null deviance. Note the deviance calculation here does *not* include the quadratic term of the PQL}
+
+#' \item{deviance_explained: }{The *percentage* of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM. This is constructed by examining \code{deviance} to \code{null_deviance}.}
+
+#' \item{deviance_explained_perspecies: }{The *percentage* of null deviance explained by the model, on a per-species basis. This is constructed by examining \code{deviance_perspecies} to \code{null_deviance_perspecies}.}
+
+#' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
 
 #' \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula_X}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
 
@@ -2807,6 +2815,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     }
                }
           new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
+          new_fit_CBFM_ptest$logLik_perspp <- sapply(all_update_coefs, function(x) x$logLik)         
           
           inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
           cw_inner_logL <- new_fit_CBFM_ptest$logLik
@@ -2859,10 +2868,12 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      
      # Calculate deviance, null deviance etc...note deviance calculation **excludes** the quadratic term in the PQL
      nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = ~ 1)
+     nulldeviance_perspp <- sapply(nulldeviance, function(x) -2*x$logLik)
      nulldeviance <- sum(sapply(nulldeviance, function(x) -2*x$logLik))
      rm(initfit_fn)
      
      new_logLik <- new_fit_CBFM_ptest$logLik
+     new_logLik_perspp <- new_fit_CBFM_ptest$logLik_perspp
      if(which_B_used[1]) {
           centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
           if(control$nonzeromean_B_space)
@@ -2909,10 +2920,14 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$num_B <- num_basisfns
      out_CBFM$converged <- converged
      out_CBFM$logLik <- new_logLik
-     out_CBFM$pql_logLik <- new_logLik_pql
+     out_CBFM$logLik_perspecies <- new_logLik_perspp
      out_CBFM$deviance <- -2*out_CBFM$logLik
+     out_CBFM$deviance_perspecies <- -2*out_CBFM$logLik_perspecies
      out_CBFM$null_deviance <- nulldeviance
+     out_CBFM$null_deviance_perspecies <- nulldeviance_perspp
      out_CBFM$deviance_explained <- 100*(out_CBFM$null_deviance - out_CBFM$deviance)/out_CBFM$null_deviance
+     out_CBFM$deviance_explained_perspecies <- 100*(out_CBFM$null_deviance_perspecies - out_CBFM$deviance_perspecies)/out_CBFM$null_deviance_perspecies
+     out_CBFM$pql_logLik <- new_logLik_pql
      out_CBFM$edf <- matrix(new_fit_CBFM_ptest$edf, ncol = num_spp)
      out_CBFM$edf1 <- matrix(new_fit_CBFM_ptest$edf1, ncol = num_spp)
      out_CBFM$pen_edf <- new_fit_CBFM_ptest$pen_edf

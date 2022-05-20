@@ -36,7 +36,7 @@ CBFM(
 )
 }
 \arguments{
-\item{y}{A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to the species.}
+\item{y}{A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to a species.}
 
 \item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}, \code{\link[mgcv:gam.models]{mgcv::gam.models()}}, \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}, and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
 
@@ -147,11 +147,15 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{num_B_spacetime: }{The number of spatio-temporal basis functions supplied i.e., \code{ncol(B_spacetime)}.}
 \item{num_B: }{The total number of basis functions supplied i.e., \code{ncol(cbind(B_space, B_time, B_spacetime))}.}
 \item{converged: }{Indicates whether or not the PQL estimation algorithm converged. Note results may still be outputted (and sensible?!) even if this is \code{FALSE}.}
-\item{logLik: }{The value of the likelihood (excluding the quadratic penalty term in the PQL) upon convergence.}
-\item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
+\item{logLik: }{The value of the log-likelihood (excluding the quadratic penalty term in the PQL) for the fitted model.}
+\item{logLik_perspecies: }{The value of each species' contribution to the log-likelihood (excluding the quadratic penalty term in the PQL) for the fitted model.}
 \item{deviance: }{The deviance for the fitted model. Note the deviance calculation here does \emph{not} include the quadratic term of the PQL.}
+\item{deviance_perspecies: }{The value of each species' contribution to the deviance of the fitted model. Note the deviance calculation here does \emph{not} include the quadratic term of the PQL.}
 \item{null_deviance: }{The null deviance i.e., deviance of a stacked model (GLM) where each species model contains only an intercept. Note the deviance calculation here does \emph{not} include the quadratic term of the PQL}
-\item{deviance_explained: }{The \emph{percentage} of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see \code{\link[=varpart]{varpart()}} for more capacity to perform variance partitioning in a CBFM.}
+\item{null_deviance_perspecies: }{The value of each species' contribution to the null deviance. Note the deviance calculation here does \emph{not} include the quadratic term of the PQL}
+\item{deviance_explained: }{The \emph{percentage} of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see \code{\link[=varpart]{varpart()}} for more capacity to perform variance partitioning in a CBFM. This is constructed by examining \code{deviance} to \code{null_deviance}.}
+\item{deviance_explained_perspecies: }{The \emph{percentage} of null deviance explained by the model, on a per-species basis. This is constructed by examining \code{deviance_perspecies} to \code{null_deviance_perspecies}.}
+\item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
 \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula_X}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate. }
 \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula_X}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
 \item{k_check: }{A list resulting from the application of \code{\link[mgcv:k.check]{mgcv::k.check()}}, used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
