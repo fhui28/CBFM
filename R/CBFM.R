@@ -3214,6 +3214,10 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           } 
  
  
+     
+     ##-------------------------
+     ## Final touches...
+     ##-------------------------
      if(!(family$family[1] %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","zinegative.binomial","ztnegative.binomial")))
           out_CBFM$dispparam <- NULL
      if(!(family$family %in% c("tweedie")))                        
