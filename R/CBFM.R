@@ -187,7 +187,7 @@
 #'
 #' ## Distributions
 #' 
-#' Te following response distributions are permitted: 
+#' The following response distributions are permitted: 
 #' \describe{
 #' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
@@ -515,9 +515,9 @@
 #' str
 #' 
 #' # Example of plotting parametric model terms
-#' fitcbfm$all_parametric_effects$response <- fitcbfm$all_parametric_effects$response %>%
+#' fitcbfm$all_parametric_effects$species <- fitcbfm$all_parametric_effects$species %>%
 #' fct_inorder
-#' ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = response)) +
+#' ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = species)) +
 #' geom_line() +
 #' facet_wrap(. ~ term, nrow = 2) +
 #' labs(x = "Covariate", y = "Effect") +
@@ -613,16 +613,16 @@
 #' str
 #' 
 #' # Example of plotting smooth model terms
-#' fitcbfm_gam$all_smooth_estimates$response <- fitcbfm_gam$all_smooth_estimates$response %>%
+#' fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species %>%
 #' fct_inorder
 #' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(temp)"), 
-#' aes(x = temp, y = est, color = response)) +
+#' aes(x = temp, y = est, color = species)) +
 #' geom_line(show.legend = FALSE) +
 #' labs(x = "temp", y = "Effect") +
 #' theme_bw()
 #' 
 #' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
-#' aes(x = depth, y = est, color = response)) +
+#' aes(x = depth, y = est, color = species)) +
 #' geom_line(show.legend = FALSE) +
 #' labs(x = "depth", y = "Effect") +
 #' theme_bw()
@@ -1858,7 +1858,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(!is.matrix(y))
           stop("y should be a matrix.")
      if(is.null(colnames(y)))
-          colnames(y) <- paste0("response", 1:ncol(y))
+          colnames(y) <- paste0("species", 1:ncol(y))
      if(is.null(rownames(y)))
           rownames(y) <- paste0("units", 1:nrow(y))
           
@@ -2846,7 +2846,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           suppressMessages(all_parametric_effects <- lapply(1:num_spp, function(x) { 
                out <- parametric_effects(all_update_coefs[[x]]$fit)
                out$se <- NULL
-               out$response <- colnames(y)[x]
+               out$species <- colnames(y)[x]
                return(as.data.frame(out))
                }))
           all_parametric_effects <- do.call(rbind, all_parametric_effects)
@@ -2857,7 +2857,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           suppressMessages(all_smooth_estimates <- lapply(1:num_spp, function(x) { 
                out <- smooth_estimates(all_update_coefs[[x]]$fit)
                out$se <- NULL
-               out$response <- colnames(y)[x]
+               out$species <- colnames(y)[x]
                return(as.data.frame(out))
           }))
           all_smooth_estimates <- do.call(rbind, all_smooth_estimates)
