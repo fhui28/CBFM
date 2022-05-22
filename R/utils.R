@@ -4,7 +4,41 @@
      return(-0.5*sum(diag(out)))
      }
           
+
+## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
+.calc_parametric_effects <- function(j) {
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = y[,j], data), fit = TRUE, control = list(maxit = 1))
      
+     if(length(attr(nullfit$pterms, "term.labels")) == 0) 
+          return(NULL)
+     if(length(attr(nullfit$pterms, "term.labels")) > 0) {
+          nullfit$coefficients <- out_CBFM$betas[j,]
+          nullfit$Vp <- as.matrix(out_CBFM$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
+          out <- parametric_effects(nullfit)
+          out$species <- colnames(y)[j]
+          return(as.data.frame(out))
+          }
+     }
+
+
+## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
+.calc_smooth_estimates <- function(j) {
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = y[,j], data), fit = TRUE, control = list(maxit = 1))
+     
+     if(length(nullfit$smooth) == 0) 
+          return(NULL)
+     if(length(nullfit$smooth) > 0) {
+          nullfit$coefficients <- out_CBFM$betas[j,]
+          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(out_CBFM$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
+          out <- smooth_estimates(nullfit)
+          out$species <- colnames(y)[j]
+          return(as.data.frame(out))
+          }
+     }
+
+
 ## Two functions used to extract relevant principle submatrices of the Bayesian posterior covariance matrix from the CBFM fit. 
 ## This was initially done to save memory and because only certain components of the matrices are needed later on, but has since been abandoned since some predictions need to simulate from the whole kitchen sink!
 .extractcovarblocks_topright <- function(j, Q, num_X, num_basisfns) { 
