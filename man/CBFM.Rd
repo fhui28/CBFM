@@ -160,9 +160,6 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula_X}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
 \item{k_check: }{A list resulting from the application of \code{\link[mgcv:k.check]{mgcv::k.check()}}, used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
 \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
-\item{all_smooth_estimates: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
-\item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is basically constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species, noting no corresponding uncertainty intervals associated with the terms are returne. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
-\item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is basically constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species, noting no corresponding uncertainty intervals associated with the terms are returne. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
 \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -188,6 +185,11 @@ Similarly, for zero-truncated count distributions, while the mean of the base co
 }
 
 Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
+
+\item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+
+\item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+
 \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of \code{\link[base:proc.time]{base::proc.time()}}.}
 }
 \description{
@@ -260,7 +262,7 @@ Why would you wish to supply a custom \eqn{G}? This is TBA =P
 
 \subsection{Distributions}{
 
-Te following response distributions are permitted:
+The following response distributions are permitted:
 \describe{
 \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{binomial(link = "logit")}: }{Binomial distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)}, where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
@@ -422,9 +424,9 @@ summary(fitcbfm) \%>\%
 str
 
 # Example of plotting parametric model terms
-fitcbfm$all_parametric_effects$response <- fitcbfm$all_parametric_effects$response \%>\%
+fitcbfm$all_parametric_effects$species <- fitcbfm$all_parametric_effects$species \%>\%
 fct_inorder
-ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = response)) +
+ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = species)) +
 geom_line() +
 facet_wrap(. ~ term, nrow = 2) +
 labs(x = "Covariate", y = "Effect") +
@@ -510,7 +512,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 tic <- proc.time()
-useformula <- ~ s(temp) + s(depth) + s(chla) + s(O2)
+useformula <- ~ temp + s(depth) + chla + s(O2)
 fitcbfm_gam <- CBFM(y = simy_train, formula_X = useformula, 
 data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
@@ -520,16 +522,16 @@ summary(fitcbfm_gam) \%>\%
 str
 
 # Example of plotting smooth model terms
-fitcbfm_gam$all_smooth_estimates$response <- fitcbfm_gam$all_smooth_estimates$response \%>\%
+fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species \%>\%
 fct_inorder
 ggplot(fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(temp)"), 
-aes(x = temp, y = est, color = response)) +
+aes(x = temp, y = est, color = species)) +
 geom_line(show.legend = FALSE) +
 labs(x = "temp", y = "Effect") +
 theme_bw()
 
 ggplot(fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(depth)"), 
-aes(x = depth, y = est, color = response)) +
+aes(x = depth, y = est, color = species)) +
 geom_line(show.legend = FALSE) +
 labs(x = "depth", y = "Effect") +
 theme_bw()

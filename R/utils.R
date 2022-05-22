@@ -6,34 +6,36 @@
           
 
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
-.calc_parametric_effects <- function(j) {
-     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = y[,j], data), fit = TRUE, control = list(maxit = 1))
+.calc_parametric_effects <- function(j, object) {
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+     num_X <- ncol(model.matrix(nullfit))
      
      if(length(attr(nullfit$pterms, "term.labels")) == 0) 
           return(NULL)
      if(length(attr(nullfit$pterms, "term.labels")) > 0) {
-          nullfit$coefficients <- out_CBFM$betas[j,]
-          nullfit$Vp <- as.matrix(out_CBFM$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
+          nullfit$coefficients <- object$betas[j,]
+          nullfit$Vp <- as.matrix(object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
           out <- parametric_effects(nullfit)
-          out$species <- colnames(y)[j]
+          out$species <- colnames(object$y)[j]
           return(as.data.frame(out))
           }
      }
 
 
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
-.calc_smooth_estimates <- function(j) {
-     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = y[,j], data), fit = TRUE, control = list(maxit = 1))
+.calc_smooth_estimates <- function(j, object) {
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+     num_X <- ncol(model.matrix(nullfit))
      
      if(length(nullfit$smooth) == 0) 
           return(NULL)
      if(length(nullfit$smooth) > 0) {
-          nullfit$coefficients <- out_CBFM$betas[j,]
-          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(out_CBFM$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
+          nullfit$coefficients <- object$betas[j,]
+          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
           out <- smooth_estimates(nullfit)
-          out$species <- colnames(y)[j]
+          out$species <- colnames(object$y)[j]
           return(as.data.frame(out))
           }
      }

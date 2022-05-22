@@ -294,12 +294,6 @@
 
 #' \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see [mgcv::random.effects()] for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
 
-#' \item{all_smooth_estimates: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see [mgcv::random.effects()] for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
-
-#' \item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is basically constructed by applying [gratia::parametric_effects()] for each species, noting no corresponding uncertainty intervals associated with the terms are returne. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
-
-#' \item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is basically constructed by applying [gratia::smooth_estimates()] for each species, noting no corresponding uncertainty intervals associated with the terms are returne. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
-
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
@@ -337,9 +331,14 @@
 #' 3) \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 #' 
 #' Please use the [summary.CBFM()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
+#' 
+#' \item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+#' 
+#' \item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+#'
 #' \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of [base::proc.time()].}
 #' 
-#'
+#' 
 #' @details # Warning
 #' 1. CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. Please do not use them for data that are **not** spatially or temporally indexed. We recommend you fit standard LVMs in those scenarios, such that made available in [gllvm::gllvm()], [boral::boral()], and [Hmsc::sampleMcmc()].
 #' 
@@ -603,7 +602,7 @@
 #' 
 #' # Fit CBFM 
 #' tic <- proc.time()
-#' useformula <- ~ s(temp) + s(depth) + s(chla) + s(O2)
+#' useformula <- ~ temp + s(depth) + chla + s(O2)
 #' fitcbfm_gam <- CBFM(y = simy_train, formula_X = useformula, 
 #' data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
@@ -2840,28 +2839,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           }
           )))
      names(all_vcomp) <- colnames(y)
-     
-     all_parametric_effects <- NULL
-     if(length(attr(all_update_coefs[[1]]$fit$pterms, "term.labels")) > 0) {
-          suppressMessages(all_parametric_effects <- lapply(1:num_spp, function(x) { 
-               out <- parametric_effects(all_update_coefs[[x]]$fit)
-               out$se <- NULL
-               out$species <- colnames(y)[x]
-               return(as.data.frame(out))
-               }))
-          all_parametric_effects <- do.call(rbind, all_parametric_effects)
-          }
-     
-     all_smooth_estimates <- NULL
-     if(length(all_update_coefs[[1]]$fit$smooth) > 0) {
-          suppressMessages(all_smooth_estimates <- lapply(1:num_spp, function(x) { 
-               out <- smooth_estimates(all_update_coefs[[x]]$fit)
-               out$se <- NULL
-               out$species <- colnames(y)[x]
-               return(as.data.frame(out))
-          }))
-          all_smooth_estimates <- do.call(rbind, all_smooth_estimates)
-          }
      rm(all_update_coefs, tidbits_data, inner_err, cw_inner_logL, cw_logLik, cw_params, new_params, diff, counter)
      gc()
      
@@ -2933,8 +2910,6 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$pen_edf <- new_fit_CBFM_ptest$pen_edf
      out_CBFM$k_check <- all_k_check
      out_CBFM$vcomp <- all_vcomp
-     out_CBFM$all_parametric_effects <- all_parametric_effects
-     out_CBFM$all_smooth_estimates <- all_smooth_estimates
      
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
@@ -2945,7 +2920,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$mean_B_time <- new_fit_CBFM_ptest$mean_B_time
      out_CBFM$mean_B_spacetime <- new_fit_CBFM_ptest$mean_B_spacetime
      out_CBFM$linear_predictors <- new_fit_CBFM_ptest$linear_predictors
-     rm(new_fit_CBFM_ptest, getweights, converged, all_k_check, all_smooth_estimates, all_parametric_effects)
+     rm(new_fit_CBFM_ptest, getweights, converged, all_k_check)
 
      # ## Get restricted CBFM estimates of the coefficients (really more for exploration at this point in time)
      #OLSmatrix_transpose <- X %*% solve(crossprod(X))
@@ -3218,6 +3193,14 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      ##-------------------------
      ## Final touches!
      ##-------------------------
+     all_parametric_effects <- foreach(j = 1:num_spp, .combine = rbind) %dopar% .calc_parametric_effects(j = j, object = out_CBFM)
+     out_CBFM$all_parametric_effects <- all_parametric_effects
+
+     all_smooth_estimates <- foreach(j = 1:num_spp, .combine = rbind) %dopar% .calc_smooth_estimates(j = j, object = out_CBFM)
+     out_CBFM$all_smooth_estimates <- all_smooth_estimates
+     rm(all_parametric_effects, all_smooth_estimates)
+     
+     
      if(!(family$family[1] %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","zinegative.binomial","ztnegative.binomial")))
           out_CBFM$dispparam <- NULL
      if(!(family$family %in% c("tweedie")))                        
