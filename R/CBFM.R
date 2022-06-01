@@ -2933,12 +2933,14 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      if(family$family %in% c("zipoisson","zinegative.binomial"))
           out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictors) * matrix(1-plogis(out_CBFM$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)
      if(family$family == "ztpoisson") {
-          out_CBFM$fitted <- exp(out_CBFM$linear_predictors) / (1 - dpois(0, lambda = exp(out_CBFM$linear_predictors)) + 1e-8)
+          out_CBFM$fitted <- exp(out_CBFM$linear_predictors) / (1 - dpois(0, lambda = exp(out_CBFM$linear_predictors)))
+          out_CBFM$fitted[out_CBFM$fitted < 1] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
           out_CBFM$linear_predictors[which(out_CBFM$y == 0)] <- NA
           out_CBFM$fitted[which(out_CBFM$y == 0)] <- NA
           }
      if(family$family == "ztnegative.binomial") {
-          out_CBFM$fitted <- exp(out_CBFM$linear_predictors) / (1 - dnbinom(0, mu = exp(out_CBFM$linear_predictors), size = matrix(1/out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)) + 1e-8)
+          out_CBFM$fitted <- exp(out_CBFM$linear_predictors) / (1 - dnbinom(0, mu = exp(out_CBFM$linear_predictors), size = matrix(1/out_CBFM$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+          out_CBFM$fitted[out_CBFM$fitted < 1] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
           out_CBFM$linear_predictors[which(out_CBFM$y == 0)] <- NA
           out_CBFM$fitted[which(out_CBFM$y == 0)] <- NA
           }

@@ -145,10 +145,14 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
                                 ptpred <- object$family$linkinv(ptpred)
                         if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial"))
                                 ptpred <- object$family$linkinv(ptpred) * matrix(1-plogis(object$zeroinfl_prob_intercept), nrow(new_X), num_spp, byrow = TRUE)
-                        if(object$family$family[1] %in% c("ztpoisson"))
-                                ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
-                        if(object$family$family[1] %in% c("ztnegative.binomial"))
-                                ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow(new_X), num_spp, byrow = TRUE)))
+                        if(object$family$family[1] %in% c("ztpoisson")) {
+                              ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
+                              ptpred[ptpred < 1] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
+                              }
+                        if(object$family$family[1] %in% c("ztnegative.binomial")) {
+                                ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow(new_X), num_spp, byrow = TRUE)))                             
+                                ptpred[ptpred < 1] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
+                              }
                }
           return(ptpred)
           }
