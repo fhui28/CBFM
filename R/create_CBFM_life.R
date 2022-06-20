@@ -7,19 +7,21 @@
 #'
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
 #' @param formula An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details. 
+#' @param ziformula An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.
 #' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument). 
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param offset A matrix of offset terms.  
 #' @param betas A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.
+#' @param zibetas A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species in the resulting simulated dataset.
 #' @param basis_effects_mat A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.   
 #' @param Sigma A list containing the covariance matrix of the species-specific regression coefficients, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{Sigma$Space} must be supplied.
 #' @param G A list containing the baseline between-species correlation matrix, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{G$Space} must be supplied.
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as the simulated response matrix is to be.
 #' @param dispparam A vector of species-specific dispersion parameters, to be used for distributions that require one.  
 #' @param powerparam A vector of species-specific power parameters, to be used for distributions that require one. 
-#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. 
+#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note that \code{ziformula} is supplied, then this argument is ignored.
 #' @param offset A matrix of offset terms.  
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
 #' @param only_y If \code{TRUE}, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if \code{FALSE}, then additional information about is returned.
@@ -57,9 +59,9 @@
 
 #' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
 
-#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation can either be a single, species-specific probability as given in part of \code{zeroinfl_prob}, or can also be modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
 
-#' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+#' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation can either be a single, species-specific probability as given in part of \code{zeroinfl_prob}, or can also be modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
 
 #' \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
 
@@ -142,7 +144,7 @@
 #' ## **Example 2: Generate spatial multivariate count data from a negative binomial distribution**
 #' ##-----------------------------------
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-#' spp_dispersion <- runif(num_spp)
+#' spp_dispersion <- runif(num_spp, 0, 5)
 #' simy <- create_CBFM_life(family = nb2(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 #' dispparam = spp_dispersion, max_resp = 20000, 
@@ -150,7 +152,8 @@
 #' 
 #' 
 #' ##-----------------------------------
-#' ## **Example 3: Generate spatial multivariate count data from a zero-inflated Poisson distribution**
+#' ## **Example 3a: Generate spatial multivariate count data from a zero-inflated**
+#' ## **Poisson distribution with constant species-specific probabilities**
 #' ##-----------------------------------
 #' # Manually supply basis function coefficients 
 #' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
@@ -161,8 +164,22 @@
 #' 
 #' 
 #' ##-----------------------------------
-#' ## **Example 4: Generate spatial multivariate count data from a zero-inflated** 
-#' ## **negative binomial distribution**
+#' ## **Example 3b: Generate spatial multivariate count data from a zero-inflated** 
+#' ## **Poisson distribution with species-specific probabilities that also vary with covariates**
+#' ##-----------------------------------
+#' # Manually supply basis function coefficients 
+#' spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_ziintercepts <- runif(num_spp, -2, 0)
+#' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+#' simy <- create_CBFM_life(family = zipoisson(), formula = useformula, ziformula = useformula, 
+#' data = dat, betas = cbind(spp_intercepts, spp_slopes), 
+#' zibetas = cbind(spp_ziintercepts, spp_zislopes), basis_effects_mat = spp_basis_coefs, 
+#' B_space = basisfunctions)
+#' 
+#' 
+#' ##-----------------------------------
+#' ## **Example 4a: Generate spatial multivariate count data from a zero-inflated** 
+#' ## **negative binomial distribution, with constant species-specific probabilities**
 #' ##-----------------------------------
 #' # Manually supply basis function coefficients 
 #' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
@@ -170,6 +187,21 @@
 #' simy <- create_CBFM_life(family = zinb2(), formula = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 #' B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
+#' 
+#' 
+#' ##-----------------------------------
+#' ## **Example 4b: Generate spatial multivariate count data from a zero-inflated** 
+#' ## **negative binomial distribution, with species-specific probabilities that also** 
+#' ## **vary with covariates**
+#' ##-----------------------------------
+#' # Manually supply basis function coefficients 
+#' spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+#' spp_ziintercepts <- runif(num_spp, -2, 0)
+#' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+#' simy <- create_CBFM_life(family = zinb2(), formula = useformula, ziformula = useformula, 
+#' data = dat, betas = cbind(spp_intercepts, spp_slopes), 
+#' zibetas = cbind(spp_ziintercepts, spp_zislopes), basis_effects_mat = spp_basis_coefs, 
+#' B_space = basisfunctions, dispparam = spp_dispersion)
 #' 
 #' 
 #' ##-----------------------------------
@@ -243,8 +275,8 @@
 #' @importFrom tweedie rtweedie
 #' @md
 
-create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
-     betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
+create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
+     betas, zibetas = NULL, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
      trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
@@ -252,7 +284,22 @@ create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL,
      nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
+     
+     if(!is.null(zeroinfl_prob) & !is.null(ziformula))
+          warning("Since ziformula has been supplied, then the values supplied to zeroinf_prob will be ignored.")
+     
+     if(!is.null(ziformula)) {
+          if(is.null(zibetas))
+               stop("If ziformula is supplied, then zibetas must also be supplied.")
+          
+          ziformula <- .check_X_formula(formula = ziformula, data = as.data.frame(data))          
+          tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse="") ) )
+          nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
+          ziX <- model.matrix(nullfit)
+          rm(tmp_formula, nullfit)
+          }
 
+     
      num_units <- nrow(X)
      num_spp <- nrow(betas)
      
@@ -272,6 +319,7 @@ create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL,
           if(ncol(B) != ncol(basis_effects_mat))
                stop("The number of columns in cbind(B_space, B_time, B_spacetime) must match that the number of columns in basis_effects_mat.")
           }
+     
      
      ## Generate species coefficients for basis functions, if required
      basismat_notsupplied <- is.null(basis_effects_mat)
@@ -299,6 +347,8 @@ create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL,
      ## Generate response
      true_eta_B <- tcrossprod(B, basis_effects_mat)
      true_eta <- tcrossprod(X, betas) + true_eta_B
+     if(!is.null(ziformula))
+          true_zieta <- tcrossprod(ziX, zibetas)
      if(!is.null(offset))
           true_eta <- true_eta + offset
      
@@ -318,15 +368,27 @@ create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL,
                sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
           if(family$family == "tweedie")
                sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+          
           if(family$family == "zipoisson") {
-                simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
-                sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
+               if(is.null(ziformula)) { 
+                    simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                    }
+               if(!is.null(ziformula)) {
+                    simz <- rbinom(num_units, size = 1, prob = plogis(true_zieta[,j])) # Probability of zero-inflation
+                    }
+               sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
                 }
           if(family$family == "zinegative.binomial") {
-                simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
-                sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
+               if(is.null(ziformula)) { 
+                    simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                    }
+               if(!is.null(ziformula)) {
+                    simz <- rbinom(num_units, size = 1, prob = plogis(true_zieta[,j])) # Probability of zero-inflation
+                    }
+               sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
                 }
-           if(family$family == "ztpoisson") {
+           
+          if(family$family == "ztpoisson") {
                 ztpR <- trun.r(par = 0, family = PO()$family[1], type = "left") 
                 sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
                 }
@@ -336,12 +398,12 @@ create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL,
                 }
           }
 
-     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson", "zinegative.binomial")) {
+     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson", "zinegative.binomial", "ztpoisson", "ztnegative.binomial")) {
           inner_counter <- 0
           while(any(sim_y > max_resp) & inner_counter < 10) {
                if(basismat_notsupplied) {
                     basis_effects_mat <- NULL
-               
+                    
                     if(!is.null(B_space)) {
                          true_cholGSigma <- kronecker(t(chol(G$space)), t(chol(Sigma$space)))
                          basis_effects_mat <- cbind(basis_effects_mat, matrix(true_cholGSigma %*% rnorm(ncol(B_space)*num_spp), nrow = num_spp, byrow = TRUE))
@@ -380,14 +442,26 @@ create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL,
                             sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]))
                     if(family$family == "tweedie")
                             sim_y[,j] <- rtweedie(num_units, mu = exp(true_eta[,j]), phi = dispparam[j], power = powerparam[j])
+                    
                     if(family$family == "zipoisson") {
-                            simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
-                            sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
-                            }
+                         if(is.null(ziformula)) { 
+                              simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                              }
+                         if(!is.null(ziformula)) {
+                              simz <- rbinom(num_units, size = 1, prob = plogis(true_zieta[,j])) # Probability of zero-inflation
+                              }
+                         sim_y[,j] <- rpois(num_units, lambda = exp(true_eta[,j]) * (1-simz))
+                         }
                     if(family$family == "zinegative.binomial") {
-                            simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
-                            sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
-                            }
+                         if(is.null(ziformula)) { 
+                              simz <- rbinom(num_units, size = 1, prob = zeroinfl_prob[j]) # Probability of zero-inflation
+                              }
+                         if(!is.null(ziformula)) {
+                              simz <- rbinom(num_units, size = 1, prob = plogis(true_zieta[,j])) # Probability of zero-inflation
+                              }
+                         sim_y[,j] <- rnbinom(num_units, mu = exp(true_eta[,j]) * (1-simz), size = 1/dispparam[j])
+                         }
+
                     if(family$family == "ztpoisson")
                             sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
                     if(family$family == "ztnegative.binomial")
