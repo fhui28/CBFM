@@ -109,13 +109,16 @@ Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions
 \details{
 The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior distribution of the parameters. This construction is similar to \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}}.
 
-The functions tries to avoid using simulation for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
+The functions tries to avoid using simulation (also known as single-fit bootstrapping, Fletcher and Jowett, 2022) for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson distribution when \code{type = "response"}.
 }
 \examples{
 \donttest{
 # Please see examples in the help file for the CBFM and makeahurdle functions 
 }
 
+}
+\references{
+Fletcher, D., and Jowett, T. (2022). Single-fit bootstrapping: A simple alternative to the delta method. Methods in Ecology and Evolution, 13, 1358-1367.
 }
 \seealso{
 \code{\link[=CBFM]{CBFM()}} for fitting CBFMs, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for obtaining fitted values from a CBFM fit, and \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating various types of residuals.
