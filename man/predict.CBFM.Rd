@@ -43,7 +43,7 @@
 \arguments{
 \item{object}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
 
-\item{newdata}{A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula_X}.}
+\item{newdata}{A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula}.}
 
 \item{manualX}{A manually supplied model matrix at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualX} should equal to \code{ncol(object$betas)}.}
 

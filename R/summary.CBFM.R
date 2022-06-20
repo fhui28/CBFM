@@ -123,7 +123,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
             }
          
          get_std_errs <- matrix(get_std_errs, nrow = num_spp, byrow = TRUE)
-         tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+         tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
          spp_results_fn <- function(j) {
             nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
 

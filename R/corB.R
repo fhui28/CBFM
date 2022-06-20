@@ -145,7 +145,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic

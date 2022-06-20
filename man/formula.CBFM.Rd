@@ -17,10 +17,10 @@ A object of class \code{formula}. Note there will be nothing on the left hand si
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
-Extract the \code{formula_X} argument from a fitted \code{CBFM} object. Nothing more, nothing less.
+Extract the \code{formula} argument from a fitted \code{CBFM} object. Nothing more, nothing less.
 }
 \details{
-This function works in a similar manner to functions such as \code{\link[stats:lm.summaries]{stats::formula.lm()}} and \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}. Recall that in the main CBFM fitting function, the argument \code{formula_X} is a symbolic description of the model matrix of covariates to be created. Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} for more details.
+This function works in a similar manner to functions such as \code{\link[stats:lm.summaries]{stats::formula.lm()}} and \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}. Recall that in the main CBFM fitting function, the argument \code{formula} is a symbolic description of the model matrix of covariates to be created. Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} for more details.
 }
 \examples{
 \donttest{
@@ -79,7 +79,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 formula(fitcbfm)

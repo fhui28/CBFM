@@ -10,11 +10,11 @@
 #' @param ... Not used.
 #'
 #' @details 
-#' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula_X}, the function directly returns what is available from \code{object$pen.edf}. Note that as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate. 
+#' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula}, the function directly returns what is available from \code{object$pen.edf}. Note that as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate. 
 #' 
 #' For the EDF associated with the spatial and/or temporal basis function coefficients, similar to [influence.CBFM()]  for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. 
 #'  
-#' @return A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula_X} and which of \code{B_space/B_time/B_spacetime} were included in the model.
+#' @return A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula} and which of \code{B_space/B_time/B_spacetime} were included in the model.
 #' 
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -78,7 +78,7 @@
 #' 
 #' # Fit CBFM 
 #' useformula <- ~ temp + s(depth) + s(chla) + s(O2) # Temperature is not "smoothed"
-#' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+#' fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' edf(fitcbfm)
@@ -190,7 +190,7 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
   ## Now the EDF
   ##------------------
   # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
-  # In fact, in additional simulations we found that the EDFs calculated for the terms in formula_X are typically very very close to those from edf and the last update using GAM in the PQL estimation algorithm. 
+  # In fact, in additional simulations we found that the EDFs calculated for the terms in formula are typically very very close to those from edf and the last update using GAM in the PQL estimation algorithm. 
   edfs <- diag(bigV %*% crossprod(bigsqrtWXB))
   names(edfs) <- colnames(bigV)
   if(object$num_B == 0)

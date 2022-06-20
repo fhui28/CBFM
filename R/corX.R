@@ -7,7 +7,7 @@
 #' 
 #' 
 #' @param object An object of class \code{CBFM}.
-#' @param newdata A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula_X}.
+#' @param newdata A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula}.
 #' @param newdata2 A second data frame containing the values of the covariates at which cross-correlations are to be calculated. If this is supplied, then \code{newdata} must also be supplied, as the function assumes then the user desires calculation of cross-correlations. 
 #' @param coverage The coverage probability of the uncertainty intervals for the correlations. Defaults to 0.95, which corresponds to 95% uncertainty intervals.
 #' @param ncores To speed up calculation of the uncertainty estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
@@ -123,7 +123,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -178,7 +178,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
         ##--------------------------------
         ## Construct new_X and new_X2, if appropriate.
         ##--------------------------------
-        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
         nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
         if(is.null(newdata)) 
             new_X <- new_X2 <- predict.gam(nullfit, type = "lpmatrix")

@@ -37,8 +37,8 @@ print.CBFM <- function(x, ...) {
                 message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), "\nNo. of responses: ", ncol(x$fitted)) 
         if(x$family$family[1] %in% c("ztpoisson"))
                 message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), " (note zero counts in the response matrix are ignored in the model) \nNo. of responses: ", ncol(x$fitted)) 
-        message("Responses-environment relationship fitted: ", x$formula_X) 
-        message("Number of columns in model matrix induced by formula_X: ", ncol(x$betas))
+        message("Responses-environment relationship fitted: ", x$formula) 
+        message("Number of columns in model matrix induced by formula: ", ncol(x$betas))
         message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
         B_names <- c("B_space ", "B_time ", "B_spacetime ")

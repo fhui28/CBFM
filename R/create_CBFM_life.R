@@ -6,8 +6,8 @@
 #' Simulates spatio-temporal multivariate abundance data based on a CBFM and given the various parameter values as appropriate.
 #'
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
-#' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details. 
-#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument). 
+#' @param formula An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details. 
+#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument). 
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
@@ -29,7 +29,7 @@
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. 
+#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. 
 #' 
 #' As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating 
 #' 
@@ -125,7 +125,7 @@
 #' ## **Example 1: Generate spatial multivariate presence-absence data**
 #' ##-----------------------------------
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-#' simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 #' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 #' 
@@ -133,7 +133,7 @@
 #' # Generates spatial multivariate presence-absence data 
 #' # Manually supply basis function coefficients 
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-#' simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 #' B_space = basisfunctions)
 #' 
@@ -143,7 +143,7 @@
 #' ##-----------------------------------
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
 #' spp_dispersion <- runif(num_spp)
-#' simy <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
+#' simy <- create_CBFM_life(family = nb2(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 #' dispparam = spp_dispersion, max_resp = 20000, 
 #' Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
@@ -155,7 +155,7 @@
 #' # Manually supply basis function coefficients 
 #' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-#' simy <- create_CBFM_life(family = zipoisson(), formula_X = useformula, data = dat,
+#' simy <- create_CBFM_life(family = zipoisson(), formula = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 #' B_space = basisfunctions, zeroinfl_prob = spp_zeroinfl_prob)
 #' 
@@ -167,7 +167,7 @@
 #' # Manually supply basis function coefficients 
 #' spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
 #' spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-#' simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
+#' simy <- create_CBFM_life(family = zinb2(), formula = useformula, data = dat,
 #' betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 #' B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
 #' 
@@ -192,12 +192,12 @@
 #' 
 #' # Generate spatial multivariate presence-absence data first
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-#' simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' simy_pa <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
 #' Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 #' 
 #' # Now generate count data from a truncated Poisson distribution
-#' simy_ztp <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
+#' simy_ztp <- create_CBFM_life(family = ztpoisson(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
 #' max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), 
 #' G = list(space = true_G_space_ztp))
@@ -220,12 +220,12 @@
 #' 
 #' # Generate spatial multivariate presence-absence data first
 #' # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-#' simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+#' simy_pa <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
 #' Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 #' 
 #' # Now generate count data from a truncated NB distribution
-#' simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+#' simy_ztnb <- create_CBFM_life(family = ztnb2(), formula = useformula, data = dat,
 #' B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
 #' max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), dispparam = spp_dispersion, 
 #' G = list(space = true_G_space_ztp))
@@ -243,12 +243,12 @@
 #' @importFrom tweedie rtweedie
 #' @md
 
-create_CBFM_life <- function(family = binomial(), formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
+create_CBFM_life <- function(family = binomial(), formula, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
      betas, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
      trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
-     formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
-     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+     formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
      nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)

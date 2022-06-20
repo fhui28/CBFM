@@ -9,7 +9,7 @@
 #' @param ... Not used.
 #' 
 #' @details 
-#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula_X}, and **not** the basis functions.  
+#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula}, and **not** the basis functions.  
 #' 
 #' @return A model matrix.
 #' 
@@ -74,7 +74,7 @@
 #' 
 #' # Fit CBFM 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+#' fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' model.matrix(fitcbfm)
@@ -89,7 +89,7 @@ model.matrix.CBFM <- function(object, ...) {
                 stop("`object' is not of class \"CBFM\"")
 
         
-        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
         nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
 
         MM <- predict.gam(nullfit, type = "lpmatrix", ...)

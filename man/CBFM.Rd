@@ -6,7 +6,7 @@
 \usage{
 CBFM(
   y,
-  formula_X,
+  formula,
   data,
   B_space = NULL,
   B_time = NULL,
@@ -38,9 +38,9 @@ CBFM(
 \arguments{
 \item{y}{A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to a species.}
 
-\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}, \code{\link[mgcv:gam.models]{mgcv::gam.models()}}, \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}, and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
+\item{formula}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}, \code{\link[mgcv:gam.models]{mgcv::gam.models()}}, \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}, and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
 
-\item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument).}
+\item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument).}
 
 \item{B_space}{An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
 
@@ -60,9 +60,9 @@ CBFM(
 
 \item{stderrors}{Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed.}
 
-\item{select}{For cases where \code{formula_X} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
+\item{select}{For cases where \code{formula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
 
-\item{gamma}{For cases where \code{formula_X} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM. #'}
+\item{gamma}{For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM. #'}
 
 \item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
 \itemize{
@@ -128,7 +128,7 @@ The rank/s should be at least 2, although internal checks are also performed to 
 \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 }}
 
-\item{k_check_control}{A list of parameters for controlling \code{\link[mgcv:k.check]{mgcv::k.check()}} when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula_X}. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on how this test works. This should be a list with the following two arguments:
+\item{k_check_control}{A list of parameters for controlling \code{\link[mgcv:k.check]{mgcv::k.check()}} when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on how this test works. This should be a list with the following two arguments:
 \itemize{
 \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.}
 \item{n.rep: }{How many re-shuffles of the residuals should be done in order to a P-value for testing. }
@@ -139,7 +139,7 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{call: }{The matched function call.}
 \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
 \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
-\item{formula_X: }{The supplied symbolic description of the model matrix to be created.}
+\item{formula: }{The supplied symbolic description of the model matrix to be created.}
 \item{B: }{The full matrix basis functions i.e., basically the result of \code{cbind(B_space, B_time, B_spacetime)}.}
 \item{which_B_used: }{A vector of length three, indicating which of \code{B_space, B_time, B_spacetime} was supplied. For example \code{which_B_bused = c(1,0,0)} implies only \code{B_space} was supplied.}
 \item{num_B_space: }{The number of spatial basis functions supplied i.e., \code{ncol(B_space)}.}
@@ -156,10 +156,10 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{deviance_explained: }{The \emph{percentage} of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see \code{\link[=varpart]{varpart()}} for more capacity to perform variance partitioning in a CBFM. This is constructed by examining \code{deviance} to \code{null_deviance}.}
 \item{deviance_explained_perspecies: }{The \emph{percentage} of null deviance explained by the model, on a per-species basis. This is constructed by examining \code{deviance_perspecies} to \code{null_deviance_perspecies}.}
 \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
-\item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula_X}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate. }
-\item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula_X}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
-\item{k_check: }{A list resulting from the application of \code{\link[mgcv:k.check]{mgcv::k.check()}}, used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
-\item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+\item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate. }
+\item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
+\item{k_check: }{A list resulting from the application of \code{\link[mgcv:k.check]{mgcv::k.check()}}, used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula}, on a per-species basis. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on the test and the output. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
+\item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
 \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
@@ -186,9 +186,9 @@ Similarly, for zero-truncated count distributions, while the mean of the base co
 
 Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 
-\item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+\item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
 
-\item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+\item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
 
 \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of \code{\link[base:proc.time]{base::proc.time()}}.}
 }
@@ -209,7 +209,7 @@ Turning to some mathematical details, the CBFM in this package is characterized 
 
 where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit \eqn{i}, and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}.
 
-The vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in \code{\link[mgcv:gam.models]{mgcv::gam.models()}}; see also \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are \emph{not} random row effects as found in packages such as \code{\link[boral:boral]{boral::boral()}} and \code{\link[gllvm:gllvm]{gllvm::gllvm()}}, and also are currently are not designed to draw the slopes from a common distribution as in \code{\link[Hmsc:Hmsc-package]{Hmsc::Hmsc-package()}} or Pollock et al., (2014), say.
+The vector of predictors \eqn{x_i} is created based on the \code{formula} and \code{data} arguments. Smoothing terms are permitted in \code{formula}, and these can be included in the same way as in \code{\link[mgcv:gam.models]{mgcv::gam.models()}}; see also \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are \emph{not} random row effects as found in packages such as \code{\link[boral:boral]{boral::boral()}} and \code{\link[gllvm:gllvm]{gllvm::gllvm()}}, and also are currently are not designed to draw the slopes from a common distribution as in \code{\link[Hmsc:Hmsc-package]{Hmsc::Hmsc-package()}} or Pollock et al., (2014), say.
 
 When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the \code{\link[mgcv:k.check]{mgcv::k.check()}} function; see that function's help file as well as \code{\link[mgcv:choose.k]{mgcv::choose.k()}} for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details. However, we warn the user that \strong{some of the smoothers available as part of \code{mgcv} e.g., \code{\link[mgcv:linear.functional.terms]{mgcv::linear.functional.terms()}}, has not been fully tested for CBFM}, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!
 
@@ -325,8 +325,8 @@ Once you have finished grumbling about the package and its developer, please bre
 
 As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
 \itemize{
-\item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
-\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
+\item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
+\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 }
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{manygam <- foreach::foreach(j = 1:num_spp) \%dopar\%
@@ -417,7 +417,7 @@ as.matrix \%>\%
 # Fit CBFM 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,,
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train,,
 B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -515,7 +515,7 @@ as.matrix \%>\%
 # Fit CBFM 
 tic <- proc.time()
 useformula <- ~ temp + s(depth) + chla + s(O2)
-fitcbfm_gam <- CBFM(y = simy_train, formula_X = useformula, 
+fitcbfm_gam <- CBFM(y = simy_train, formula = useformula, 
 data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc-tic
@@ -610,7 +610,7 @@ as.matrix \%>\%
 # Fit Poisson CBFM 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = poisson(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -702,7 +702,7 @@ as.matrix \%>\%
 # overdispersion. 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = nb2(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -802,7 +802,7 @@ as.matrix \%>\%
 # Fit zero-inflated Poisson CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = zipoisson(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -912,7 +912,7 @@ as.matrix \%>\%
 # Fit zero-inflated negative binomial CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = zinb2(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -1018,7 +1018,7 @@ as.matrix \%>\%
 # Fit Tweedie CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = tweedielogfam(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -1154,7 +1154,7 @@ as.matrix \%>\%
 # Fit zero-truncated negative binomial CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = ztnb2(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -1250,7 +1250,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 tic <- proc.time()
-fitcbfm <- CBFM(y = all.data$Y, formula_X = all.data$X.formula, data = all.data$X.data, 
+fitcbfm <- CBFM(y = all.data$Y, formula = all.data$X.formula, data = all.data$X.data, 
 B_space = basisfunctions, family = gaussian(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -1326,7 +1326,7 @@ as.matrix \%>\%
 # Note also that Hmsc generates and fits models assuming a probit link, 
 # but CBFM uses a logit link
 tic <- proc.time()
-fitcbfm <- CBFM(y = all.data$Y, formula_X = all.data$X.formula, data = all.data$X.data, 
+fitcbfm <- CBFM(y = all.data$Y, formula = all.data$X.formula, data = all.data$X.data, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -1469,7 +1469,7 @@ rm(time_basisfunctions, time_knots)
 # Fit CBFM with additive spatial and temporal basis functions 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm_additive <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm_additive <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_space_basisfunctions, B_time = train_time_basisfunctions, family = binomial(), 
 G_control = list(rank = c(5,5)), Sigma_control = list(rank = c(5,5)), control = list(trace = 1))
 toc <- proc.time()
@@ -1588,7 +1588,7 @@ custom_Sigma_time <- diag(nrow = ncol(train_time_basisfunctions))
 # Fit CBFM with additive spatial and temporal basis functions 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm_additive <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm_additive <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_space_basisfunctions, B_time = train_time_basisfunctions, family = binomial(), 
 G_control = list(rank = c(5,5)), 
 Sigma_control = list(rank = c(5,1), custom_time = custom_Sigma_time), control = list(trace = 1))
@@ -1668,7 +1668,7 @@ useformula <- ~ temp + depth + chla + O2
 train_st_basisfunctions <- tensorproduct(train_space_basisfunctions, train_time_basisfunctions)
 dim(train_st_basisfunctions)
 
-fitcbfm_tensor <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm_tensor <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_spacetime = train_st_basisfunctions, family = binomial(), 
 G_control = list(rank = 10, method = "simple"), 
 Sigma_control = list(rank = 10, method = "simple"), control = list(trace = 1))

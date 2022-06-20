@@ -6,8 +6,8 @@
 #' Fits CBFMs to spatio-temporal multivariate abundance data, where the basis functions are used to account for spatio-temporal correlation within and between-species. Three types of basis functions can supplied and included in conjunction with each other: 1) spatial basis functions; 2) temporal basis functions; 3) spatio-temporal basis functions. For the part of the mean model corresponding to the measured covariates, CBFM currently permits both parametric terms and/or smoothing terms, where the latter makes use are included in a similar manner to [mgcv::gam()]. Estimation and inference for CBFM is based on a maximum penalized quasi-likelihood (PQL) estimation approach.
 #'
 #' @param y A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to a species.
-#' @param formula_X An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see [mgcv::formula.gam()], [mgcv::gam.models()], [mgcv::smooth.terms()], and [mgcv::s()] for more details. 
-#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument). 
+#' @param formula An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see [mgcv::formula.gam()], [mgcv::gam.models()], [mgcv::smooth.terms()], and [mgcv::s()] for more details. 
+#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument). 
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
@@ -17,8 +17,8 @@
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as \code{y}.
 #' @param dofit Should the CBFM be fitted? If set to \code{FALSE}, then the function terminates (and return nothing) immediately after copying the C++ file to the compilation directory; please see the \code{TMB_directories} argument below.
 #' @param stderrors Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed. 
-#' @param select For cases where \code{formula_X} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details, noting that its implementation for the purposes of CBFM is a *wee bit experimental*. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.  
-#' @param gamma For cases where \code{formula_X} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in [mgcv::gam()], and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a *wee bit experimental*. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM. #' 
+#' @param select For cases where \code{formula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details, noting that its implementation for the purposes of CBFM is a *wee bit experimental*. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.  
+#' @param gamma For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in [mgcv::gam()], and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a *wee bit experimental*. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM. #' 
 #' @param start_params Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms: 
 #' \itemize{
 #' \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.} 
@@ -110,7 +110,7 @@
 
 #' \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 #' }
-#' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula_X}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
+#' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
 #' \itemize{
 #' \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.} 
 
@@ -132,7 +132,7 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit \eqn{i}, and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. 
 #' 
-#' The vector of predictors \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments. Smoothing terms are permitted in \code{formula_X}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are *not* random row effects as found in packages such as [boral::boral()] and [gllvm::gllvm()], and also are currently are not designed to draw the slopes from a common distribution as in [Hmsc::Hmsc-package()] or Pollock et al., (2014), say.  
+#' The vector of predictors \eqn{x_i} is created based on the \code{formula} and \code{data} arguments. Smoothing terms are permitted in \code{formula}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are *not* random row effects as found in packages such as [boral::boral()] and [gllvm::gllvm()], and also are currently are not designed to draw the slopes from a common distribution as in [Hmsc::Hmsc-package()] or Pollock et al., (2014), say.  
 #' 
 #' When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we warn the user that **some of the smoothers available as part of \code{mgcv} e.g., [mgcv::linear.functional.terms()], has not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
 #' 
@@ -252,7 +252,7 @@
 
 #' \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
 
-#' \item{formula_X: }{The supplied symbolic description of the model matrix to be created.}
+#' \item{formula: }{The supplied symbolic description of the model matrix to be created.}
 
 #' \item{B: }{The full matrix basis functions i.e., basically the result of \code{cbind(B_space, B_time, B_spacetime)}.}
 
@@ -286,13 +286,13 @@
 
 #' \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
 
-#' \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula_X}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
+#' \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
 
-#' \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula_X}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+#' \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
 
-#' \item{k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula_X}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+#' \item{k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
 
-#' \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula_X}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see [mgcv::random.effects()] for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula_X}, then this will be a list of \code{NULL} elements.}
+#' \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see [mgcv::random.effects()] for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
 
 #' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
 
@@ -332,9 +332,9 @@
 #' 
 #' Please use the [summary.CBFM()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 #' 
-#' \item{all_parametric_effects: }{If \code{formula_X} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+#' \item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
 #' 
-#' \item{all_smooth_estimates: }{If \code{formula_X} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{formula_X}, then this will equal to \code{NULL}.}
+#' \item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
 #'
 #' \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of [base::proc.time()].}
 #' 
@@ -358,9 +358,9 @@
 #' 
 #' As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
 #' 
-#' * Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula_X} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
+#' * Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
 #' 
-#' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula_X}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
+#' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 #' ```
 #' manygam <- foreach::foreach(j = 1:num_spp) %dopar%
 #'     gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
@@ -505,7 +505,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train,,
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train,,
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -603,7 +603,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + s(depth) + chla + s(O2)
-#' fitcbfm_gam <- CBFM(y = simy_train, formula_X = useformula, 
+#' fitcbfm_gam <- CBFM(y = simy_train, formula = useformula, 
 #' data = dat_train, B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc-tic
@@ -698,7 +698,7 @@
 #' # Fit Poisson CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = poisson(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -791,7 +791,7 @@
 #' # overdispersion. 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = nb2(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -891,7 +891,7 @@
 #' # Fit zero-inflated Poisson CBFM
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = zipoisson(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1001,7 +1001,7 @@
 #' # Fit zero-inflated negative binomial CBFM
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = zinb2(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1107,7 +1107,7 @@
 #' # Fit Tweedie CBFM
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = tweedielogfam(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1243,7 +1243,7 @@
 #' # Fit zero-truncated negative binomial CBFM
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = ztnb2(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1339,7 +1339,7 @@
 #' 
 #' # Fit CBFM 
 #' tic <- proc.time()
-#' fitcbfm <- CBFM(y = all.data$Y, formula_X = all.data$X.formula, data = all.data$X.data, 
+#' fitcbfm <- CBFM(y = all.data$Y, formula = all.data$X.formula, data = all.data$X.data, 
 #' B_space = basisfunctions, family = gaussian(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1415,7 +1415,7 @@
 #' # Note also that Hmsc generates and fits models assuming a probit link, 
 #' # but CBFM uses a logit link
 #' tic <- proc.time()
-#' fitcbfm <- CBFM(y = all.data$Y, formula_X = all.data$X.formula, data = all.data$X.data, 
+#' fitcbfm <- CBFM(y = all.data$Y, formula = all.data$X.formula, data = all.data$X.data, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -1558,7 +1558,7 @@
 #' # Fit CBFM with additive spatial and temporal basis functions 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm_additive <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_additive <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_space_basisfunctions, B_time = train_time_basisfunctions, family = binomial(), 
 #' G_control = list(rank = c(5,5)), Sigma_control = list(rank = c(5,5)), control = list(trace = 1))
 #' toc <- proc.time()
@@ -1677,7 +1677,7 @@
 #' # Fit CBFM with additive spatial and temporal basis functions 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm_additive <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_additive <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_space_basisfunctions, B_time = train_time_basisfunctions, family = binomial(), 
 #' G_control = list(rank = c(5,5)), 
 #' Sigma_control = list(rank = c(5,1), custom_time = custom_Sigma_time), control = list(trace = 1))
@@ -1757,7 +1757,7 @@
 #' train_st_basisfunctions <- tensorproduct(train_space_basisfunctions, train_time_basisfunctions)
 #' dim(train_st_basisfunctions)
 #' 
-#' fitcbfm_tensor <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_tensor <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_spacetime = train_st_basisfunctions, family = binomial(), 
 #' G_control = list(rank = 10, method = "simple"), 
 #' Sigma_control = list(rank = 10, method = "simple"), control = list(trace = 1))
@@ -1831,7 +1831,7 @@
 #' @md
 
 
-CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
+CBFM <- function(y, formula, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, select = FALSE, gamma = 1,
      start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
@@ -1900,8 +1900,8 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      which_nonzeromean_B <- 1*c(control$nonzeromean_B_space, control$nonzeromean_B_time, control$nonzeromean_B_spacetime)
 
      ## Form covariate model matrix B
-     formula_X <- .check_X_formula(formula_X = formula_X, data = as.data.frame(data))          
-     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+     formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
      nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
@@ -1959,15 +1959,15 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      ## Obtain starting values -- No selection is attempted here  
      ##----------------
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
-     initfit_fn <- function(j, formula_X) {
-          tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+     initfit_fn <- function(j, formula) {
+          tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
           
           if(family$family %in% c("gaussian","poisson","Gamma")) {
                fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("binomial")) {
-               tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
+               tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse="") ) )
                use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
                
                fit0 <-  try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
@@ -2054,7 +2054,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                fit0$logLik <- new_inner_logL
                }
           if(family$family %in% c("ztpoisson")) {
-               tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse=""), "+ offset(off)" ) )
+               tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse=""), "+ offset(off)" ) )
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
@@ -2128,7 +2128,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
           if(control$trace > 0)
                message("Calculating starting values...")
           
-          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = formula_X)              
+          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = formula)              
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
           start_params$betas <- start_params$betas * control$initial_betas_dampen # Should be OK even if control$initial_betas_dampen is vector equal to number of species
           rm(all_start_fits)
@@ -2412,7 +2412,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                ## Update coefficients related to covariate model matrix X, and other nuisance parameters, one response at a time
                ##-------------------------
                update_Xcoefsspp_fn <- function(j) {
-                    tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
+                    tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
                     new_offset <- offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
                     Hmat <- diag(control$ridge+1e-15, nrow = num_X)
                     
@@ -2427,7 +2427,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("binomial")) {
-                         tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula_X),collapse="") ) )
+                         tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse="") ) )
                          use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
      
                          if(control$ridge > 0)
@@ -2492,7 +2492,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
                     if(family$family %in% c("ztpoisson")) {
                          Hmat <- diag(control$ridge+1e-15, nrow = num_X+1)
                          tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data), 1:10),], off = c(new_offset, numeric(10))) # Append some zeros avoids a non-convergence problem in mgcv
-                         tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse=""), "+ offset(off)" ) )
+                         tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse=""), "+ offset(off)" ) )
                          if(control$ridge > 0)
                               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, H = Hmat, family = ziplss(), select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
@@ -2844,7 +2844,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      
      
      # Calculate deviance, null deviance etc...note deviance calculation **excludes** the quadratic term in the PQL
-     nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula_X = ~ 1)
+     nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = ~ 1)
      nulldeviance_perspp <- sapply(nulldeviance, function(x) -2*x$logLik)
      nulldeviance <- sum(sapply(nulldeviance, function(x) -2*x$logLik))
      rm(initfit_fn)
@@ -2883,7 +2883,7 @@ CBFM <- function(y, formula_X, data, B_space = NULL, B_time = NULL, B_spacetime 
      out_CBFM$y <- y
      out_CBFM$data <- data
      out_CBFM$trial_size <- trial_size
-     out_CBFM$formula_X <- formula_X
+     out_CBFM$formula <- formula
      out_CBFM$select <- select
      out_CBFM$gamma <- full_gamma
      out_CBFM$B <- B

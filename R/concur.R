@@ -95,7 +95,7 @@
 #' 
 #' # Fit CBFM 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+#' fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' concur(fitcbfm)
@@ -117,7 +117,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ s(temp) + s(depth) + s(chla) + s(O2)
-#' fitcbfm_gam <- CBFM(y = simy, formula_X = useformula, 
+#' fitcbfm_gam <- CBFM(y = simy, formula = useformula, 
 #' data = dat, B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc-tic
@@ -134,7 +134,7 @@ concur <- function(object, ...) {
         stop("`object' is not of class \"CBFM\"")
      
      num_spp <- ncol(object$y)
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
      nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
      
      # Start with parametric terms, but exclude intercept. Then include smoothing terms. Then basis functions.
@@ -182,13 +182,13 @@ concur <- function(object, ...) {
      num_terms <- length(start)
      full_concur <- array(0, dim = c(num_spp, 2, num_terms), dimnames = list(species = colnames(object$y), measure = c("Observed", "Estimate"), covariates = labs))
      rm(labs, tmp_formula, nullfit)
-     # So start and stop capture all things implied by formula_X. num_terms counts this along with the any basis coefficients in model
+     # So start and stop capture all things implied by formula. num_terms counts this along with the any basis coefficients in model
 
      
      X <- cbind(model.matrix(object), object$B)
      X <- base::qr.R(base::qr(X)) # Using a QR decomposition speeds up remaining computation for calculating measures?
      
-     # Doing concurvity measures for terms in formula_X
+     # Doing concurvity measures for terms in formula
      for(k0 in 1:(num_terms-sum(object$which_B_used))) {
           Xj <- X[, start[k0]:stop[k0], drop = FALSE]
           Xi <- X[, -(start[k0]:stop[k0]), drop = FALSE]

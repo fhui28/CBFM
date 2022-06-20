@@ -16,7 +16,7 @@ corX(
 \arguments{
 \item{object}{An object of class \code{CBFM}.}
 
-\item{newdata}{A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula_X}.}
+\item{newdata}{A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula}.}
 
 \item{newdata2}{A second data frame containing the values of the covariates at which cross-correlations are to be calculated. If this is supplied, then \code{newdata} must also be supplied, as the function assumes then the user desires calculation of cross-correlations.}
 
@@ -122,7 +122,7 @@ as.matrix \%>\%
 # Fit CBFM 
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic

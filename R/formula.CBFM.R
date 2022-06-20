@@ -3,13 +3,13 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extract the \code{formula_X} argument from a fitted \code{CBFM} object. Nothing more, nothing less.
+#' Extract the \code{formula} argument from a fitted \code{CBFM} object. Nothing more, nothing less.
 #'
 #' @param x An object of class \code{CBFM}.
 #' @param ... Not used in this case.
 #'
 #' @details 
-#' This function works in a similar manner to functions such as [stats::formula.lm()] and [mgcv::formula.gam()]. Recall that in the main CBFM fitting function, the argument \code{formula_X} is a symbolic description of the model matrix of covariates to be created. Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] for more details. 
+#' This function works in a similar manner to functions such as [stats::formula.lm()] and [mgcv::formula.gam()]. Recall that in the main CBFM fitting function, the argument \code{formula} is a symbolic description of the model matrix of covariates to be created. Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] for more details. 
 #' 
 #' @return A object of class \code{formula}. Note there will be nothing on the left hand side of the "~". 
 #'
@@ -74,7 +74,7 @@
 #' 
 #' # Fit CBFM 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+#' fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' formula(fitcbfm)
@@ -87,6 +87,6 @@ formula.CBFM <- function(x, ...) {
     if(!inherits(x, "CBFM")) 
         stop("`x' is not of class \"CBFM\"")
      
-     return(x$formula_X)
+     return(x$formula)
      }
 

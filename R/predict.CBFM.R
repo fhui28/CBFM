@@ -6,7 +6,7 @@
 #' Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in [mgcv::predict.gam()] this is also known as the linear predictor matrix.  
 #' 
 #' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
-#' @param newdata A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula_X}.
+#' @param newdata A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula}.
 #' @param manualX A manually supplied model matrix at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualX} should equal to \code{ncol(object$betas)}.
 #' @param new_B_space A matrix of new spatial basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_space} argument are returned. Please note this should only be supplied if \code{B_space} was supplied in the original CBFM fit.  
 #' @param new_B_time A matrix of new temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.  
@@ -87,10 +87,10 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = N
         
         if(!is.null(manualX)) {
                 new_X <- manualX
-                warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula_X and/or newdata.")
+                warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula and/or newdata.")
                 }
         if(is.null(manualX)) {
-                tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+                tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
                 nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
                 if(is.null(newdata))
                         new_X <- predict.gam(nullfit, type = "lpmatrix")

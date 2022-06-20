@@ -15,7 +15,7 @@
 \item{...}{Not used.}
 }
 \value{
-A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula_X} and which of \code{B_space/B_time/B_spacetime} were included in the model.
+A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula} and which of \code{B_space/B_time/B_spacetime} were included in the model.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
@@ -23,7 +23,7 @@ A matrix of species-specific EDFs, with the the number of columns equal to the n
 Takes a fitted \code{CBFM} object and calculates the estimated or effective degrees of freedom associated with each smoothing terms included in the model, as well as for each of the spatial and/or temporal basis functions included in the model.
 }
 \details{
-For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula_X}, the function directly returns what is available from \code{object$pen.edf}. Note that as stated in the \code{\link[=CBFM]{CBFM()}}, these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be \emph{very} approximate.
+For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula}, the function directly returns what is available from \code{object$pen.edf}. Note that as stated in the \code{\link[=CBFM]{CBFM()}}, these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be \emph{very} approximate.
 
 For the EDF associated with the spatial and/or temporal basis function coefficients, similar to \code{\link[=influence.CBFM]{influence.CBFM()}}  for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be \emph{much} smaller than the corresponding number of basis functions included in the model.
 }
@@ -84,7 +84,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + s(depth) + s(chla) + s(O2) # Temperature is not "smoothed"
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 edf(fitcbfm)

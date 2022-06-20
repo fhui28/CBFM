@@ -7,7 +7,7 @@
 
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
 .calc_parametric_effects <- function(j, object) {
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
      nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
@@ -25,7 +25,7 @@
 
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
 .calc_smooth_estimates <- function(j, object) {
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
      nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      

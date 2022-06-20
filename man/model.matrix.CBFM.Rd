@@ -20,7 +20,7 @@ A model matrix.
 Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used.
 }
 \details{
-Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} works, it calls \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula_X}, and \strong{not} the basis functions.
+Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} works, it calls \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula}, and \strong{not} the basis functions.
 }
 \examples{
 \donttest{
@@ -79,7 +79,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 model.matrix(fitcbfm)
