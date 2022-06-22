@@ -2,7 +2,7 @@
 ## Hidden and not exported
 ## Some help from Wolfram alpha differentiation online!
 
-.neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zeroinfl_prob_intercept = NULL, trial_size, return_matrix = FALSE, 
+.neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zieta = NULL, trial_size, return_matrix = FALSE, 
                            domore = FALSE, tol = 1e-6) {
         if(family$family[1] %in% c("Beta")) {
                 out <- grad(.sbetalogit, x = eta, y = y, phi = phi)    
@@ -55,22 +55,23 @@
         if(family$family[1] %in% c("zipoisson")) {
              lambda <- exp(eta)
              rhat <- numeric(length(y))
-             rhat[y == 0] <- as.vector(plogis(zeroinfl_prob_intercept + lambda))[y == 0]
+             rhat[y == 0] <- as.vector(plogis(zieta + lambda))[y == 0]
              out <- lambda * (1-rhat) * (1-lambda*rhat)
          
              if(domore) {
                  # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
-                     dhat <- exp(zeroinfl_prob_intercept) / (exp(zeroinfl_prob_intercept) + exp(-lambda))
-                     phat <- plogis(zeroinfl_prob_intercept)
-                     out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
-                
-                     out_zeroinflbetas <- -(exp(zeroinfl_prob_intercept) * lambda * exp(-lambda)) / (exp(zeroinfl_prob_intercept) + exp(-lambda))^2
-                     out_zeroinflbetas[y > 0] <- 0
-                     }
+
+               dhat <- exp(zieta) / (exp(zieta) + exp(-lambda))
+               phat <- plogis(zieta)
+               out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
+           
+               out_zeroinflbetas <- -(exp(zieta) * lambda * exp(-lambda)) / (exp(zieta) + exp(-lambda))^2
+               out_zeroinflbetas[y > 0] <- 0
+               }
              }
         if(family$family[1] %in% c("zinegative.binomial")) { 
              lambda <- exp(eta)
-             phat <- plogis(zeroinfl_prob_intercept)
+             phat <- plogis(zieta)
              
              score_beta <- function(x, phi, phat) {
                 exp(x) * (1 + phi * exp(x))^(-1) / (1 + phat * (1 + phi * exp(x))^(1/phi))     
@@ -80,11 +81,11 @@
 
              if(domore) {
                  # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
-                     dhat <- exp(zeroinfl_prob_intercept) * (1+phi*lambda)^(-1/phi) / (exp(zeroinfl_prob_intercept) + (1+phi*lambda)^(-1/phi))^2
-                     phat <- plogis(zeroinfl_prob_intercept)
+                     dhat <- exp(zieta) * (1+phi*lambda)^(-1/phi) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
+                     phat <- plogis(zieta)
                      out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat
                 
-                     out_zeroinflbetas <- -(exp(zeroinfl_prob_intercept)*lambda*(1+phi*lambda)^(-1/phi-1)) / (exp(zeroinfl_prob_intercept) + (1+phi*lambda)^(-1/phi))^2
+                     out_zeroinflbetas <- -(exp(zieta)*lambda*(1+phi*lambda)^(-1/phi-1)) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
                      out_zeroinflbetas[y > 0] <- 0
                      }
              }
