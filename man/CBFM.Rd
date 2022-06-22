@@ -7,6 +7,7 @@
 CBFM(
   y,
   formula,
+  ziformula = NULL,
   data,
   B_space = NULL,
   B_time = NULL,
@@ -39,6 +40,8 @@ CBFM(
 \item{y}{A response matrix, where each row corresponds to an observational unit \eqn{i}.e, a particular space-time coordinate, and each column corresponds to a species.}
 
 \item{formula}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}, \code{\link[mgcv:gam.models]{mgcv::gam.models()}}, \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}, and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
+
+\item{ziformula}{An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for #' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument}
 
 \item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument).}
 
@@ -271,8 +274,8 @@ The following response distributions are permitted:
 \item{\code{poisson(link = "log")}: }{Poisson distribution using a log link. The corresponding mean-variance relationship is given by \eqn{V = \mu}, where \eqn{\mu} denotes the mean.}
 \item{\code{nb2()}: }{Negative binomial distribution with the log link. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{tweedielogfam()}: }{Tweedie distribution using log link. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}}, where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
-\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution using a log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
-\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution using a log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution using a log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution using a log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
 \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution using a log link. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution as described above. The mean of the Poisson distribution is modeled against covariates and basis functions.}
 
 \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution using a log link. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution as described above. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
