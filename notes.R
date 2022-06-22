@@ -86,8 +86,9 @@ ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fi
 
 
 
+
 ##------------------------------
-## **Example 1a: Fitting a CBFM to spatial multivariate presence-absence data**
+## **Example 1 modified: Fitting a CBFM to spatial multivariate presence-absence data**
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ##------------------------------
@@ -97,9 +98,9 @@ num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
 
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-#spp_slopes <- cbind(rnorm(num_spp, -1, sd = 0.25), rnorm(num_spp, 1, sd = 0.25), rnorm(num_spp, -0.25, sd = 0.1), rnorm(num_spp, 0.25, sd = 0.1))
-#spp_slopes <- cbind(rnorm(num_spp, 1, sd = 0.25))
 spp_intercepts <- rnorm(num_spp, -3, sd = 0.5)
+spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_ziintercepts <- runif(num_spp, -0.5, 0)
 
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
@@ -124,9 +125,10 @@ spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
 set.seed(NULL)
 
 # Simulate spatial multivariate abundance data (presence-absence)
-# We will use this information in later examples as well
 eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + tcrossprod(true_lvs, spp_loadings)
-simy <- matrix(rbinom(num_sites * num_spp, size = 1, prob = plogis(eta)), nrow = num_sites)
+zieta <- tcrossprod(cbind(1,mm), cbind(spp_ziintercepts,spp_zislopes))
+component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, prob = matrix(plogis(zieta), num_sites, num_spp, byrow = TRUE)), num_sites,num_spp)
+simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta+2) * (1-component_ind)), num_sites, num_spp)
 
 # Form training and test sets
 dat_train <- dat[1:500,]
@@ -137,11 +139,6 @@ mm_train <- mm[1:500,,drop=FALSE]
 mm_test <- mm[501:1000,,drop=FALSE]
 rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
 
-
-#-----------------------------------------
-# Fit stacked GLM as a baseline
-fitstacked <- manyglm(simy_train ~ temp + depth + chla + O2, family = binomial(), data = dat_train)
-#fitstacked <- manyglm(simy_train ~ gear, family = binomial(), data = dat_train)
 
 
 # Set up spatial basis functions for CBFM -- Most users will start here!
@@ -168,43 +165,6 @@ fitcbfm_pure <- CBFM(y = simy_train,
                      Sigma_control = list(rank = 5), 
                      G_control = list(rank = 2))
 
-
-fitcbfm_pure$all_parametric_effects$species <- fitcbfm_pure$all_parametric_effects$species %>% 
-     fct_inorder()
-ggplot(fitcbfm_pure$all_parametric_effects, aes(x = value, y = partial, group = response, color = response)) +
-     geom_line() +
-     facet_wrap(. ~ term, nrow = 2) +
-     geom_rug(data = fitcbfm_pure$all_parametric_effects %>% dplyr::filter(response == "response1"), 
-              aes(x = value, y = partial), sides = "b", alpha = 0.2, color = "black") +
-     theme_bw() +
-     theme(legend.position = "bottom")
-
-
-fitcbfm_pure$all_smooth_estimates$response <- fitcbfm_pure$all_smooth_estimates$response %>% 
-     fct_inorder()
-ggplot(fitcbfm_pure$all_smooth_estimates %>% dplyr::filter(smooth == "s(temp)"), 
-       aes(x = temp, y = est, group = response, color = response)) +
-     geom_line() +
-     theme_bw() +
-     theme(legend.position = "bottom")
-ggplot(fitcbfm_pure$all_smooth_estimates %>% dplyr::filter(smooth == "s(chla)"), 
-       aes(x = chla, y = est, group = response, color = response)) +
-     geom_line() +
-     theme_bw() +
-     theme(legend.position = "bottom")
-
-
-
-# fitcbfm <- CBFM(y = simy_train, formula_X = ~ depth + chla + O2, data = dat_train,
-#                 B_space = train_basisfunctions, B_time = mm_train,
-#                 family = binomial(),
-#                 control = list(trace = 1),
-#                 #control = list(trace = 1, nonzeromean_B_time = TRUE),
-#                 Sigma_control = list(rank = c(5,"full"), custom_time = Sinv),
-#                 G_control = list(rank = c(2,"full"))
-#                )
-# 
-# 
 
 # Calculate predictions onto test dataset
 predictions_cbfm_pure <- predict(fitcbfm_pure, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
@@ -266,21 +226,24 @@ theme_bw()
 ## Custom testing
 ##----------------------------------
 y = simy_train
-useformula <- ~ 1
-formula_X = ~ s(temp) + depth + s(chla) + O2
+useformula <- ~ temp + depth + chla + O2
+formula <- useformula
+ziformula <- useformula
 data = dat_train
-family =  binomial()
+family =  zipoisson()
 B_space = train_basisfunctions
 B_time = NULL
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
 gamma = 1
+zigamma = 1
 trial_size = 1
 dofit = TRUE
 stderrors = TRUE
 select = FALSE
-start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL)
+ziselect = FALSE
+start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
 control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
 Sigma_control = list(rank = c(5), trace = 0)
