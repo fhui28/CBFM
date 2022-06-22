@@ -248,6 +248,8 @@
           control$gam_method <- "REML"
      if(is.null(control$ridge))
           control$ridge <- 0
+     if(is.null(control$ziridge))
+          control$ziridge <- 0
      if(is.null(control$trace))
           control$trace <- 0
 
