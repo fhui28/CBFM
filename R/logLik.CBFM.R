@@ -12,7 +12,11 @@
 #' @details 
 #' In this package, CBFM are fitted using maximized penalized quasi-likelihood or PQL estimation. In turn, this function returns the maximized log-likelihood value *excluding* the quadratic penalty term in the PQL of the CBFM fit at convergence. 
 #' 
-#' By default, the degrees of freedom calculated as part of this function is based on: 1) using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula} plus any nuisance parameters (see [mgcv::logLik.gam()] for details about estimated degrees of freedom when smoothing terms are involved); 2) treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justifications for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to [edf.CBFM()] and we refer to the corresponding help file for more information.
+#' By default, the degrees of freedom calculated as part of this function is based on: 
+#' 
+#' 1. using the estimated of effective degrees of freedom for the component of the model related to \code{object$formula} (and \code{object$ziformula} if appropriate) plus any nuisance parameters; see [mgcv::logLik.gam()] for details about estimated degrees of freedom when smoothing terms are involved;.
+#' 
+#' 2. treating the species-specific regression coefficients related to the spatial and/or temporal basis functions as fixed effects. Overall, this means the calculation of degrees of freedom only involves the number of regression coefficients in the model (see Hui et al., 2017, Hui, 2021, for justifications for these in the context of mixed models). Alternatively, if \code{use_edf = TRUE}, then point 2 is modified to instead use the estimated degrees of freedom instead. This is done by making a call to [edf.CBFM()] and we refer to the corresponding help file for more information.
 #' 
 #' The community-level covariance matrices are not involved in the calculation of the degrees of freedom. 
 #' 
@@ -111,17 +115,17 @@ logLik.CBFM <- function(object, use_edf = FALSE, ...) {
      logL <- object$logLik
      num_params <- min(sum(object$edf), nrow(object$betas)*ncol(object$betas)) + nrow(object$basis_effects_mat)*ncol(object$basis_effects_mat)
      if(use_edf) {
-         getedf <- edf.CBFM(object)
-         getedf <- sum(getedf[(nrow(getedf) - sum(object$which_B_used) + 1):nrow(getedf),])
-         num_params <- min(sum(object$edf), nrow(object$betas)*ncol(object$betas)) + min(getedf, nrow(object$basis_effects_mat)*ncol(object$basis_effects_mat))
-        }
-     if(object$family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","ztnegative.binomial"))                       
+          getedf <- edf.CBFM(object)
+          getedf <- sum(getedf[(nrow(getedf) - sum(object$which_B_used) + 1):nrow(getedf),])
+          num_params <- min(sum(object$edf), nrow(object$betas)*ncol(object$betas)) + min(getedf, nrow(object$basis_effects_mat)*ncol(object$basis_effects_mat))
+          }
+     if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial"))
+          num_params <- num_params + min(sum(object$ziedf), nrow(object$zibetas)*ncol(object$zibetas))
+     if(object$family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","ztnegative.binomial","zinegative.binomial"))                       
           num_params <- num_params + length(object$dispparam)
      if(object$family$family %in% c("tweedie"))                        
           num_params <- num_params + length(object$powerparam)
-     if(object$family$family %in% c("zipoisson", "zinegative.binomial"))                        
-          num_params <- num_params + length(object$zeroinfl_prob)
-     
+
      
      attributes(logL)$df <- num_params
      attributes(logL)$nobs <- dim(object$y)[1]

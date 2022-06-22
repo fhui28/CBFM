@@ -59,15 +59,16 @@
              out <- lambda * (1-rhat) * (1-lambda*rhat)
          
              if(domore) {
-                 # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
+                  # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
 
-               dhat <- exp(zieta) / (exp(zieta) + exp(-lambda))
-               phat <- plogis(zieta)
-               out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
-           
-               out_zeroinflbetas <- -(exp(zieta) * lambda * exp(-lambda)) / (exp(zieta) + exp(-lambda))^2
-               out_zeroinflbetas[y > 0] <- 0
-               }
+                  dhat <- exp(zieta) / (exp(zieta) + exp(-lambda))
+                  phat <- plogis(zieta)
+                  out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
+                  out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
+                  
+                  out_zeroinflbetas <- -(exp(zieta) * lambda * exp(-lambda)) / (exp(zieta) + exp(-lambda))^2
+                  out_zeroinflbetas[y > 0] <- 0
+                  }
              }
         if(family$family[1] %in% c("zinegative.binomial")) { 
              lambda <- exp(eta)
@@ -84,7 +85,8 @@
                      dhat <- exp(zieta) * (1+phi*lambda)^(-1/phi) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
                      phat <- plogis(zieta)
                      out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat
-                
+                     out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
+                     
                      out_zeroinflbetas <- -(exp(zieta)*lambda*(1+phi*lambda)^(-1/phi-1)) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
                      out_zeroinflbetas[y > 0] <- 0
                      }
