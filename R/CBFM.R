@@ -2733,7 +2733,6 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                }
                
-     
 
           ##-------------------------
           ## Update covariance function for basis functions Sigma. First assuming unstructured, then update loading and nugget 

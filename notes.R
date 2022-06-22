@@ -140,7 +140,6 @@ mm_test <- mm[501:1000,,drop=FALSE]
 rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
 
 
-
 # Set up spatial basis functions for CBFM -- Most users will start here!
 # We will also use this basis functions in some later examples
 num_basisfunctions <- 25 # Number of spatial basis functions to use
@@ -156,14 +155,17 @@ as.matrix %>%
 
 
 # Fit CBFMs
-fitcbfm_pure <- CBFM(y = simy_train, 
-                     formula_X = ~ s(temp) + depth + s(chla) + O2, 
-                     #formula_X = ~ gear, 
+fitcbfm_zip <- CBFM(y = simy_train, 
+                     formula = ~ s(temp) + depth + s(chla) + O2, 
+                     ziformula = ~ s(temp) + depth + s(chla) + O2, 
                      data = dat_train,
                      B_space = train_basisfunctions, 
-                     family = binomial(), control = list(trace = 1),
+                     family = zipoisson(), 
+                     control = list(trace = 1),
                      Sigma_control = list(rank = 5), 
                      G_control = list(rank = 2))
+
+
 
 
 # Calculate predictions onto test dataset
@@ -226,9 +228,9 @@ theme_bw()
 ## Custom testing
 ##----------------------------------
 y = simy_train
-useformula <- ~ temp + depth + chla + O2
+useformula <- ~ temp + s(depth) + chla + s(O2)
 formula <- useformula
-ziformula <- useformula
+ziformula <- ~ 1
 data = dat_train
 family =  zipoisson()
 B_space = train_basisfunctions
