@@ -11,15 +11,41 @@
      nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
+     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+          tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+          zinullfit <- mgcv::gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+          num_ziX <- ncol(model.matrix(zinullfit))
+          }
+     
      if(length(attr(nullfit$pterms, "term.labels")) == 0) 
-          return(NULL)
+          out <- NULL
      if(length(attr(nullfit$pterms, "term.labels")) > 0) {
           nullfit$coefficients <- object$betas[j,]
-          nullfit$Vp <- as.matrix(object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
+          sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+          if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+               sel_rowcols <- sel_rowcols[-(1:num_ziX)]
+               }
+          nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
           out <- parametric_effects(nullfit)
           out$species <- colnames(object$y)[j]
-          return(as.data.frame(out))
           }
+     
+     # Parametric effects for zero-inflation is appropriate
+     ziout <- NULL
+     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+          if(length(attr(zinullfit$pterms, "term.labels")) == 0) 
+               ziout <- NULL
+          if(length(attr(zinullfit$pterms, "term.labels")) > 0) {
+               zinullfit$coefficients <- object$zibetas[j,]
+               sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+               sel_rowcols <- sel_rowcols[(1:num_ziX)]
+               nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
+               ziout <- parametric_effects(zinullfit)
+               ziout$species <- colnames(object$y)[j]
+               }
+          }
+     
+     return(list(out = out, ziout = ziout))
      }
 
 
@@ -29,15 +55,41 @@
      nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
+     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+          tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+          zinullfit <- mgcv::gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+          num_ziX <- ncol(model.matrix(zinullfit))
+          }
+     
      if(length(nullfit$smooth) == 0) 
-          return(NULL)
+          out <- NULL
      if(length(nullfit$smooth) > 0) {
           nullfit$coefficients <- object$betas[j,]
-          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE])
+          sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+          if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+               sel_rowcols <- sel_rowcols[-(1:num_ziX)]
+               }
+          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
           out <- smooth_estimates(nullfit)
           out$species <- colnames(object$y)[j]
-          return(as.data.frame(out))
           }
+     
+     # Smooth estimates for zero-inflation is appropriate
+     ziout <- NULL
+     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+          if(length(zinullfit$smooth) == 0) 
+               ziout <- NULL
+          if(length(zinullfit$smooth) > 0) {
+               zinullfit$coefficients <- object$zibetas[j,]
+               sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+               sel_rowcols <- sel_rowcols[(1:num_ziX)]
+               zinullfit$Vp <- zinullfit$Ve <- zinullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
+               ziout <- smooth_estimates(zinullfit)
+               ziout$species <- colnames(object$y)[j]
+               }
+          }
+     
+     return(list(out = out, ziout = ziout))
      }
 
 
@@ -53,33 +105,27 @@
 
                
 ## E-step functions for zero-inflated and zero-truncated distributions -- calculate the posterior probability of being in the zero-inflation component/posterior probability of observing a zero
-.estep_fn <- function(family, cwfit, y, X, B) {
+.estep_fn <- function(family, cwfit, y, X, B, ziX = NULL) {
    num_units <- nrow(y)
    num_spp <- ncol(y)
    out <- Matrix::Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
+   
    if(family$family %in% c("zipoisson","zinegative.binomial")) {
                 fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
-                zeroinfl_prob <- plogis(cwfit$zeroinfl_prob_intercept)
+                zeroinfl_prob <- plogis(tcrossprod(X, cwfit$zibetas))
                 
                 for(j in 1:num_spp) {
                         sel_zerospp <- which(y[,j] == 0)
                         if(family$family[1] == "zipoisson")
-                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
+                                out[sel_zerospp,j] <- zeroinfl_prob[sel_zerospp,j] / (zeroinfl_prob[sel_zerospp,j] + (1-zeroinfl_prob[sel_zerospp,j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
                         if(family$family[1] == "zinegative.binomial")
-                                out[sel_zerospp,j] <- zeroinfl_prob[j] / (zeroinfl_prob[j] + (1-zeroinfl_prob[j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
+                                out[sel_zerospp,j] <- zeroinfl_prob[sel_zerospp,j] / (zeroinfl_prob[sel_zerospp,j] + (1-zeroinfl_prob[sel_zerospp,j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
                         }
+                
                 }
-        
-   # if(family$family %in% c("ztnegative.binomial")) {
-   #    fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
-   #    for(j in 1:num_spp) {
-   #       out[,j] <- dnbinom(0, mu = fitvals[,j], size = 1/cwfit$dispparam[j]) / (1-dnbinom(0, mu = fitvals[,j], size = 1/cwfit$dispparam[j]))
-   #       }
-   #    }
         
    return(out)
    }
-
 
 
 ## Get the full S matrix from GAMs. Relies on the fact that gam always move the parametric terms first
