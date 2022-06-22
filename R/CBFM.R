@@ -296,7 +296,11 @@
 
 #' \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
 
+#' \item{ziedf/ziedf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{ziformula}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate. }
+
 #' \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
+
+#' \item{zipen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{ziformula}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be *very* approximate.}
 
 #' \item{k_check: }{A list resulting from the application of [mgcv::k.check()], used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula}, on a per-species basis. Please see [mgcv::k.check()] for more details on the test and the output. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
 
@@ -2617,8 +2621,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          out$dispparam <- fit0$sig2
                          out$powerparam <- fit0$family$getTheta(TRUE)
                          }
-                    if(family$family %in% c("zipoisson","ztnegative.binomial")) {
+                    if(family$family %in% c("zipoisson","zinegative.binomial")) {
                          out$zicoefficients <- fitzi$coefficients
+                         out$fitzi <- fitzi
                          out$ziS <- .get_bigS(fit_gam = fitzi, num_X = ncol(ziX))
                          }
                     
@@ -2874,14 +2879,22 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
                new_fit_CBFM_ptest$zibetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$zicoefficients))
-               }
-          new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf) # Maybe shoddy for zero-inflated and zero-truncated distributions 
-          new_fit_CBFM_ptest$edf1 <- sapply(all_update_coefs, function(x) x$fit$edf1) # Maybe shoddy for zero-inflated and zero-truncated distributions   
-          if(family$family[1] %in% c("ztpoisson")) {
+          }
+          
+          # Degrees of freedom calculations below may be shoddy for zero-inflated and zero-truncated distributions 
+          new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf) 
+          new_fit_CBFM_ptest$edf1 <- sapply(all_update_coefs, function(x) x$fit$edf1)    
+          if(family$family[1] %in% c("ztpoisson")) { # Need to make this adjustment due to the way ziplss works in mgcv
                new_fit_CBFM_ptest$edf <- new_fit_CBFM_ptest$edf[1:num_X,]     
                new_fit_CBFM_ptest$edf1 <- new_fit_CBFM_ptest$edf1[1:num_X,]     
+               }
+          new_fit_CBFM_ptest$pen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fit)) 
+          if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+               new_fit_CBFM_ptest$ziedf <- sapply(all_update_coefs, function(x) x$fitzi$edf)
+               new_fit_CBFM_ptest$ziedf1 <- sapply(all_update_coefs, function(x) x$fitzi$edf1)    
+               new_fit_CBFM_ptest$zipen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fitzi)) 
           }
-          new_fit_CBFM_ptest$pen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fit)) # Maybe shoddy for zero-inflated and zero-truncated distributions   
+          
           new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
           new_fit_CBFM_ptest$logLik_perspp <- sapply(all_update_coefs, function(x) x$logLik)         
           
@@ -2980,6 +2993,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      out_CBFM$edf <- matrix(new_fit_CBFM_ptest$edf, ncol = num_spp)
      out_CBFM$edf1 <- matrix(new_fit_CBFM_ptest$edf1, ncol = num_spp)
      out_CBFM$pen_edf <- new_fit_CBFM_ptest$pen_edf
+     if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+          out_CBFM$ziedf <- matrix(new_fit_CBFM_ptest$ziedf, ncol = num_spp)
+          out_CBFM$ziedf1 <- matrix(new_fit_CBFM_ptest$ziedf1, ncol = num_spp)
+          out_CBFM$zipen_edf <- new_fit_CBFM_ptest$zipen_edf
+          }
      out_CBFM$k_check <- all_k_check
      out_CBFM$vcomp <- all_vcomp
      
@@ -3023,7 +3041,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      names(out_CBFM$dispparam) <- names(out_CBFM$powerparam) <- colnames(out_CBFM$edf) <- colnames(out_CBFM$edf1) <- names(out_CBFM$logLik_perspecies) <- 
           names(out_CBFM$deviance_perspecies) <- names(out_CBFM$null_deviance_perspecies) <- names(out_CBFM$deviance_explained_perspecies) <- 
           names(out_CBFM$pen_edf) <- names(out_CBFM$k_check) <- names(out_CBFM$vcomp) <- colnames(y)
-
+     if(family$family %in% c("zipoisson","zinegative.binomial")) {
+          colnames(out_CBFM$ziedf) <- colnames(out_CBFM$ziedf1) <- names(out_CBFM$zipen_edf) <- colnames(y)
+          }
      
      if(which_B_used[1]) {
           if(is.null(Sigma_control$custom_space)) {

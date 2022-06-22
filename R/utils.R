@@ -112,7 +112,7 @@
    
    if(family$family %in% c("zipoisson","zinegative.binomial")) {
                 fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
-                zeroinfl_prob <- plogis(tcrossprod(X, cwfit$zibetas))
+                zeroinfl_prob <- plogis(tcrossprod(ziX, cwfit$zibetas))
                 
                 for(j in 1:num_spp) {
                         sel_zerospp <- which(y[,j] == 0)
