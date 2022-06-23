@@ -9,7 +9,7 @@
 #' @param ... Not used.
 #' 
 #' @details 
-#' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_j)*\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. 
+#' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_{ij})*\mu_{ij}} where \eqn{\pi_{ij}} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component. 
 #' 
 #' Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.
 #' 
