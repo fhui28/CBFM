@@ -12,7 +12,7 @@
 #' @details 
 #' This is a relatively basic function that calculates the so-called "hat values", an approximate Cook's distance, and some estimated degrees of freedom from a fitted CBFM. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM. 
 #' 
-#' Regarding the estimated degrees of freedom (EDF) for the basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. These degrees of freedom values are analogous to what are available in \code{object$edf/object$edf1}, which are the EDFs for each model parameter in \code{formula}; see [CBFM()] for more information. Note however that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. On their own, the EDFs are not really of much use at the moment, especially since they are at the moment **not** used in calculating overall degrees of freedom e.g., [logLik.CBFM()] or in information criteria e.g., [AIC.CBFM()] and [AICc.CBFM()]. This might change at some point down the road though... 
+#' Regarding the estimated degrees of freedom (EDF) for the basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. These degrees of freedom values are analogous to what are available in \code{object$edf/object$edf1}, which are the EDFs for each model parameter in \code{formula}, and similarly for \code{object$ziedf/object$ziedf1}, which are the EDFs for each model parameter in \code{ziformula}; see [CBFM()] for more information. Note however that because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. 
 #' 
 #' All measures are obtained on a *per-species basis*. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates. 
 #' 
@@ -131,51 +131,58 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
       object$dispparam <- rep(1, num_spp)
    if(is.null(object$powerparam))
       object$powerparam <- rep(0, num_spp)
-   if(is.null(object$zeroinfl_prob_intercept))
-      object$zeroinfl_prob_intercept <- rep(0, num_spp)
-  
+   if(object$family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+        zieta <- as.vector(tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas))
+        }
+   
    weights_mat <- .neghessfamily(family = object$family, eta = object$linear_predictors, y = object$y, 
                                  phi = matrix(object$dispparam, num_units, num_spp, byrow = TRUE), 
                                  powerparam = matrix(object$powerparam, num_units, num_spp, byrow = TRUE),
-                                 zeroinfl_prob_intercept = matrix(object$zeroinfl_prob_intercept, num_units, num_spp, byrow = TRUE), 
-                                 trial_size = object$trial_size, domore = TRUE)
+                                 zieta = zieta, trial_size = object$trial_size, domore = TRUE)
    if(object$family$family[1] %in% c("ztpoisson"))
       weights_mat$out[is.na(weights_mat$out)] <- 0
   if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
     weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
     weights_mat[is.na(object$y)] <- 0
     }
-  if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-    weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
-    weights_mat$out_zeroinflzeroinfl[is.na(object$y)] <- 0
-    weights_mat$out_zeroinflbetas[is.na(object$y)] <- 0
-    }
-
+   if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+        weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
+        weights_mat_betabeta[is.na(object$y)] <- 0
+        weights_mat$out_zeroinflzeroinfl[is.na(object$y)] <- 0
+        weights_mat$out_zeroinflbetas[is.na(object$y)] <- 0
+        }
+   
+   
    # [W^{1/2}X, W^{1/2}B]
    X <- model.matrix.CBFM(object)
-   WsqrtXB <- function(j) {                
-      if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
-         WsqrtX <- X*sqrt(weights_mat[,j])
-         WsqrtB <- object$B * sqrt(weights_mat[,j])
-         return(list(WsqrtX = WsqrtX, WsqrtB = WsqrtB))
+   if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
+        WsqrtXB <- function(j) {                
+             WsqrtX <- X*sqrt(weights_mat[,j])
+             WsqrtB <- object$B * sqrt(weights_mat[,j])
+             return(list(WsqrtX = WsqrtX, WsqrtB = WsqrtB))
+        }
+        getall_WsqrtXB <- foreach(j = 1:num_spp) %dopar% WsqrtXB(j = j)
+        bigXBWXB <- cbind(bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtX)), bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtB))) 
+        bigXBWXB <- crossprod(bigsqrtWXB)
+   }
+   
+   if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+        WsqrtXB <- function(j) {                
+             Xi <- bdiag(model.matrix.CBFM(object, zi = TRUE), X)
+             bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
+             bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
+             XTWX <- crossprod(Xi, bigW) %*% Xi
+             BTWX <- crossprod(object$B, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% Xi
+             BTWB <- crossprod(object$B*sqrt(weights_mat_betabeta[,j]))
+             return(list(XTWX = XTWX, BTWX = BTWX, BTWB = BTWB))
+             }
+         getall_XBWXB <- foreach(j = 1:num_spp) %dopar% WsqrtXB(j = j)
+         bigXBWXB <- cbind(bdiag(lapply(getall_XBWXB, function(x) x$XTWX)), bdiag(lapply(getall_XBWXB, function(x) t(x$BTWX)))) 
+         bigXBWXB <- rbind(bigXBWXB, cbind(bdiag(lapply(getall_XBWXB, function(x) x$BTWX)), bdiag(lapply(getall_XBWXB, function(x) x$BTWB))))
          }
-    
-      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-         Xi <- bdiag(matrix(1, num_units, 1), X)
-         bigW <- cbind(Diagonal(x = sqrt(weights_mat$out_zeroinflzeroinfl[,j])),  Diagonal(x = sqrt(weights_mat$out_zeroinflbetas[,j])))
-         bigW <- rbind(bigW, cbind(Diagonal(x = sqrt(weights_mat$out_zeroinflbetas[,j])),  Diagonal(x = sqrt(weights_mat_betabeta[,j]))))
-         WsqrtX <- Xi %*% sqrt(bigW)
-         WsqrtB <- object$B * sqrt(weights_mat_betabeta[,j])
-         return(list(WsqrtX = WsqrtX, WsqrtB = WsqrtB))
-         }
-      }
-  
-   getall_WsqrtXB <- foreach(j = 1:num_spp) %dopar% WsqrtXB(j = j)
    gc()
    rm(X)
-  
-   bigsqrtWXB <- cbind(bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtX)), bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtB))) 
-  
+   
   
    ##------------------
    ## Now the measures
@@ -188,40 +195,41 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
       return(hatvals_j)
       }
     #hatvals <- rowSums((bigsqrtWXB %*% bigV) * bigsqrtWXB)
-   #hatvals <- matrix(hatvals, nrow = num_units, ncol = num_spp)
-   hatvals <- foreach(j = 1:num_spp, .combine = cbind) %dopar% gethatvals_j(j = j)
+    #hatvals <- matrix(hatvals, nrow = num_units, ncol = num_spp)
+    hatvals <- foreach(j = 1:num_spp, .combine = cbind) %dopar% gethatvals_j(j = j)
    
   
-   # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
-   # In fact, in additional simulations we found that the EDFs calculated for the terms in formula are typically very very close to those from edf and the last update using GAM in the PQL estimation algorithm. 
-   edfs <- diag(bigV %*% crossprod(bigsqrtWXB))
-   names(edfs) <- colnames(bigV)
-   if(object$num_B == 0)
-      edfs_out <- NULL
-   if(object$num_B > 0) {
-      edfs_out <- matrix(NA, nrow = num_spp, ncol = 3)
-      rownames(edfs_out) <- colnames(object$y)
-      colnames(edfs_out) <- c("B_space", "B_time", "B_spacetime")
-    
-      for(j in 1:num_spp) { 
-         sub_edfs <- edfs[grep(paste0(colnames(object$y)[j],"$"), names(edfs))]
-         sub_edfs <- sub_edfs[-(1:(nrow(object$covar_components$topleft)/num_spp))] 
-      
-         if(object$which_B_used[1]) {
-            edfs_out[j,1] <- sum(sub_edfs[1:object$num_B_space])
-            sub_edfs <- sub_edfs[-(1:object$num_B_space)] 
-            }
-         if(object$which_B_used[2]) {
-            edfs_out[j,2] <- sum(sub_edfs[1:object$num_B_time])
-            sub_edfs <- sub_edfs[-(1:object$num_B_time)] 
-            }
-         if(object$which_B_used[3]) {
-            edfs_out[j,3] <- sum(sub_edfs[1:object$num_B_spacetime])
-            sub_edfs <- sub_edfs[-(1:object$num_B_spacetime)] 
-            }
+    # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
+    # In additional simulations we found that the EDFs calculated for the terms in formula are typically *very* close to those from edf and the last update using GAM in the PQL estimation algorithm. 
+    edfs <- diag(bigV %*% bigXBWXB)
+    names(edfs) <- colnames(bigV)
+    if(object$num_B == 0)
+         edfs_out <- NULL
+    if(object$num_B > 0) {
+         edfs_out <- matrix(NA, nrow = num_spp, ncol = 3)
+         rownames(edfs_out) <- colnames(object$y)
+         colnames(edfs_out) <- c("B_space", "B_time", "B_spacetime")
+         
+         for(j in 1:num_spp) { 
+              sub_edfs <- edfs[grep(paste0(colnames(object$y)[j],"$"), names(edfs))]
+              sub_edfs <- sub_edfs[-(1:(nrow(object$covar_components$topleft)/num_spp))] 
+              
+              if(object$which_B_used[1]) {
+                   edfs_out[j,1] <- sum(sub_edfs[1:object$num_B_space])
+                   sub_edfs <- sub_edfs[-(1:object$num_B_space)] 
+              }
+              if(object$which_B_used[2]) {
+                   edfs_out[j,2] <- sum(sub_edfs[1:object$num_B_time])
+                   sub_edfs <- sub_edfs[-(1:object$num_B_time)] 
+              }
+              if(object$which_B_used[3]) {
+                   edfs_out[j,3] <- sum(sub_edfs[1:object$num_B_spacetime])
+                   sub_edfs <- sub_edfs[-(1:object$num_B_spacetime)] 
+              }
          }
-      }
-  
+    }
+    
+   
   # Experimentation. But most of the time frequentist either has smaller standard errors, so not used
   #freq_cov_stderrs <- sqrt(rowSums((bigV %*% crossprod(bigsqrtWXB)) * bigV))
   #freq_cov_stderrs <- matrix(freq_cov_stderrs[1:(num_spp*ncol(model.matrix(object)))], ncol = num_spp)
@@ -230,9 +238,11 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
   #abline(0,1)
   
    # Cook's distance
-   rm(bigsqrtWXB, bigV, weights_mat, edfs)    
+   rm(bigXBWXB, bigV, weights_mat, edfs)    
    res <- residuals.CBFM(object, type = "pearson")
-   final_dfs <- colSums(object$edf) + nrow(object$basis_effects_mat)
+   final_dfs <- colSums(object$edf) + ncol(object$basis_effects_mat)
+   if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
+        final_dfs <- final_dfs + colSums(object$ziedf)
    cookD <- (res / (1 - hatvals))^2 * hatvals / matrix(final_dfs, nrow = num_units, ncol = num_spp, byrow = TRUE)
   
    rownames(hatvals) <- rownames(cookD) <- rownames(object$y)
