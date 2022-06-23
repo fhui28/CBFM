@@ -97,7 +97,7 @@ model.matrix.CBFM <- function(object, zi = FALSE, ...) {
         
      if(zi) {
           if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial")))
-               stop("A model model associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
+               stop("A model matrix associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
           
           tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
           nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))

@@ -6,6 +6,7 @@
 #' Calculates measures of concurvity from a fitted \code{CBFM} object. The measures are adapted from those found in [mgcv::concurvity()], and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.  
 #' 
 #' @param object An object of class \code{CBFM}.
+#' @param zi For zero-inflated distributions, set this to \code{TRUE} if measures of concurvity associated with modeling the probabilities of zero-inflation are desired.
 #' @param ... Not used.
 #' 
 #' @details 
@@ -129,13 +130,23 @@
 #' @importFrom mgcv gam 
 #' @md
 
-concur <- function(object, ...) {
+concur <- function(object, zi = FALSE, ...) {
      if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
      
      num_spp <- ncol(object$y)
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
      nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+     
+     if(zi) {
+          if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) 
+               stop("Measures of concurvity associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
+          if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+               tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+               nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+               }
+          }
+          
      
      # Start with parametric terms, but exclude intercept. Then include smoothing terms. Then basis functions.
      if(length(nullfit$smooth) == 0) {
@@ -163,20 +174,22 @@ concur <- function(object, ...) {
      
      num_X_terms <- length(start)
      
-     if(object$num_B_space > 0) {
-          start <- c(start, stop[length(stop)]+1)
-          stop <- c(stop, stop[length(stop)] + object$num_B_space)
-          labs <- c(labs, "B_space")
-          }
-     if(object$num_B_time > 0) {
-          start <- c(start, stop[length(stop)]+1)
-          stop <- c(stop, stop[length(stop)] + object$num_B_time)
-          labs <- c(labs, "B_time")
-          }
-     if(object$num_B_spacetime > 0) {
-          start <- c(start, stop[length(stop)]+1)
-          stop <- c(stop, stop[length(stop)] + object$num_B_spacetime)
-          labs <- c(labs, "B_spacetime")
+     if(!zi) {
+          if(object$num_B_space > 0) {
+               start <- c(start, stop[length(stop)]+1)
+               stop <- c(stop, stop[length(stop)] + object$num_B_space)
+               labs <- c(labs, "B_space")
+               }
+          if(object$num_B_time > 0) {
+               start <- c(start, stop[length(stop)]+1)
+               stop <- c(stop, stop[length(stop)] + object$num_B_time)
+               labs <- c(labs, "B_time")
+               }
+          if(object$num_B_spacetime > 0) {
+               start <- c(start, stop[length(stop)]+1)
+               stop <- c(stop, stop[length(stop)] + object$num_B_spacetime)
+               labs <- c(labs, "B_spacetime")
+               }
           }
      
      num_terms <- length(start)
@@ -185,7 +198,10 @@ concur <- function(object, ...) {
      # So start and stop capture all things implied by formula. num_terms counts this along with the any basis coefficients in model
 
      
-     X <- cbind(model.matrix(object), object$B)
+     X <- cbind(model.matrix.CBFM(object), object$B)
+     if(zi) {
+          X <- model.matrix.CBFM(object, zi = TRUE)
+          } 
      X <- base::qr.R(base::qr(X)) # Using a QR decomposition speeds up remaining computation for calculating measures?
      
      # Doing concurvity measures for terms in formula
@@ -202,8 +218,11 @@ concur <- function(object, ...) {
                # Numerator is ||Q_everything*R_everythingelse %*% beta ||^2 
                # Denominator is ||X%*%beta||^2 for that covariate
                sel_betas <- object$betas[k1, start[k0]:stop[k0]]
+               if(zi)
+                    sel_betas <- object$zibetas[k1, start[k0]:stop[k0]]
                full_concur[k1,1,k0] <- sum((R[1:sel_num_cols,,drop = FALSE] %*% sel_betas)^2) / sum((Rt %*% sel_betas)^2)
-
+               sel_betas <- object$betas[k1, start[k0]:stop[k0]]
+               
                # Less pessimistic estimate
                # Numerator is ||Q_everything*R_everythingelse||^2 
                # Denominator is ||X||^2 for that covariate
@@ -213,21 +232,23 @@ concur <- function(object, ...) {
      
      
      # Doing concurvity measures for basis function terms
-     for(k0 in (num_X_terms+1):num_terms) {
-          Xj <- X[, start[k0]:stop[k0], drop = FALSE]
-          Xi <- X[, -(start[k0]:stop[k0]), drop = FALSE]
-          sel_num_cols <- ncol(Xi) 
-          
-          R <- base::qr.R(base::qr(cbind(Xi,Xj), tol = 0))[, -(1:sel_num_cols), drop = FALSE] 
-          Rt <- base::qr.R(base::qr(R, tol = 0)) 
-          
-          for(k1 in 1:num_spp) { 
-               # Observed 
-               sel_betas <- cbind(object$betas, object$basis_effects_mat)[k1, start[k0]:stop[k0]]
-               full_concur[k1,1,k0] <- sum((R[1:sel_num_cols,,drop = FALSE] %*% sel_betas)^2) / sum((Rt %*% sel_betas)^2)
-
-               # Less pessimistic estimate
-               full_concur[k1,2,k0] <- sum(R[1:sel_num_cols,]^2) / sum(R^2)
+     if(!zi) {
+          for(k0 in (num_X_terms+1):num_terms) {
+               Xj <- X[, start[k0]:stop[k0], drop = FALSE]
+               Xi <- X[, -(start[k0]:stop[k0]), drop = FALSE]
+               sel_num_cols <- ncol(Xi) 
+               
+               R <- base::qr.R(base::qr(cbind(Xi,Xj), tol = 0))[, -(1:sel_num_cols), drop = FALSE] 
+               Rt <- base::qr.R(base::qr(R, tol = 0)) 
+               
+               for(k1 in 1:num_spp) { 
+                    # Observed 
+                    sel_betas <- cbind(object$betas, object$basis_effects_mat)[k1, start[k0]:stop[k0]]
+                    full_concur[k1,1,k0] <- sum((R[1:sel_num_cols,,drop = FALSE] %*% sel_betas)^2) / sum((Rt %*% sel_betas)^2)
+     
+                    # Less pessimistic estimate
+                    full_concur[k1,2,k0] <- sum(R[1:sel_num_cols,]^2) / sum(R^2)
+                    }
                }
           }
      
