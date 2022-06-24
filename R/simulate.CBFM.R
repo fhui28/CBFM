@@ -26,7 +26,7 @@
 #' 
 #' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from the corresponding estimates from the ftted CBFM, and \eqn{kronecker(\cdot)} is the Kronecker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
 #' 
-#' By plugging estimated (or simulated) values of the parameters from the fitted CBFM into the mean model given above, responses \eqn{y_{ij}} are then subsequently simulated from the assumed distribution given this mean value, along with any estimated values of the dispersion/power/zero inflation probability parameters from the fitted CBFM as appropriate. For hurdle CBFMs, the simulation process is analogous to this, except that it consists of two steps: 1) simulating presence-absence responses first, and then simulating count responses for the presences only.  
+#' By plugging estimated (or simulated) values of the parameters from the fitted CBFM into the mean model given above, responses \eqn{y_{ij}} are then subsequently simulated from the assumed distribution given this mean value, along with any estimated values of the dispersion/power/zero-inflation probability parameters from the fitted CBFM as appropriate. For hurdle CBFMs, the simulation process is analogous to this, except that it consists of two steps: 1) simulating presence-absence responses first, and then simulating count responses for the presences only.  
 #' 
 #' 
 #' @return A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
@@ -112,82 +112,83 @@
 #' @md
 #' 
 simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, conditional = TRUE, ...) {
-  if(!inherits(object, "CBFM")) 
-    stop("`object' is not of class \"CBFM\"")
+     if(!inherits(object, "CBFM")) 
+          stop("`object' is not of class \"CBFM\"")
 
-
-  ## Code chunk from simulate.lm to sort out the seed thing
-  if(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
-    runif(1)
-  if(is.null(seed)) 
-    RNGstate <- get(".Random.seed", envir = .GlobalEnv)
-  else {
-    R.seed <- get(".Random.seed", envir = .GlobalEnv)
-    set.seed(seed)
-    RNGstate <- structure(seed, kind = as.list(RNGkind()))
-    on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
-    }
+     ## Code chunk from simulate.lm to sort out the seed thing
+     if(!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
+          runif(1)
+     if(is.null(seed)) 
+          RNGstate <- get(".Random.seed", envir = .GlobalEnv)
+     else {
+          R.seed <- get(".Random.seed", envir = .GlobalEnv)
+          set.seed(seed)
+          RNGstate <- structure(seed, kind = as.list(RNGkind()))
+          on.exit(assign(".Random.seed", R.seed, envir = .GlobalEnv))
+          }
   
-  ##-----------------------
-  ## Set up true model
-  ##-----------------------
-  true_model <- list(
-    family = object$family, 
-    formula = object$formula,
-    data = object$data, 
-    B_space = NULL, 
-    B_time = NULL, 
-    B_spacetime = NULL, 
-    offset = object$offset,
-    betas = object$betas,
-    basis_effects_mat = NULL,
-    Sigma = NULL,
-    G = NULL,
-    trial_size = object$trial_size,
-    dispparam = object$dispparam, 
-    powerparam = object$powerparam, 
-    max_resp = max_resp
-    )
-    if(!is.null(object$zeroinfl_prob_intercept))
-      true_model$zeroinfl_prob <- plogis(object$zeroinfl_prob_intercept)
-    if(object$which_B_used[1] == 1)
-      true_model$B_space <- object$B[,1:object$num_B_space,drop=FALSE]
-    if(object$which_B_used[2] == 1)
-      true_model$B_time <- object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE]
-    if(object$which_B_used[3] == 1)
-      true_model$B_spacetime <- object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE]
+     ##-----------------------
+     ## Set up true model
+     ##-----------------------
+     true_model <- list(
+          family = object$family, 
+          formula = object$formula,
+          ziformula = object$ziformula,
+          data = object$data, 
+          B_space = NULL, 
+          B_time = NULL, 
+          B_spacetime = NULL, 
+          offset = object$offset,
+          betas = object$betas,
+          zibetas = object$zibetas,
+          basis_effects_mat = NULL,
+          Sigma = NULL,
+          G = NULL,
+          trial_size = object$trial_size,
+          dispparam = object$dispparam, 
+          powerparam = object$powerparam, 
+          max_resp = max_resp
+          )
+     if(object$which_B_used[1] == 1)
+          true_model$B_space <- object$B[,1:object$num_B_space,drop=FALSE]
+     if(object$which_B_used[2] == 1)
+          true_model$B_time <- object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE]
+     if(object$which_B_used[3] == 1)
+          true_model$B_spacetime <- object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE]
         
-    if(conditional == TRUE) {
-      true_model$basis_effects_mat <- object$basis_effects_mat
-      }
+     if(conditional == TRUE) {
+          true_model$basis_effects_mat <- object$basis_effects_mat
+          }
      
-    if(conditional == FALSE) {
-      true_model$Sigma <- list(space = object$Sigma_space, time = object$Sigma_time, spacetime = object$Sigma_spacetime)
-      true_model$G <- list(space = object$G_space, time = object$G_time, spacetime = object$G_spacetime)
-      }
+     if(conditional == FALSE) {
+          true_model$Sigma <- list(space = object$Sigma_space, time = object$Sigma_time, spacetime = object$Sigma_spacetime)
+          true_model$G <- list(space = object$G_space, time = object$G_time, spacetime = object$G_spacetime)
+          }
      
-    ##-------------------
-    ## Simulate response matrices
-    ##-------------------
-    out <- replicate(nsim, create_CBFM_life(
-      family = true_model$family, 
-      formula = true_model$formula, 
-      data = true_model$data, 
-      B_space = true_model$B_space, 
-      B_time = true_model$B_time, 
-      B_spacetime = true_model$B_spacetime, 
-      offset = true_model$offset,
-      betas = true_model$betas,
-      basis_effects_mat = true_model$basis_effects_mat,
-      Sigma = true_model$Sigma,
-      G = true_model$G,
-      trial_size = true_model$trial_size,
-      dispparam = true_model$dispparam, 
-      powerparam = true_model$dispparam, 
-      zeroinfl_prob = true_model$zeroinfl_prob, 
-      max_resp = max_resp,
-      only_y = TRUE)
-      )
+    
+     ##-------------------
+     ## Simulate response matrices
+     ##-------------------
+     out <- replicate(nsim, create_CBFM_life(
+          family = true_model$family, 
+          formula = true_model$formula, 
+          ziformula = true_model$ziformula,
+          data = true_model$data, 
+          B_space = true_model$B_space, 
+          B_time = true_model$B_time, 
+          B_spacetime = true_model$B_spacetime, 
+          offset = true_model$offset,
+          betas = true_model$betas,
+          zibetas = true_model$zibetas,
+          basis_effects_mat = true_model$basis_effects_mat,
+          Sigma = true_model$Sigma,
+          G = true_model$G,
+          trial_size = true_model$trial_size,
+          dispparam = true_model$dispparam, 
+          powerparam = true_model$dispparam, 
+          max_resp = max_resp,
+          only_y = TRUE)
+          )
     
     return(out)
     }
