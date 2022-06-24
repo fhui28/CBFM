@@ -92,7 +92,7 @@ ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fi
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ##------------------------------
-set.seed(2022)
+set.seed(072022)
 num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
 num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
@@ -167,10 +167,14 @@ fitcbfm_zip <- CBFM(y = simy_train,
 
 
 
-
 # Calculate predictions onto test dataset
-predictions_cbfm_pure <- predict(fitcbfm_pure, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
-predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", new_B_space = test_basisfunctions, new_B_time = mm_test, se_fit = FALSE)
+predictions_cbfm_gold <- predict(fitcbfm_zip, type = "response")
+predictions_cbfm_test <- predict(fitcbfm_zip, type = "response", se_fit = TRUE)
+matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "xy"); abline(0,1)
+
+
+predictions_cbfm_pure <- predict(fitcbfm_zip, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
+
 
 # Evaluation predictions
 # Tjur R-squared across species
