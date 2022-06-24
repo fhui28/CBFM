@@ -30,7 +30,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
              weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
                                            powerparam = rep(powerparam, each = nrow(B)), zieta = zieta, trial_size = trial_size)
 
-                ## Set up to to REML as opposed to ML
+                ## Set up REML as opposed to ML
                 weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
@@ -220,7 +220,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                 weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
                                               powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
 
-                ## Set up to to REML as opposed to ML
+                ## Set up to REML as opposed to ML
                 weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
