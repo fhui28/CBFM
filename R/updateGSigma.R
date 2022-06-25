@@ -23,7 +23,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
      
         if(G_control$method == "LA") {
              zieta <- NULL
-             if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+             if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                   zieta <- as.vector(tcrossprod(ziX, zibetas))
                   }
              ## Note weights are on a per-species basis i.e., site runs faster than species
@@ -213,7 +213,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
 
         if(Sigma_control$method == "LA") {
              zieta <- NULL
-             if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+             if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                   zieta <- as.vector(tcrossprod(ziX, zibetas))
                   }
              ## Note weights are on a per-species basis i.e., site runs faster than species

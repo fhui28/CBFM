@@ -153,7 +153,7 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
      if(is.null(object$powerparam))
           object$powerparam <- rep(0, num_spp)
      zieta <- NULL
-     if(object$family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
           zieta <- as.vector(tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas))
           }
   

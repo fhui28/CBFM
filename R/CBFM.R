@@ -2641,7 +2641,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
                          }
                     }
-               if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+               if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                     new_fit_CBFM_ptest$zibetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$zicoefficients))
                     }
                new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
@@ -2877,7 +2877,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     new_fit_CBFM_ptest$powerparam[j] <- all_update_coefs[[j]]$powerparam
                     }
                }
-          if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                new_fit_CBFM_ptest$zibetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$zicoefficients))
           }
           
@@ -2889,7 +2889,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                new_fit_CBFM_ptest$edf1 <- new_fit_CBFM_ptest$edf1[1:num_X,]     
                }
           new_fit_CBFM_ptest$pen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fit)) 
-          if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                new_fit_CBFM_ptest$ziedf <- sapply(all_update_coefs, function(x) x$fitzi$edf)
                new_fit_CBFM_ptest$ziedf1 <- sapply(all_update_coefs, function(x) x$fitzi$edf1)    
                new_fit_CBFM_ptest$zipen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fitzi)) 
@@ -3181,7 +3181,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                message("Calculating (components of) the covariance (standard error) matrix...")
           
           zieta <- NULL
-          if(family$family[1] %in% c("zipoisson","zinegtive.binomial")) {                        
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                zieta <- as.vector(tcrossprod(ziX, out_CBFM$zibetas))
                }
           
