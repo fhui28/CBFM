@@ -12,7 +12,7 @@
 #' @param ... Not used.
 #'
 #' @details 
-#' Currently, the function returns estimated species-specific regression coefficients, and estimated vector of species-specific probabilities of zero-inflation (on the logit scale), for distributions which require one. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is adapted from that of [mgcv::summary.gam()]; we refer the reader to their help file as well as Wood (2017) for more details on these tests.
+#' Currently, the function returns estimated species-specific regression coefficients, including those associated with modeling the probability of zero-inflation if appropriate. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is *heavily* adapted from that of [mgcv::summary.gam()]; we refer the reader to their help file as well as Wood (2017) for more details on these tests, with any mistakes/issues to be blamed on me (sorry!) and not on Simon Wood who maintains \code{mgcv} splendidly.  
 #' 
 #' As discussed in [CBFM()], all tests are based on the Bayesian posterior covariance matrix of the coefficients. Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
 #' 
@@ -21,18 +21,19 @@
 #' \describe{
 #' \item{call: }{The matched function call of \code{object}.}
 
-#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created, rounded.}
+#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with \code{object$formula}, rounded.}
 
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. }
 
-#' \item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one, rounded. *Note this is presented on the logit scale*, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. } 
+#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with \code{object$ziformula}, rounded.}
 
-#' \item{zeroinf_prob_intercept_resultstab: }{If the \code{object$stderrors == TRUE}, then a data frame containing the point estimates, standard errors, corresponding Wald statistics and P-values, and the lower and upper limit of Wald confidence intervals for the probabilities of zero-inflation (if appropriate). Please note that the Wald-test is a test of whether the intercept is statistically different from i.e., whether the probability of zero-inflation is statistically different from 0.5. This may not be that useful in practice. }
-
-#' \item{summary_tables: }{If the \code{object$stderrors == TRUE}, then a list with length equal to the number of species i.e., \code{ncol(object$y)}. Each element in the list may contain up to three summary tables: 
+#' \item{summary_tables: }{If the \code{object$stderrors == TRUE}, then a list with length equal to the number of species i.e., \code{ncol(object$y)}. Each element in the list may contain the following (as appropriate): 
 #' 1) \code{parametric_coefs}, which is a summary table corresponding to (any) strictly parametric coefficients included in the model; 
 #' 2) \code{anova_terms}, which is a summary table for (any) parametric terms included in the model. The difference between \code{anova_terms} and \code{parametric_coefs} matters when it comes to categorical predictors (most commonly), with \code{parametric_coefs} returning summaries for individual coefficients involved in parameterizing the factor, and \code{anova_terms} returning a single summary for the entire factor. 
 #' 3) \code{smooth_terms}, which is s summary table for (any) smoothing terms included in the model. 
+#' 4) \code{ziparametric_coefs}, which is a summary table corresponding to (any) strictly parametric coefficients included in modeling the probability of zero-inflation; 
+#' 5) \code{zianova_terms}, which is a summary table for (any) parametric terms included in modeling the probability of zero-inflation. The difference between \code{anova_terms} and \code{parametric_coefs} matters when it comes to categorical predictors (most commonly), with \code{parametric_coefs} returning summaries for individual coefficients involved in parameterizing the factor, and \code{anova_terms} returning a single summary for the entire factor. 
+#' 6) \code{zismooth_terms}, which is s summary table for (any) smoothing terms included in modeling the probability of zero-inflation. 
 #'  
 #' Each summary table itself may consists of (and as appropriate) the estimated coefficient, the estimated standard error, the estimated degrees of freedom and rank, the value of the test statistic, the resulting P-values, and the lower and upper limit of Wald confidence intervals.}
 #' }
@@ -66,48 +67,28 @@
 # This version is heavily based on and inspired a lot more by the summary.gam function...acknowledgements go to Simon Wood for his mgcv package.
 # Interesting note that in simulations, most of the time, the results from this are not too far from (but very slightly more conservative than) just ad-hoc applying summary.gam to the last iteration of the PQL estimation algorithm in CBFM! 
 summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("digits") - 3L), ncores = NULL, ...) {
-    if(!inherits(object, "CBFM")) 
-        stop("`object' is not of class \"CBFM\"")
+     if(!inherits(object, "CBFM")) 
+          stop("`object' is not of class \"CBFM\"")
     
-    if(is.null(ncores))
-        registerDoParallel(cores = detectCores()-1)
-    if(!is.null(ncores))
-        registerDoParallel(cores = ncores)
+     if(is.null(ncores))
+          registerDoParallel(cores = detectCores()-1)
+     if(!is.null(ncores))
+          registerDoParallel(cores = ncores)
     
-    num_spp <- nrow(object$betas)
-    num_basisfns <- nrow(object$basis_effects_mat)
+     num_spp <- nrow(object$betas)
+     num_basisfns <- nrow(object$basis_effects_mat)
 
-    summary_output <- list(call = object$call,
-                           betas = round(object$betas, digits),
-                           basis_effects_mat = round(object$basis_effects_mat, digits))
-    if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
-        summary_output$zeroinfl_prob_intercept <- round(object$zeroinfl_prob_intercept, digits)
+     summary_output <- list(call = object$call, betas = round(object$betas, digits), basis_effects_mat = round(object$basis_effects_mat, digits))
+     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
+          summary_output$zibetas <- round(object$zibetas, digits)
 
-    if(object$stderrors) {
-        ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
-        get_std_errs <- sqrt(diag(object$covar_components$topleft))
+     if(object$stderrors) {
+          ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
+          get_std_errs <- sqrt(diag(object$covar_components$topleft))
 
-        # Probabilities of zero-inflation
-        if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-            sel_zeroinfl <- seq(1, length = nrow(summary_output$betas), by = ncol(summary_output$betas)+1)
-            zeroinfl_prob_resultstab <- data.frame(
-                estimate = object$zeroinfl_prob_intercept,
-                std_err = get_std_errs[sel_zeroinfl]
-                )
-            zeroinfl_prob_resultstab$z_value <- zeroinfl_prob_resultstab$estimate / zeroinfl_prob_resultstab$std_err
-            zeroinfl_prob_resultstab$p_value <- 2*pnorm(abs(zeroinfl_prob_resultstab$z_value), lower.tail = FALSE)
-            zeroinfl_prob_resultstab$lower <- zeroinfl_prob_resultstab$estimate - ci_alpha * zeroinfl_prob_resultstab$std_err
-            zeroinfl_prob_resultstab$upper = zeroinfl_prob_resultstab$estimate + ci_alpha * zeroinfl_prob_resultstab$std_err
-            zeroinfl_prob_resultstab <- round(zeroinfl_prob_resultstab, digits)
-            colnames(zeroinfl_prob_resultstab) <- c("Estimate", "Std. Error", "z value", "P-value", "Lower CI", "Upper CI")
-
-            summary_output$zeroinf_prob_intercept_resultstab <- zeroinfl_prob_resultstab
-            get_std_errs <- get_std_errs[-sel_zeroinfl]
-            }
-
-
-         ## A local pseudo-inverse function -- straight from summary.gam
-         pinv <- function(V, M, rank.tol = 1e-6) {
+         
+          # A local pseudo-inverse function -- straight from summary.gam
+          pinv <- function(V, M, rank.tol = 1e-6) {
              D <- eigen(V, symmetric = TRUE)
              M1 <- length(D$values[D$values > rank.tol * D$values[1]])
              if(M > M1)
@@ -122,143 +103,303 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
              res
             }
          
-         get_std_errs <- matrix(get_std_errs, nrow = num_spp, byrow = TRUE)
-         tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
-         spp_results_fn <- function(j) {
-            nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
-
-            # Individual parametric coefficient p-values...
-            if(sum(nullfit$nsdf) > 0) {
-                pstart <- 1
-                ind <- 1:nullfit$nsdf
-                p.coeff <- object$betas[j, ind]
-                p.se <- get_std_errs[j, ind]
-                p.t <- p.coeff / p.se
-                p_table <- cbind(p.coeff, p.se, p.t, 2*pnorm(abs(p.t),lower.tail = FALSE),
-                                 p.coeff - ci_alpha * p.se, p.coeff + ci_alpha * p.se)
-                dimnames(p_table) <- list(names(p.coeff), c("Estimate", "Std. Error", "z value", "P-value", "Lower CI", "Upper CI"))
-                p_table <- as.data.frame(p_table)
-                p_table <- round(p_table, digits)
-                }
-            if(sum(nullfit$nsdf) == 0) {
-                p_table <- NULL
-                }
-
-
-            # Parametric terms, with factors treated whole...
-            pterms <- if(is.list(nullfit$pterms)) nullfit$pterms else list(nullfit$pterms)
-            if(!is.list(nullfit$assign)) nullfit$assign <- list(nullfit$assign)
-            npt <- length(unlist(lapply(pterms, attr, "term.labels")))
-            if(npt > 0)
-                pTerms.df <- pTerms.chi.sq <- pTerms.pv <- array(0, npt)
-            term.labels <- rep("",0)
-            k <- 0 ## total term counter
-
-            for(k1 in 1:length(pterms)) {
-                tlj <- attr(pterms[[k1]], "term.labels")
-                nt <- length(tlj)
-                if (k1 > 1 && nt > 0)
-                    tlj <- paste(tlj, k1-1, sep = ".")
-                term.labels <- c(term.labels, tlj)
-
-                if(nt>0) { # individual parametric terms
-                    np <- length(nullfit$assign[[k1]])
-                    ind <- pstart[k1] - 1 + 1:np
-                    Vb <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
-                    Vb <- object$covar_components$topleft[Vb, Vb, drop = FALSE]
-                    Vb <- Vb[ind, ind, drop = FALSE]
-                    bp <- array(object$betas[j, ind], np)
-
-                    for(i in 1:nt) {
-                        k <- k + 1
-                        ind <- nullfit$assign[[k1]] == i
-                        b <- bp[ind]
-                        V <- Vb[ind,ind]
-                        ## pseudo-inverse needed in case of truncation of parametric space
-                        if(length(b) == 1) {
-                            V <- 1/V
-                            pTerms.df[k] <- nb <- 1
-                            pTerms.chi.sq[k] <- V * b * b
-                            }
-                        if(length(b) > 1) {
-                            V <- pinv(V, length(b), rank.tol = 0.5*.Machine$double.eps)
-                            pTerms.df[k] <- nb <- attr(V,"rank")
-                            pTerms.chi.sq[k] <- crossprod(b, V) %*% b
-                            }
-                        pTerms.pv[k] <- pchisq(pTerms.chi.sq[k], df = nb, lower.tail = FALSE)
-                        } ## for (i in 1:nt)
-                    }  ## if (nt>0)
-                }
-
-            if(npt) {
-                attr(pTerms.pv,"names") <- term.labels
-                pTerms_table <- cbind(pTerms.df, pTerms.chi.sq, pTerms.pv)
-                dimnames(pTerms_table) <- list(term.labels, c("DF", "Chi-squared", "P-value"))
-                pTerms_table <- as.data.frame(pTerms_table)
-                pTerms_table <- round(pTerms_table, digits)
-                }
-            if(!npt) {
-                pTerms_table <- NULL
-                }
-
-
-            # Smooth terms...
-            m <- length(nullfit$smooth) # number of smooth terms
-            df <- edf1 <- edf <- s.pv <- chi.sq <- array(0, m)
-            s_table <- NULL
-            if (m > 0) { # form test statistics for each smooth
-                X <- model.matrix.gam(nullfit)
-                ii <- 0
-                for (i in 1:m) { ## loop through smooths
-                    start <- nullfit$smooth[[i]]$first.para
-                    stop <- nullfit$smooth[[i]]$last.para
-
-                    V <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
-                    V <- object$covar_components$topleft[V, V, drop = FALSE]
-                    V <- V[start:stop, start:stop, drop = FALSE]
-
-                    p <- object$betas[j, start:stop]  # params for smooth
-                    edf1i <- edfi <- sum(object$edf[start:stop,j]) # edf for this smooth
-                    if(!is.null(object$edf1)) # Extract alternative edf estimate for this smooth, if possible
-                        edf1i <-  sum(object$edf1[start:stop,j])
-                    
-                    Xt <- X[,start:stop, drop = FALSE]
-                    #fx <- if(inherits(nullfit$smooth[[i]],"tensor.smooth")&& !is.null(nullfit$smooth[[i]]$fx))
-                    #    all(nullfit$smooth[[i]]$fx) else nullfit$smooth[[i]]$fixed
-                    #if(!fx && nullfit$smooth[[i]]$null.space.dim == 0 && !is.null(object$R)) { ## random effect or fully penalized term
-                    #    res <- if (re.test) reTest(nullfit,i) else NULL
-                    #    }
-                    #else { ## Inverted Nychka interval statistics
-                    res <- .testStat(p = p, X = Xt, V = V, rank = min(ncol(Xt), edf1i), type = 0, res.df = -1)
-                
-                    if(!is.null(res)) {
-                        ii <- ii + 1
-                        df[ii] <- res$rank
-                        chi.sq[ii] <- res$stat
-                        s.pv[ii] <- res$pval
-                        edf1[ii] <- edf1i
-                        edf[ii] <- edfi
-                        names(chi.sq)[ii] <- nullfit$smooth[[i]]$label
+          ##------------------
+          ## Begin construction of summary outputs [on a per-species basis]
+          ##------------------
+          get_std_errs <- matrix(get_std_errs, nrow = num_spp, byrow = TRUE)
+          formnames <- rownames(object$covar_components$topleft)[1:(nrow(object$covar_components$topleft)/num_spp)]
+          formnames <- sapply(strsplit(formnames, ":"), function(x) x[1])
+          colnames(get_std_errs) <- formnames
+          rm(formnames)
+       
+          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+          if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
+               tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+         
+          spp_results_fn <- function(j) {
+               spp_std_errs <- get_std_errs[j,]
+              
+               ## Summary tables for modeling the probability of zero-inflation
+               if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+                    nullfit <- gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+                   
+                    # Individual parametric coefficient p-values...
+                    if(sum(nullfit$nsdf) > 0) {
+                        pstart <- 1
+                        ind <- 1:nullfit$nsdf
+                        p.coeff <- object$zibetas[j, ind]
+                        p.se <- spp_std_errs[ind]
+                        p.t <- p.coeff / p.se
+                        zip_table <- cbind(p.coeff, p.se, p.t, 2*pnorm(abs(p.t),lower.tail = FALSE),
+                                         p.coeff - ci_alpha * p.se, p.coeff + ci_alpha * p.se)
+                        dimnames(zip_table) <- list(names(p.coeff), c("Estimate", "Std. Error", "z value", "P-value", "Lower CI", "Upper CI"))
+                        zip_table <- as.data.frame(zip_table)
+                        zip_table <- round(zip_table, digits)
                         }
+                    if(sum(nullfit$nsdf) == 0) {
+                         zip_table <- NULL
+                         }
+                   
+                    # Parametric terms, with factors treated whole...
+                    pterms <- if(is.list(nullfit$pterms)) nullfit$pterms else list(nullfit$pterms)
+                    if(!is.list(nullfit$assign)) nullfit$assign <- list(nullfit$assign)
+                    npt <- length(unlist(lapply(pterms, attr, "term.labels")))
+                    if(npt > 0)
+                         pTerms.df <- pTerms.chi.sq <- pTerms.pv <- array(0, npt)
+                    term.labels <- rep("",0)
+                    k <- 0 ## total term counter
+                    
+                    for(k1 in 1:length(pterms)) {
+                         tlj <- attr(pterms[[k1]], "term.labels")
+                         nt <- length(tlj)
+                         if (k1 > 1 && nt > 0)
+                              tlj <- paste(tlj, k1-1, sep = ".")
+                         term.labels <- c(term.labels, tlj)
+                         
+                         if(nt>0) { # individual parametric terms
+                              np <- length(nullfit$assign[[k1]])
+                              ind <- pstart[k1] - 1 + 1:np
+                              Vb <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+                              Vb <- object$covar_components$topleft[Vb, Vb, drop = FALSE] # Gets the entire species component of covariance
+                              Vb <- Vb[grep("ZeroInfl",rownames(Vb)), grep("ZeroInfl",rownames(Vb)), drop = FALSE] # Gets only the zero-inflation component
+                              Vb <- Vb[ind, ind, drop = FALSE]
+                              bp <- array(object$zibetas[j, ind], np)
+                              
+                              for(i in 1:nt) {
+                                   k <- k + 1
+                                   ind <- nullfit$assign[[k1]] == i
+                                   b <- bp[ind]
+                                   V <- Vb[ind,ind]
+                                   ## pseudo-inverse needed in case of truncation of parametric space
+                                   if(length(b) == 1) {
+                                        V <- 1/V
+                                        pTerms.df[k] <- nb <- 1
+                                        pTerms.chi.sq[k] <- V * b * b
+                                   }
+                                   if(length(b) > 1) {
+                                        V <- pinv(V, length(b), rank.tol = 0.5*.Machine$double.eps)
+                                        pTerms.df[k] <- nb <- attr(V,"rank")
+                                        pTerms.chi.sq[k] <- crossprod(b, V) %*% b
+                                   }
+                                   pTerms.pv[k] <- pchisq(pTerms.chi.sq[k], df = nb, lower.tail = FALSE)
+                              } ## for (i in 1:nt)
+                         }  ## if (nt>0)
+                         }
+                    
+                    if(npt) {
+                         attr(pTerms.pv,"names") <- term.labels
+                         zipTerms_table <- cbind(pTerms.df, pTerms.chi.sq, pTerms.pv)
+                         dimnames(zipTerms_table) <- list(term.labels, c("DF", "Chi-squared", "P-value"))
+                         zipTerms_table <- as.data.frame(zipTerms_table)
+                         zipTerms_table <- round(zipTerms_table, digits)
+                         }
+                    if(!npt) {
+                         zipTerms_table <- NULL
+                         }
+                    
+                    
+                    # Smooth terms...
+                    m <- length(nullfit$smooth) # number of smooth terms
+                    df <- edf1 <- edf <- s.pv <- chi.sq <- array(0, m)
+                    s_table <- NULL
+                    if (m > 0) { # form test statistics for each smooth
+                         X <- model.matrix.gam(nullfit)
+                         ii <- 0
+                         for (i in 1:m) { ## loop through smooths
+                              start <- nullfit$smooth[[i]]$first.para
+                              stop <- nullfit$smooth[[i]]$last.para
+                              
+                              V <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+                              V <- object$covar_components$topleft[V, V, drop = FALSE]
+                              V <- V[grep("ZeroInf",rownames(V)), grep("ZeroInfl",rownames(V)), drop = FALSE] # Gets only the zero-inflation component
+                              V <- V[start:stop, start:stop, drop = FALSE]
+                              
+                              p <- object$zibetas[j, start:stop]  # params for smooth
+                              edf1i <- edfi <- sum(object$ziedf[start:stop,j]) # edf for this smooth
+                              if(!is.null(object$edf1)) # Extract alternative edf estimate for this smooth, if possible
+                                   edf1i <-  sum(object$ziedf1[start:stop,j])
+                              
+                              Xt <- X[,start:stop, drop = FALSE]
+                              #fx <- if(inherits(nullfit$smooth[[i]],"tensor.smooth")&& !is.null(nullfit$smooth[[i]]$fx))
+                              #    all(nullfit$smooth[[i]]$fx) else nullfit$smooth[[i]]$fixed
+                              #if(!fx && nullfit$smooth[[i]]$null.space.dim == 0 && !is.null(object$R)) { ## random effect or fully penalized term
+                              #    res <- if (re.test) reTest(nullfit,i) else NULL
+                              #    }
+                              #else { ## Inverted Nychka interval statistics
+                              res <- .testStat(p = p, X = Xt, V = V, rank = min(ncol(Xt), edf1i), type = 0, res.df = -1)
+                              
+                              if(!is.null(res)) {
+                                   ii <- ii + 1
+                                   df[ii] <- res$rank
+                                   chi.sq[ii] <- res$stat
+                                   s.pv[ii] <- res$pval
+                                   edf1[ii] <- edf1i
+                                   edf[ii] <- edfi
+                                   names(chi.sq)[ii] <- nullfit$smooth[[i]]$label
+                                   }
+                              }
+                         
+                         if(ii == 0)
+                              s_table <- NULL
+                         if(ii > 0) {
+                              df <- df[1:ii]
+                              chi.sq <- chi.sq[1:ii]
+                              edf1 <- edf1[1:ii]
+                              edf <- edf[1:ii]
+                              s.pv <- s.pv[1:ii]
+                              
+                              zis_table <- cbind(edf, df, chi.sq, s.pv)
+                              dimnames(zis_table) <- list(names(chi.sq), c("EDF", "Rank", "Chi-squared", "P-value"))
+                              zis_table <- as.data.frame(zis_table)
+                              zis_table <- round(zis_table, digits)
+                              }
+                         }
+                    
+                    spp_std_errs <- spp_std_errs[-grep("ZeroInfl",names(spp_std_errs))]
                     }
 
-                if(ii == 0)
-                    s_table <- NULL
-                if(ii > 0) {
-                    df <- df[1:ii]
-                    chi.sq <- chi.sq[1:ii]
-                    edf1 <- edf1[1:ii]
-                    edf <- edf[1:ii]
-                    s.pv <- s.pv[1:ii]
-                    
-                    s_table <- cbind(edf, df, chi.sq, s.pv)
-                    dimnames(s_table) <- list(names(chi.sq), c("EDF", "Rank", "Chi-squared", "P-value"))
-                    s_table <- as.data.frame(s_table)
-                    s_table <- round(s_table, digits)
+              
+               ## Summary tables for modeling the mean/location parameter
+               nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+
+               # Individual parametric coefficient p-values...
+               if(sum(nullfit$nsdf) > 0) {
+                    pstart <- 1
+                    ind <- 1:nullfit$nsdf
+                    p.coeff <- object$betas[j, ind]
+                    p.se <- spp_std_errs[ind]
+                    p.t <- p.coeff / p.se
+                    p_table <- cbind(p.coeff, p.se, p.t, 2*pnorm(abs(p.t),lower.tail = FALSE), p.coeff - ci_alpha * p.se, p.coeff + ci_alpha * p.se)
+                    dimnames(p_table) <- list(names(p.coeff), c("Estimate", "Std. Error", "z value", "P-value", "Lower CI", "Upper CI"))
+                    p_table <- as.data.frame(p_table)
+                    p_table <- round(p_table, digits)
                     }
-                }
+               if(sum(nullfit$nsdf) == 0) {
+                    p_table <- NULL
+                    }
+
+               # Parametric terms, with factors treated whole...
+               pterms <- if(is.list(nullfit$pterms)) nullfit$pterms else list(nullfit$pterms)
+               if(!is.list(nullfit$assign)) nullfit$assign <- list(nullfit$assign)
+               npt <- length(unlist(lapply(pterms, attr, "term.labels")))
+               if(npt > 0)
+                    pTerms.df <- pTerms.chi.sq <- pTerms.pv <- array(0, npt)
+               term.labels <- rep("",0)
+               k <- 0 ## total term counter
+
+               for(k1 in 1:length(pterms)) {
+                    tlj <- attr(pterms[[k1]], "term.labels")
+                    nt <- length(tlj)
+                    if (k1 > 1 && nt > 0)
+                         tlj <- paste(tlj, k1-1, sep = ".")
+                    term.labels <- c(term.labels, tlj)
+
+                    if(nt>0) { # individual parametric terms
+                         np <- length(nullfit$assign[[k1]])
+                         ind <- pstart[k1] - 1 + 1:np
+                         Vb <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+                         Vb <- object$covar_components$topleft[Vb, Vb, drop = FALSE]
+                         if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
+                              Vb <- Vb[-grep("ZeroInfl",rownames(Vb)), -grep("ZeroInfl",rownames(Vb)), drop = FALSE] # Gets only the zero-inflation component
+                         Vb <- Vb[ind, ind, drop = FALSE]
+                         bp <- array(object$betas[j, ind], np)
+
+                         for(i in 1:nt) {
+                              k <- k + 1
+                              ind <- nullfit$assign[[k1]] == i
+                              b <- bp[ind]
+                              V <- Vb[ind,ind]
+                              ## pseudo-inverse needed in case of truncation of parametric space
+                              if(length(b) == 1) {
+                                   V <- 1/V
+                                   pTerms.df[k] <- nb <- 1
+                                   pTerms.chi.sq[k] <- V * b * b
+                                   }
+                              if(length(b) > 1) {
+                                   V <- pinv(V, length(b), rank.tol = 0.5*.Machine$double.eps)
+                                   pTerms.df[k] <- nb <- attr(V,"rank")
+                                   pTerms.chi.sq[k] <- crossprod(b, V) %*% b
+                                   }
+                              pTerms.pv[k] <- pchisq(pTerms.chi.sq[k], df = nb, lower.tail = FALSE)
+                              } ## for (i in 1:nt)
+                         }  ## if (nt>0)
+                    }
+
+               if(npt) {
+                    attr(pTerms.pv,"names") <- term.labels
+                    pTerms_table <- cbind(pTerms.df, pTerms.chi.sq, pTerms.pv)
+                    dimnames(pTerms_table) <- list(term.labels, c("DF", "Chi-squared", "P-value"))
+                    pTerms_table <- as.data.frame(pTerms_table)
+                    pTerms_table <- round(pTerms_table, digits)
+                    }
+               if(!npt) {
+                    pTerms_table <- NULL
+                    }
+
+
+               # Smooth terms...
+               m <- length(nullfit$smooth) # number of smooth terms
+               df <- edf1 <- edf <- s.pv <- chi.sq <- array(0, m)
+               s_table <- NULL
+               if (m > 0) { # form test statistics for each smooth
+                    X <- model.matrix.gam(nullfit)
+                    ii <- 0
+                    for (i in 1:m) { ## loop through smooths
+                         start <- nullfit$smooth[[i]]$first.para
+                         stop <- nullfit$smooth[[i]]$last.para
+
+                         V <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+                         V <- object$covar_components$topleft[V, V, drop = FALSE]
+                         V <- V[start:stop, start:stop, drop = FALSE]
+
+                         p <- object$betas[j, start:stop]  # params for smooth
+                         edf1i <- edfi <- sum(object$edf[start:stop,j]) # edf for this smooth
+                         if(!is.null(object$edf1)) # Extract alternative edf estimate for this smooth, if possible
+                              edf1i <-  sum(object$edf1[start:stop,j])
+                    
+                         Xt <- X[,start:stop, drop = FALSE]
+                         #fx <- if(inherits(nullfit$smooth[[i]],"tensor.smooth")&& !is.null(nullfit$smooth[[i]]$fx))
+                         #    all(nullfit$smooth[[i]]$fx) else nullfit$smooth[[i]]$fixed
+                         #if(!fx && nullfit$smooth[[i]]$null.space.dim == 0 && !is.null(object$R)) { ## random effect or fully penalized term
+                         #    res <- if (re.test) reTest(nullfit,i) else NULL
+                         #    }
+                         #else { ## Inverted Nychka interval statistics
+                         res <- .testStat(p = p, X = Xt, V = V, rank = min(ncol(Xt), edf1i), type = 0, res.df = -1)
+                
+                         if(!is.null(res)) {
+                             ii <- ii + 1
+                             df[ii] <- res$rank
+                             chi.sq[ii] <- res$stat
+                             s.pv[ii] <- res$pval
+                             edf1[ii] <- edf1i
+                             edf[ii] <- edfi
+                             names(chi.sq)[ii] <- nullfit$smooth[[i]]$label
+                             }
+                         }
+
+                     if(ii == 0)
+                         s_table <- NULL
+                     if(ii > 0) {
+                         df <- df[1:ii]
+                         chi.sq <- chi.sq[1:ii]
+                         edf1 <- edf1[1:ii]
+                         edf <- edf[1:ii]
+                         s.pv <- s.pv[1:ii]
+                         
+                         s_table <- cbind(edf, df, chi.sq, s.pv)
+                         dimnames(s_table) <- list(names(chi.sq), c("EDF", "Rank", "Chi-squared", "P-value"))
+                         s_table <- as.data.frame(s_table)
+                         s_table <- round(s_table, digits)
+                         }
+                    }
 
             out <- list(parametric_coefs = p_table, anova_terms = pTerms_table, smooth_terms = s_table)
+            if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+                 out$ziparametric_coefs <- zip_table
+                 out$zianova_terms <- zipTerms_table
+                 out$zismooth_terms <- zis_table
+                 }
+                 
             return(out)
             }
         
@@ -504,53 +645,3 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
         #     }
         #   
 
-# OLD_summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("digits") - 3L), ...) {
-#     num_spp <- nrow(object$betas)
-#     num_basisfns <- nrow(object$basis_effects_mat)
-#      
-#     summary_output <- list(call = object$call, 
-#                            betas = round(object$betas, digits), 
-#                            basis_effects_mat = round(object$basis_effects_mat, digits))
-#     if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
-#         summary_output$zeroinfl_prob_intercept <- round(object$zeroinfl_prob_intercept, digits)
-#      
-#     if(object$stderrors) {
-#         get_std_errs <- sqrt(diag(object$covar_components$topleft))
-#         ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
-#         
-#         if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-#             sel_zeroinfl <- seq(1, length = nrow(summary_output$betas), by = ncol(summary_output$betas)+1)
-#             zeroinfl_prob_resultstab <- data.frame(
-#                 estimate = object$zeroinfl_prob_intercept, 
-#                 std_err = get_std_errs[sel_zeroinfl]
-#                 )
-#             zeroinfl_prob_resultstab$z_value <- zeroinfl_prob_resultstab$estimate / zeroinfl_prob_resultstab$std_err
-#             zeroinfl_prob_resultstab$p_value <- 2*pnorm(abs(zeroinfl_prob_resultstab$z_value), lower.tail = FALSE)
-#             zeroinfl_prob_resultstab$lower <- zeroinfl_prob_resultstab$estimate - ci_alpha * zeroinfl_prob_resultstab$std_err
-#             zeroinfl_prob_resultstab$upper = zeroinfl_prob_resultstab$estimate + ci_alpha * zeroinfl_prob_resultstab$std_err
-#             zeroinfl_prob_resultstab <- round(zeroinfl_prob_resultstab, digits)
-#             colnames(zeroinfl_prob_resultstab) <- c("Estimate", "Std. Error", "z value", "Pr(>|z|)", "Lower CI", "Upper CI")
-#             
-#             summary_output$zeroinf_prob__intercept_results <- zeroinfl_prob_resultstab
-#             get_std_errs <- get_std_errs[-sel_zeroinfl]
-#             }
-#         
-#         betas_resultstab <- data.frame(
-#             as.data.frame.table(t(object$betas)), 
-#             std_err = get_std_errs
-#             )
-#         betas_resultstab$z_value <- betas_resultstab[,3] / betas_resultstab$std_err
-#         betas_resultstab$p_value <- 2*pnorm(abs(betas_resultstab$z_value), lower.tail = FALSE)
-#         betas_resultstab$lower <- betas_resultstab[,3] - ci_alpha * get_std_errs
-#         betas_resultstab$upper <- betas_resultstab[,3] + ci_alpha * get_std_errs
-#         betas_resultstab[,-(1:2)] <- round(betas_resultstab[,-(1:2)], digits)
-#         
-#         colnames(betas_resultstab) <- c("Covariate", "Response", "Estimate", "Std. Error", "z value", "Pr(>|z|)", "Lower CI", "Upper CI")
-#           
-#         summary_output$betas_results <- betas_resultstab
-#         }
-#           
-#     class(summary_output) <- "summary.CBFM"
-#     return(summary_output) 
-#     }	
-# 

@@ -160,7 +160,7 @@ fitcbfm_zip <- CBFM(y = simy_train,
                      ziformula = ~ s(temp) + depth + s(chla) + O2, 
                      data = dat_train,
                      B_space = train_basisfunctions, 
-                     family = zinb2(), 
+                     family = zipoisson(), 
                      control = list(trace = 1),
                      Sigma_control = list(rank = 5), 
                      G_control = list(rank = 2))
