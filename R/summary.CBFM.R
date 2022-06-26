@@ -201,7 +201,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                     # Smooth terms...
                     m <- length(nullfit$smooth) # number of smooth terms
                     df <- edf1 <- edf <- s.pv <- chi.sq <- array(0, m)
-                    s_table <- NULL
+                    zis_table <- NULL
                     if (m > 0) { # form test statistics for each smooth
                          X <- model.matrix.gam(nullfit)
                          ii <- 0
@@ -240,7 +240,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                               }
                          
                          if(ii == 0)
-                              s_table <- NULL
+                              zis_table <- NULL
                          if(ii > 0) {
                               df <- df[1:ii]
                               chi.sq <- chi.sq[1:ii]
@@ -393,6 +393,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                          }
                     }
 
+               
             out <- list(parametric_coefs = p_table, anova_terms = pTerms_table, smooth_terms = s_table)
             if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                  out$ziparametric_coefs <- zip_table
