@@ -4,10 +4,12 @@
 \alias{concur}
 \title{Concurvity measures for a CBFM fit}
 \usage{
-concur(object, ...)
+concur(object, zi = FALSE, ...)
 }
 \arguments{
 \item{object}{An object of class \code{CBFM}.}
+
+\item{zi}{For zero-inflated distributions, set this to \code{TRUE} if measures of concurvity associated with modeling the probabilities of zero-inflation are desired.}
 
 \item{...}{Not used.}
 }
@@ -95,7 +97,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 concur(fitcbfm)
@@ -117,7 +119,7 @@ as.matrix \%>\%
 # Fit CBFM 
 tic <- proc.time()
 useformula <- ~ s(temp) + s(depth) + s(chla) + s(O2)
-fitcbfm_gam <- CBFM(y = simy, formula_X = useformula, 
+fitcbfm_gam <- CBFM(y = simy, formula = useformula, 
 data = dat, B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 toc <- proc.time()
 toc-tic

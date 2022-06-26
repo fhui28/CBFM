@@ -26,7 +26,7 @@ For the purposes of the package, the CBFM is characterized by the following mean
 
 where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}.
 
-This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included in the fitted CBFM. For zero-inflated distributions, it will also return the estimated species-specific probabilities of zero-inflation on the logit scale i.e., \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation.
+This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included. For zero-inflated distributions, it will also return the estimated coefficients associated with modeling the probability of zero-inflation, noting that this may included the estimated smoothing coefficients if any smoothers were included.
 
 This function does \emph{not} return the estimated regression coefficients associated with the basis functions i.e., the \eqn{\hat{a}_j}'s. These can be obtained from \code{object$basis_effects_mat}.
 }
@@ -87,7 +87,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 coef(fitcbfm)

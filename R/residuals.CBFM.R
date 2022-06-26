@@ -14,7 +14,7 @@
 #' Suppose that the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then:
 #' 
 #' For \code{type = "response"}, this returns the raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success". 
-#' For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_j)\hat{\mu}_{ij}} where \eqn{\hat{\pi}_j} is the estimated species-specific probability of zero-inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
+#' For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_{ij})\hat{\mu}_{ij}} where \eqn{\hat{\pi}_{ij}} is the estimated probabilities of zero-inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
 #' 
 #' For \code{type = "pearson"}, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance. Note the variance incorporates any scaled parameters if present, and so sometimes this type of residual is referred to as scaled Pearson residuals.
 #' 
@@ -90,7 +90,7 @@
 #' 
 #' # Fit CBFM 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+#' fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' residuals(fitcbfm)
@@ -137,11 +137,16 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                 if(object$family$family[1] %in% c("tweedie")) 
                         out <- out / sqrt(object$family$variance(object$fitted, phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE),
                                                                  power = matrix(object$powerparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
-                if(object$family$family[1] %in% c("zipoisson")) 
-                        out <- out / sqrt(object$family$actual_variance(object$fitted, zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)))
-                if(object$family$family[1] %in% c("zinegative.binomial")) 
-                        out <- out / sqrt(object$family$actual_variance(object$fitted, zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-                            )
+                if(object$family$family[1] %in% c("zipoisson")) {
+                     zieta <- tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas) 
+                     out <- out / sqrt(object$family$actual_variance(exp(object$linear_predictor), zeroinfl_prob = plogis(zieta)))
+                     rm(zieta)
+                     }
+                if(object$family$family[1] %in% c("zinegative.binomial")) {
+                     zieta <- tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas) 
+                     out <- out / sqrt(object$family$actual_variance(exp(object$linear_predictor), zeroinfl_prob = plogis(zieta), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)))
+                     rm(zieta)
+                    }
                 if(object$family$family[1] %in% c("ztpoisson")) 
                         out <- out / sqrt(object$family$actual_variance(mu = object$fitted, lambda = exp(object$linear_predictors)))
                 if(object$family$family[1] %in% c("ztnegative.binomial")) 
@@ -177,17 +182,20 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                         out <- runif(length(object$y), min = a, max = b)
                         }
                 if(object$family$family[1] %in% c("zipoisson")) {
-                        out <- runif(length(object$y), 
-                                     min = .pzipois(object$y-1, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                                     max = .pzipois(object$y, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE))
-                                     )
-                        }
+                     zieta <- tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas) 
+                     out <- runif(length(object$y), 
+                                  min = .pzipois(object$y-1, lambda = exp(object$linear_predictors), zeroinfl_prob = plogis(zieta)),
+                                  max = .pzipois(object$y, lambda = exp(object$linear_predictors), zeroinfl_prob = plogis(zieta))
+                                  )
+                     rm(zieta)   
+                     }
                 if(object$family$family[1] %in% c("zinegative.binomial")) {
-                        out <- runif(length(object$y), 
-                                     min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
-                                     max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictors), zeroinfl_prob = matrix(plogis(object$zeroinfl_prob_intercept), nrow = num_units, ncol = num_spp, byrow = TRUE), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
-                                     )
-               }
+                     zieta <- tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas) 
+                     out <- runif(length(object$y),
+                                  min = .pzinegativebinomial(object$y-1, lambda = exp(object$linear_predictors), zeroinfl_prob = plogis(zieta), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)),
+                                  max = .pzinegativebinomial(object$y, lambda = exp(object$linear_predictors), zeroinfl_prob = plogis(zieta), phi = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE))
+                                  )
+                     }
           if(object$family$family[1] %in% c("ztpoisson")) {
                   tmp_trun <- trun.p(par = 0, family = "PO", type = "left")
                   out <- matrix(NA, nrow = num_units, ncol = num_spp)

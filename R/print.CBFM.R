@@ -35,10 +35,14 @@ print.CBFM <- function(x, ...) {
 
         if(!(x$family$family[1] %in% c("ztpoisson")))
                 message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), "\nNo. of responses: ", ncol(x$fitted)) 
-        if(x$family$family[1] %in% c("ztpoisson"))
+        if(x$family$family[1] %in% c("ztpoisson","ztnegative.binomial"))
                 message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), " (note zero counts in the response matrix are ignored in the model) \nNo. of responses: ", ncol(x$fitted)) 
-        message("Responses-environment relationship fitted: ", x$formula_X) 
-        message("Number of columns in model matrix induced by formula_X: ", ncol(x$betas))
+        message("Responses-environment relationship fitted: ", x$formula) 
+        message("Number of columns in model matrix induced by formula: ", ncol(x$betas))
+        if(x$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+             message("Responses-environment relationship fitted for modeling the probability of zero-inflation: ", x$ziformula) 
+             message("Number of columns in model matrix induced by ziformula: ", ncol(x$zibetas))
+             }
         message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
         B_names <- c("B_space ", "B_time ", "B_spacetime ")
@@ -62,7 +66,7 @@ print.CBFM <- function(x, ...) {
                 message("\nOne or more of the normal distributions for the basis effect coefficients had non-zero mean vectors.")
           
         invisible(x)
-        }
+        } 
 
 
 #' @rdname print.CBFM

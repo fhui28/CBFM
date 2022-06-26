@@ -4,10 +4,12 @@
 \alias{model.matrix.CBFM}
 \title{Extract model matrices (otherwise known as design matrices) from a CBFM fit}
 \usage{
-\method{model.matrix}{CBFM}(object, ...)
+\method{model.matrix}{CBFM}(object, zi = FALSE, ...)
 }
 \arguments{
 \item{object}{An object of class \code{CBFM}.}
+
+\item{zi}{For zero-inflated distributions, set this to \code{TRUE} if the model matrix associated with modeling the probabilities of zero-inflation is desired.}
 
 \item{...}{Not used.}
 }
@@ -20,7 +22,9 @@ A model matrix.
 Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used.
 }
 \details{
-Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} works, it calls \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula_X}, and \strong{not} the basis functions.
+Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} works, it calls \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula}, and \strong{not} the basis functions.
+
+For zero-inflated distributions, it can also obtain the model matrix associated with modeling the probabilities of zero-inflation.
 }
 \examples{
 \donttest{
@@ -79,7 +83,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 model.matrix(fitcbfm)

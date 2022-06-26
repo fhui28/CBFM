@@ -142,7 +142,7 @@
 .check_start_params <- function(start_params, num_spp, num_basisfns, num_X) {
      if(!is.null(start_params$betas)) {
           if(!is.matrix(start_params$betas))
-               stop("start_params$betas should be a matrix of starting values for the regression coefficients corresponding to formula_X.")
+               stop("start_params$betas should be a matrix of starting values for the regression coefficients corresponding to formula.")
           if(nrow(start_params$betas) != num_spp | ncol(start_params$betas) != num_X)
                stop("The dimensions of start_params$betas are not appropriate. Please check and amend.")
           }
@@ -167,15 +167,15 @@
      }
 
      
-.check_X_formula <- function(formula_X, data) {
-     formulaX <- as.formula(formula_X)
+.check_X_formula <- function(formula, data) {
+     formulaX <- as.formula(formula)
           
-     termsinformula <- as.character(formula_X)
+     termsinformula <- as.character(formula)
      if(length(termsinformula) == 3)
           termsinformula <- termsinformula[-2]
-     formula_X <- as.formula(termsinformula)
+     formula <- as.formula(termsinformula)
           
-     return(formula_X)
+     return(formula)
      }     
      
      
@@ -248,6 +248,8 @@
           control$gam_method <- "REML"
      if(is.null(control$ridge))
           control$ridge <- 0
+     if(is.null(control$ziridge))
+          control$ziridge <- 0
      if(is.null(control$trace))
           control$trace <- 0
 

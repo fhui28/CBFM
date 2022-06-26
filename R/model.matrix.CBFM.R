@@ -6,10 +6,13 @@
 #' Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used. 
 #' 
 #' @param object An object of class \code{CBFM}.
+#' @param zi For zero-inflated distributions, set this to \code{TRUE} if the model matrix associated with modeling the probabilities of zero-inflation is desired.
 #' @param ... Not used.
 #' 
 #' @details 
-#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] the with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula_X}, and **not** the basis functions.  
+#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula}, and **not** the basis functions. 
+#' 
+#' For zero-inflated distributions, it can also obtain the model matrix associated with modeling the probabilities of zero-inflation.
 #' 
 #' @return A model matrix.
 #' 
@@ -74,7 +77,7 @@
 #' 
 #' # Fit CBFM 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+#' fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 #' B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 #' 
 #' model.matrix(fitcbfm)
@@ -84,15 +87,22 @@
 #' @importFrom mgcv gam predict.gam
 #' @md
 
-model.matrix.CBFM <- function(object, ...) {
-        if(!inherits(object, "CBFM")) 
-                stop("`object' is not of class \"CBFM\"")
-
+model.matrix.CBFM <- function(object, zi = FALSE, ...) {
+     if(!inherits(object, "CBFM")) 
+          stop("`object' is not of class \"CBFM\"")
         
-        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
-        nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
-
-        MM <- predict.gam(nullfit, type = "lpmatrix", ...)
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+     nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+     MM <- predict.gam(nullfit, type = "lpmatrix", ...)
+        
+     if(zi) {
+          if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial")))
+               stop("A model matrix associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
+          
+          tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+          nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+          MM <- predict.gam(nullfit, type = "lpmatrix", ...)
+          }
         return(MM)
         }
      

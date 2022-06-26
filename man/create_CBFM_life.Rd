@@ -6,13 +6,15 @@
 \usage{
 create_CBFM_life(
   family = binomial(),
-  formula_X,
+  formula,
+  ziformula = NULL,
   data,
   B_space = NULL,
   B_time = NULL,
   B_spacetime = NULL,
   offset = NULL,
   betas,
+  zibetas = NULL,
   basis_effects_mat = NULL,
   Sigma = list(space = NULL, time = NULL, spacetime = NULL),
   G = list(space = NULL, time = NULL, spacetime = NULL),
@@ -27,9 +29,11 @@ create_CBFM_life(
 \arguments{
 \item{family}{a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.}
 
-\item{formula_X}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
+\item{formula}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
 
-\item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula_X} argument).}
+\item{ziformula}{An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
+
+\item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument).}
 
 \item{B_space}{An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
 
@@ -40,6 +44,8 @@ create_CBFM_life(
 \item{offset}{A matrix of offset terms.}
 
 \item{betas}{A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.}
+
+\item{zibetas}{A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species in the resulting simulated dataset.}
 
 \item{basis_effects_mat}{A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.}
 
@@ -53,7 +59,7 @@ create_CBFM_life(
 
 \item{powerparam}{A vector of species-specific power parameters, to be used for distributions that require one.}
 
-\item{zeroinfl_prob}{A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one.}
+\item{zeroinfl_prob}{A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note that \code{ziformula} is supplied, then this argument is ignored.}
 
 \item{max_resp}{A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.}
 
@@ -78,7 +84,7 @@ Simulates spatio-temporal multivariate abundance data from a community-level bas
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
-where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula_X} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments.
+where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments.
 
 As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating
 
@@ -99,8 +105,8 @@ Currently the following response distributions are permitted:
 \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
 \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
-\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
-\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation can either be a single, species-specific probability as given in part of \code{zeroinfl_prob}, or can also be modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
+\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation can either be a single, species-specific probability as given in part of \code{zeroinfl_prob}, or can also be modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
 \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
 \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 }
@@ -152,7 +158,7 @@ cov2cor
 ## **Example 1: Generate spatial multivariate presence-absence data**
 ##-----------------------------------
 # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
@@ -160,7 +166,7 @@ Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 # Generates spatial multivariate presence-absence data 
 # Manually supply basis function coefficients 
 spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 B_space = basisfunctions)
 
@@ -169,34 +175,64 @@ B_space = basisfunctions)
 ## **Example 2: Generate spatial multivariate count data from a negative binomial distribution**
 ##-----------------------------------
 # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-spp_dispersion <- runif(num_spp)
-simy <- create_CBFM_life(family = nb2(), formula_X = useformula, data = dat,
+spp_dispersion <- runif(num_spp, 0, 5)
+simy <- create_CBFM_life(family = nb2(), formula = useformula, data = dat,
 B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
 dispparam = spp_dispersion, max_resp = 20000, 
 Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
 ##-----------------------------------
-## **Example 3: Generate spatial multivariate count data from a zero-inflated Poisson distribution**
+## **Example 3a: Generate spatial multivariate count data from a zero-inflated**
+## **Poisson distribution with constant species-specific probabilities**
 ##-----------------------------------
 # Manually supply basis function coefficients 
 spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
 spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-simy <- create_CBFM_life(family = zipoisson(), formula_X = useformula, data = dat,
+simy <- create_CBFM_life(family = zipoisson(), formula = useformula, data = dat,
 betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 B_space = basisfunctions, zeroinfl_prob = spp_zeroinfl_prob)
 
 
 ##-----------------------------------
-## **Example 4: Generate spatial multivariate count data from a zero-inflated** 
-## **negative binomial distribution**
+## **Example 3b: Generate spatial multivariate count data from a zero-inflated** 
+## **Poisson distribution with species-specific probabilities that also vary with covariates**
+##-----------------------------------
+# Manually supply basis function coefficients 
+spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_ziintercepts <- runif(num_spp, -2, 0)
+spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+simy <- create_CBFM_life(family = zipoisson(), formula = useformula, ziformula = useformula, 
+data = dat, betas = cbind(spp_intercepts, spp_slopes), 
+zibetas = cbind(spp_ziintercepts, spp_zislopes), basis_effects_mat = spp_basis_coefs, 
+B_space = basisfunctions)
+
+
+##-----------------------------------
+## **Example 4a: Generate spatial multivariate count data from a zero-inflated** 
+## **negative binomial distribution, with constant species-specific probabilities**
 ##-----------------------------------
 # Manually supply basis function coefficients 
 spp_zeroinfl_prob <- runif(num_spp, 0, 0.5)
 spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
-simy <- create_CBFM_life(family = zinb2(), formula_X = useformula, data = dat,
+simy <- create_CBFM_life(family = zinb2(), formula = useformula, data = dat,
 betas = cbind(spp_intercepts, spp_slopes), basis_effects_mat = spp_basis_coefs, 
 B_space = basisfunctions, dispparam = spp_dispersion, zeroinfl_prob = spp_zeroinfl_prob)
+
+
+##-----------------------------------
+## **Example 4b: Generate spatial multivariate count data from a zero-inflated** 
+## **negative binomial distribution, with species-specific probabilities that also** 
+## **vary with covariates**
+##-----------------------------------
+# Manually supply basis function coefficients 
+spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_ziintercepts <- runif(num_spp, -2, 0)
+spp_basis_coefs <- matrix(rnorm(num_spp * (num_basisfunctions-1), 0, 0.1), nrow = num_spp)
+simy <- create_CBFM_life(family = zinb2(), formula = useformula, ziformula = useformula, 
+data = dat, betas = cbind(spp_intercepts, spp_slopes), 
+zibetas = cbind(spp_ziintercepts, spp_zislopes), basis_effects_mat = spp_basis_coefs, 
+B_space = basisfunctions, dispparam = spp_dispersion)
 
 
 ##-----------------------------------
@@ -219,12 +255,12 @@ cov2cor
 
 # Generate spatial multivariate presence-absence data first
 # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+simy_pa <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
 Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 
 # Now generate count data from a truncated Poisson distribution
-simy_ztp <- create_CBFM_life(family = ztpoisson(), formula_X = useformula, data = dat,
+simy_ztp <- create_CBFM_life(family = ztpoisson(), formula = useformula, data = dat,
 B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
 max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), 
 G = list(space = true_G_space_ztp))
@@ -247,12 +283,12 @@ cov2cor
 
 # Generate spatial multivariate presence-absence data first
 # Basis function coefficients are simulated based on the supplied values of Sigma and G 
-simy_pa <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+simy_pa <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 B_space = basisfunctions, betas = cbind(spp_intercepts_pa, spp_slopes_pa),
 Sigma = list(space = true_Sigma_space_pa), G = list(space = true_G_space_pa))
 
 # Now generate count data from a truncated NB distribution
-simy_ztnb <- create_CBFM_life(family = ztnb2(), formula_X = useformula, data = dat,
+simy_ztnb <- create_CBFM_life(family = ztnb2(), formula = useformula, data = dat,
 B_space = basisfunctions, betas = cbind(spp_intercepts_ztp, spp_slopes_ztp),
 max_resp = 20000, Sigma = list(space = true_Sigma_space_ztp), dispparam = spp_dispersion, 
 G = list(space = true_G_space_ztp))

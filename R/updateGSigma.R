@@ -1,4 +1,4 @@
-update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_vec, dispparam, powerparam, zeroinfl_prob_intercept,  
+update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
                         trial_size, family, G_control, return_correlation = TRUE) {
         
         num_spp <- nrow(basis_effects_mat)
@@ -22,12 +22,15 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, y_vec, linpred_
                 }
      
         if(G_control$method == "LA") {
-                ## Note weights are on a per-species basis i.e., site runs faster than species
-                weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                              powerparam = rep(powerparam, each = nrow(B)), 
-                                              zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
+             zieta <- NULL
+             if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
+                  zieta <- as.vector(tcrossprod(ziX, zibetas))
+                  }
+             ## Note weights are on a per-species basis i.e., site runs faster than species
+             weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                           powerparam = rep(powerparam, each = nrow(B)), zieta = zieta, trial_size = trial_size)
 
-                ## Set up to to REML as opposed to ML
+                ## Set up REML as opposed to ML
                 weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {
@@ -187,7 +190,7 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
      }
      
 
-update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linpred_vec, dispparam, powerparam, zeroinfl_prob_intercept, 
+update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
                             trial_size, family, Sigma_control) {
         num_spp <- nrow(basis_effects_mat)
         num_basisfns <- ncol(Sigmainv)
@@ -209,12 +212,15 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, y_vec, linp
                 }
 
         if(Sigma_control$method == "LA") {
-                ## Note weights are on a per-species basis i.e., site runs faster than species
+             zieta <- NULL
+             if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
+                  zieta <- as.vector(tcrossprod(ziX, zibetas))
+                  }
+             ## Note weights are on a per-species basis i.e., site runs faster than species
                 weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                              powerparam = rep(powerparam, each = nrow(B)), 
-                                              zeroinfl_prob_intercept = rep(zeroinfl_prob_intercept, each = nrow(B)), trial_size = trial_size)
+                                              powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
 
-                ## Set up to to REML as opposed to ML
+                ## Set up to REML as opposed to ML
                 weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 inner_fn <- function(j) {

@@ -30,7 +30,7 @@ Variance partitioning can be performed for a communiy-level basis function model
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
-where \eqn{g(.)} is a known link function, \eqn{x_i^\top\beta_j} is the component of the linear predictor due to the explained covariates (however they end up being included in the CBFM fit), and \eqn{b_i^\top a_j} is the component due to the inclusion of basis functions, noting that that may include spatial, temporal, and/or spatio-temporal basis functions. Note that for zero-inflated distributions, this \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.
+where \eqn{g(.)} is a known link function, \eqn{x_i^\top\beta_j} is the component of the linear predictor due to the explained covariates (however they end up being included in the CBFM fit), and \eqn{b_i^\top a_j} is the component due to the inclusion of basis functions, noting that that may include spatial, temporal, and/or spatio-temporal basis functions. Note that for zero-inflated distributions, this \eqn{\mu_{ij}} is the mean of the count component i.e., the variance partitioning does not take into account/is not applied to covariates used in modeling the probability of zero-inflation.
 
 For each species, variation partitioning is performed by calculating the variance due to each component in \eqn{\eta_{ij}}, and then rescaling them to ensure that they sum to one. The general details of this type of variation partitioning is given in Ovaskainen et al., (2017) and Bjork et al. (2018) among others for latent variables models. Note that the variance due the basis functions is itself broken up into components depending on what basis functions are included in the model. For example, if a fitted \code{CBFM} object included basis functions for \code{B_space} and \code{B_space} (but not \code{B_spacetime}), then the variance is partitioned into separate components for the spatial and temporal basis functions.
 
@@ -100,7 +100,7 @@ as.matrix \%>\%
 
 # Fit CBFM 
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat, 
+fitcbfm <- CBFM(y = simy, formula = useformula, data = dat, 
 B_space = basisfunctions, family = binomial(), control = list(trace = 1))
 
 varpart(fitcbfm)

@@ -7,7 +7,7 @@
 #' 
 #' 
 #' @param object An object of class \code{CBFM}.
-#' @param newdata A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula_X}.
+#' @param newdata A data frame containing the values of the covariates at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for constructing correlations, that is, it can construct a model matrix from this as \code{object$formula}.
 #' @param newdata2 A second data frame containing the values of the covariates at which cross-correlations are to be calculated. If this is supplied, then \code{newdata} must also be supplied, as the function assumes then the user desires calculation of cross-correlations. 
 #' @param coverage The coverage probability of the uncertainty intervals for the correlations. Defaults to 0.95, which corresponds to 95% uncertainty intervals.
 #' @param ncores To speed up calculation of the uncertainty estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
@@ -23,7 +23,7 @@
 #' 
 #' The covariance and hence correlation between two species \eqn{j} and \eqn{j'} that can be attributed to the measured covariates is then based on examining the components \eqn{x_i^\top\beta_j} and \eqn{x_i^\top\beta_{j'}} across the observational units; see equation 4 in Pollock et al., (2014) for the precise formula, as well as Warton et al., (2015) and Hui (2016) among others. Both the point estimate and the uncertainty intervals for the correlation are constructed by simulation. Specifically, species-specific regression coefficients \eqn{\beta_j} are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see [CBFM()] and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}), after which a point estimate of the correlations is obtained by taking the sample average, while uncertainty intervals are based on taking sample quantiles.
 #' 
-#' Note that because this function calculates correlations as based on component of the linear predictor \eqn{x_i^\top\beta_j}, then it can not be applied to  \code{CBFM_hurdle} object (which by construction contains two linear predictors, so the user has to decide which component of the hurdle model they are interested in). 
+#' Note that because this function calculates correlations as based on component of the linear predictor \eqn{x_i^\top\beta_j}, then it can not be applied to  \code{CBFM_hurdle} object (which by construction contains two linear predictors, so the user has to decide which component of the hurdle model they are interested in). Analogously, for zero-inflated CBFMs this function currently only calculates the between-species correlation matrix due to the measured covariates in \code{object$formula} i.e., the mean of the count component. It is *not* able to calculate correlations due to measured covariates in \code{object$ziformula} i.e., in modeling the probability of zero-inflation.
 #' 
 #' With the above definition of the between-species correlation, note that the predictors on which the correlations are constructed need not be the same those used in fitting the original CBFM i.e., the \eqn{x_i}'s can be different to those of \code{object$data}. This is handled via the \code{newdata} argument. Additionally, it is possible to calculate within and between species *cross-correlations* across two different sets of measured predictors. That is, correlations are calculated between \eqn{x_i^\top\beta_j} and \eqn{x_{i2}^\top\beta_{j'}}, where \eqn{x_i} and \eqn{x_{i2}} can be different sets of measured predictors. This is handled by supplying both \code{newdata} and \code{newdata2} arguments simultaneously. Cross-correlations may be useful, say, if the two sets of measurement predictors reflect two different sets of sampling units, and we are interested in how similar (or lack of) the species communities are in terms of their environmental response across these two sets (Ovakainen et al., 2017). Another example if is the same set of observational units are visited at two different time points, and we are interested in how similarity (or lack of) the environmental responses within and between species are between these two time points.
 #' 
@@ -123,7 +123,7 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
@@ -178,7 +178,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
         ##--------------------------------
         ## Construct new_X and new_X2, if appropriate.
         ##--------------------------------
-        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
         nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
         if(is.null(newdata)) 
             new_X <- new_X2 <- predict.gam(nullfit, type = "lpmatrix")

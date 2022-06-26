@@ -158,13 +158,13 @@
 #' # Fit presence-absence CBFM 
 #' simy_pa_train <- (simy_train > 0)*1 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm_pa <- CBFM(y = simy_pa_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_pa <- CBFM(y = simy_pa_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' rm(simy_pa_train)
 #' 
 #' # Now fit zero-truncated Poisson CBFM
 #' # This could take a while...
-#' fitcbfm_ztp <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_ztp <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = ztpoisson(), control = list(trace = 1))
 #' 
 #' 
@@ -215,7 +215,7 @@
 #' 
 #' # Fit a negative binomial CBFM as another baseline
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm_nb <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_nb <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = nb2(), control = list(trace = 1))
 #' 
 #' 
@@ -336,13 +336,13 @@
 #' # Fit presence-absence CBFM 
 #' simy_pa_train <- (simy_train > 0)*1 
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm_pa <- CBFM(y = simy_pa_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_pa <- CBFM(y = simy_pa_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' rm(simy_pa_train)
 #' 
 #' # Now fit zero-truncated negative binomial CBFM
 #' # This could take a while...
-#' fitcbfm_ztnb <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_ztnb <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = ztnb2(), control = list(trace = 1))
 #' 
 #' 
@@ -393,7 +393,7 @@
 #' 
 #' # Fit a negative binomial CBFM as another baseline
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm_nb <- CBFM(y = simy_train, formula_X = useformula, data = dat_train, 
+#' fitcbfm_nb <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_basisfunctions, family = nb2(), control = list(trace = 1))
 #' 
 #' 
