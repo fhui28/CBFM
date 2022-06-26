@@ -4,10 +4,12 @@
 \alias{concur}
 \title{Concurvity measures for a CBFM fit}
 \usage{
-concur(object, ...)
+concur(object, zi = FALSE, ...)
 }
 \arguments{
 \item{object}{An object of class \code{CBFM}.}
+
+\item{zi}{For zero-inflated distributions, set this to \code{TRUE} if measures of concurvity associated with modeling the probabilities of zero-inflation are desired.}
 
 \item{...}{Not used.}
 }

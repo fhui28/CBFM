@@ -60,7 +60,7 @@ Now, as an example suppose we have a CBFM which involves spatial and temporal (b
 
 where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from the corresponding estimates from the ftted CBFM, and \eqn{kronecker(\cdot)} is the Kronecker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}.
 
-By plugging estimated (or simulated) values of the parameters from the fitted CBFM into the mean model given above, responses \eqn{y_{ij}} are then subsequently simulated from the assumed distribution given this mean value, along with any estimated values of the dispersion/power/zero inflation probability parameters from the fitted CBFM as appropriate. For hurdle CBFMs, the simulation process is analogous to this, except that it consists of two steps: 1) simulating presence-absence responses first, and then simulating count responses for the presences only.
+By plugging estimated (or simulated) values of the parameters from the fitted CBFM into the mean model given above, responses \eqn{y_{ij}} are then subsequently simulated from the assumed distribution given this mean value, along with any estimated values of the dispersion/power/zero-inflation probability parameters from the fitted CBFM as appropriate. For hurdle CBFMs, the simulation process is analogous to this, except that it consists of two steps: 1) simulating presence-absence responses first, and then simulating count responses for the presences only.
 }
 \examples{
  \donttest{

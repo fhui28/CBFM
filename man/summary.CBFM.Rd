@@ -27,15 +27,17 @@
 An object of class "summary.CBFM" which includes the following components, not necessarily in the order below (and as appropriate):
 \describe{
 \item{call: }{The matched function call of \code{object}.}
-\item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created, rounded.}
+\item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with \code{object$formula}, rounded.}
 \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. }
-\item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one, rounded. \emph{Note this is presented on the logit scale}, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
-\item{zeroinf_prob_intercept_resultstab: }{If the \code{object$stderrors == TRUE}, then a data frame containing the point estimates, standard errors, corresponding Wald statistics and P-values, and the lower and upper limit of Wald confidence intervals for the probabilities of zero-inflation (if appropriate). Please note that the Wald-test is a test of whether the intercept is statistically different from i.e., whether the probability of zero-inflation is statistically different from 0.5. This may not be that useful in practice. }
-\item{summary_tables: }{If the \code{object$stderrors == TRUE}, then a list with length equal to the number of species i.e., \code{ncol(object$y)}. Each element in the list may contain up to three summary tables:
+\item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with \code{object$ziformula}, rounded.}
+\item{summary_tables: }{If the \code{object$stderrors == TRUE}, then a list with length equal to the number of species i.e., \code{ncol(object$y)}. Each element in the list may contain the following (as appropriate):
 \enumerate{
 \item \code{parametric_coefs}, which is a summary table corresponding to (any) strictly parametric coefficients included in the model;
 \item \code{anova_terms}, which is a summary table for (any) parametric terms included in the model. The difference between \code{anova_terms} and \code{parametric_coefs} matters when it comes to categorical predictors (most commonly), with \code{parametric_coefs} returning summaries for individual coefficients involved in parameterizing the factor, and \code{anova_terms} returning a single summary for the entire factor.
 \item \code{smooth_terms}, which is s summary table for (any) smoothing terms included in the model.
+\item \code{ziparametric_coefs}, which is a summary table corresponding to (any) strictly parametric coefficients included in modeling the probability of zero-inflation;
+\item \code{zianova_terms}, which is a summary table for (any) parametric terms included in modeling the probability of zero-inflation. The difference between \code{anova_terms} and \code{parametric_coefs} matters when it comes to categorical predictors (most commonly), with \code{parametric_coefs} returning summaries for individual coefficients involved in parameterizing the factor, and \code{anova_terms} returning a single summary for the entire factor.
+\item \code{zismooth_terms}, which is s summary table for (any) smoothing terms included in modeling the probability of zero-inflation.
 }
 
 Each summary table itself may consists of (and as appropriate) the estimated coefficient, the estimated standard error, the estimated degrees of freedom and rank, the value of the test statistic, the resulting P-values, and the lower and upper limit of Wald confidence intervals.}
@@ -47,7 +49,7 @@ Each summary table itself may consists of (and as appropriate) the estimated coe
 Takes a fitted \code{CBFM} object and produces some useful summaries from it.
 }
 \details{
-Currently, the function returns estimated species-specific regression coefficients, and estimated vector of species-specific probabilities of zero-inflation (on the logit scale), for distributions which require one. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is adapted from that of \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}; we refer the reader to their help file as well as Wood (2017) for more details on these tests.
+Currently, the function returns estimated species-specific regression coefficients, including those associated with modeling the probability of zero-inflation if appropriate. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is \emph{heavily} adapted from that of \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}; we refer the reader to their help file as well as Wood (2017) for more details on these tests, with any mistakes/issues to be blamed on me (sorry!) and not on Simon Wood who maintains \code{mgcv} splendidly.
 
 As discussed in \code{\link[=CBFM]{CBFM()}}, all tests are based on the Bayesian posterior covariance matrix of the coefficients. Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
 }

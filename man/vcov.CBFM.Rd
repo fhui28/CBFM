@@ -13,8 +13,8 @@
 }
 \value{
 A list containing with the following components:
-\item{topleft: }{A matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, and the species-specific zero-inflated probabilities on the logit scale if the response distribution involved one.}
-\item{topright: }{matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat}.}
+\item{topleft: }{A matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors in \code{object$formula}, and, if appropriate in \code{object$ziformula} i.e., the covariance matrix associated with \code{object$betas} and \code{object$zibetas}.}
+\item{topright: }{matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas}/\code{object$zibetas} and \code{object$basis_effects_mat}.}
 \item{bottomright: }{A matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.}
 }
 \description{

@@ -20,14 +20,17 @@ CBFM(
   stderrors = TRUE,
   select = FALSE,
   gamma = 1,
-  start_params = list(betas = NULL, basis_effects_mat = NULL, dispparam = NULL,
-    powerparam = NULL, zeroinfl_prob = NULL),
+  ziselect = FALSE,
+  zigamma = 1,
+  start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam
+    = NULL, powerparam = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
   control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type =
     "parameters", gam_method = "REML", tol = 1e-04, initial_beta_dampen = 1,
     subsequent_betas_dampen = 0.25, nonzeromean_B_space = FALSE, nonzeromean_B_time =
-    FALSE, nonzeromean_B_spacetime = FALSE, seed = NULL, ridge = 0, trace = 0),
+    FALSE, nonzeromean_B_spacetime = FALSE, seed = NULL, ridge = 0, ziridge = 0, trace =
+    0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "LA", trace = 0,
     custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
   G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100,
@@ -65,15 +68,19 @@ CBFM(
 
 \item{select}{For cases where \code{formula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
 
-\item{gamma}{For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM. #'}
+\item{gamma}{For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
+
+\item{ziselect}{For cases where \code{ziformula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
+
+\item{zigamma}{For cases where \code{ziformula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
 
 \item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
 \itemize{
 \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.}
+\item{zibetas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates for the zero-inflation component (if included), where the number of rows is equal to the number of species.}
 \item{basis_effect_mat: }{A matrix of starting values for the species-specific regression coefficients related to the combined matrix of basis functions. Again, the number of rows is equal to the number of species, while the number of columns should equal to \code{ncol(B_space, B_time, B_spacetime)} (or whatever the supplied basis functions are).}
 \item{dispparam: }{A vector of starting values for the species-specific dispersion parameters, to be used for distributions that require one.}
 \item{powerparam: }{A vector of starting values for the species-specific power parameters, to be used for distributions that require one.}
-\item{zeroinfl_prob: }{A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. }
 }}
 
 \item{TMB_directories}{A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.}
@@ -99,6 +106,7 @@ Note that this argument \emph{only} comes into play when the first attempt, whic
 \item{nonzeromean_B_spacetime: }{This is an experimental feature at this point. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
 \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
 \item{ridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates.}
+\item{ziridge: }{A additional ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates for modeling the zero-inflation probabilities.}
 \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
 }}
 
@@ -143,6 +151,7 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
 \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
 \item{formula: }{The supplied symbolic description of the model matrix to be created.}
+\item{ziformula: }{The supplied symbolic description of the model matrix to be created for modeling the probability of zero-inflation.}
 \item{B: }{The full matrix basis functions i.e., basically the result of \code{cbind(B_space, B_time, B_spacetime)}.}
 \item{which_B_used: }{A vector of length three, indicating which of \code{B_space, B_time, B_spacetime} was supplied. For example \code{which_B_bused = c(1,0,0)} implies only \code{B_space} was supplied.}
 \item{num_B_space: }{The number of spatial basis functions supplied i.e., \code{ncol(B_space)}.}
@@ -160,17 +169,18 @@ An object of class \code{CBFM} which includes the following components, not nece
 \item{deviance_explained_perspecies: }{The \emph{percentage} of null deviance explained by the model, on a per-species basis. This is constructed by examining \code{deviance_perspecies} to \code{null_deviance_perspecies}.}
 \item{pql_logLik: }{The value of the PQL i.e., the likelihood plus the quadratic penalty term, upon convergence.}
 \item{edf/edf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{formula}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate. }
+\item{ziedf/ziedf1: }{A matrix of estimated degrees of freedom for each model parameter in \code{ziformula}. The number of columns of the matrix should be equal to the number of species i.e., \code{ncol(y)}. Penalization means that many of these are less than one. \code{edf1} is an alternative estimate of EDF. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate. }
 \item{pen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{formula}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
+\item{zipen_edf: }{A list with each element containing a vector of the estimated degrees of freedom associated with each smoothing term in \code{ziformula}. The length of the list should be equal to the number of species i.e., \code{ncol(y)}. Note these values are pulled straight from the GAM part of the estimation algorithm, and consequently may only be \emph{very} approximate.}
 \item{k_check: }{A list resulting from the application of \code{\link[mgcv:k.check]{mgcv::k.check()}}, used as a diagnostic test of whether the smooth basis dimension is adequate for smoothing terms included in \code{formula}, on a per-species basis. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on the test and the output. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
 \item{vcomp: }{A list with length equal to \code{ncol(y)}, where each element contains a vector of the estimated variance components (as standard deviations) associated with the smoothing terms included in \code{formula}. This output is only really useful when one or more of the smoothing terms were included in the CBFM as species-specific intercepts/slopes (see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} for more details), in which case the corresponding values in \code{vcomp} are the estimated variance components (estimated standard deviations to be precise) associated with these random effects; see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details on the one-to-one relationship between smoothing parameters in GAMs and variance components in mixed models. Note that if no smoothing terms are included in \code{formula}, then this will be a list of \code{NULL} elements.}
 \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species i.e., \code{ncol(y)}.}
+\item{zibetas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species i.e., \code{ncol(y)}. Recall a logit scale to model the probability of zero-inflation i.e., \eqn{log(\pi/(1-\pi))} is regressed against covariates.}
 \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. The number of rows in \code{basis_effects_mat} is equal to the number of species i.e., \code{ncol(y)}.}
 \item{dispparam: }{The estimated vector of species-specific dispersion parameters, for distributions which require one. }
 \item{powerparam: }{The estimated vector of species-specific power parameters, for distributions which require one. }
-\item{zeroinfl_prob_intercept: }{The estimated vector of species-specific probabilities of zero-inflation, for distributions which require one. \emph{Note this is presented on the logit scale}, that is the model returns \eqn{log(\pi_j/(1-\pi_j))} where \eqn{\pi_j} is the probability of zero-inflation. This is the same as the intercept term of a logistic regression model for the probabilities of zero-inflation, hence the name. }
-\item{linear_predictors: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the non-zero-inflated component is modeled in CBFM, and the function returns the linear predictors corresponding to this non-zero-inflated component in the CBFM.
-Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
-\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_j)\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.
+\item{linear_predictors: }{The estimated matrix of linear predictors. Note that for zero-inflated distributions, the mean of the count component is modeled in CBFM, and the function returns the linear predictors corresponding to this count component in the CBFM. Similarly, for zero-truncated count distributions, the mean of the base count distribution is modeled in CBFM, and the function returns the linear predictors corresponding to this base count distribution in the CBFM (and \code{NA} values for elements corresponding to zero counts in \code{object$y}.)}
+\item{fitted: }{The estimated matrix of fitted mean values. Note that for zero-inflated distributions, while the mean of the count component is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{(1-\pi_{ij})\mu_{ij}} where \eqn{\pi_j} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the count component.
 Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the \emph{actual expected mean values} i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.)
 }
 \item{Sigma_space/Loading_Sigma_space/nugget_Sigma_space: }{The estimated community-level covariance matrix/loadings/nugget effect associated with the spatial basis functions, if \code{B_space} is supplied. Note if \code{Sigma_control$custom_space} was supplied, then \code{Sigma_space} would be directly the supplied matrix, while the loading and nugget arguments are set to \code{NULL}.}
@@ -182,17 +192,16 @@ Similarly, for zero-truncated count distributions, while the mean of the base co
 \item{stderrors: }{The supplied argument for \code{stderrors} i.e., whether standard errors were calculated.}
 \item{covar_components: }{If \code{stderrors = TRUE}, then a list containing with the following components:
 \enumerate{
-\item \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, and the species-specific zero-inflated probabilities on the logit scale if the response distribution involved one;
-\item \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat};
+\item \code{topleft}, which is a matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors i.e., the covariance matrix associated with \code{object$betas}, along with \code{object$zibetas} if zero-inflated distributions are used;
+\item \code{topright}, which is a matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the coefficients associated with the probabilities of zero-inflation) and the basis functions i.e., the cross-covariance matrix between \code{object$betas} and \code{object$basis_effects_mat};
 \item \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 }
 
 Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
-
 \item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-
+\item{allzi_parametric_effects: }{If \code{ziformula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
 \item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-
+\item{allzi_smooth_estimates: }{If \code{ziformula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
 \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of \code{\link[base:proc.time]{base::proc.time()}}.}
 }
 \description{
@@ -274,8 +283,8 @@ The following response distributions are permitted:
 \item{\code{poisson(link = "log")}: }{Poisson distribution using a log link. The corresponding mean-variance relationship is given by \eqn{V = \mu}, where \eqn{\mu} denotes the mean.}
 \item{\code{nb2()}: }{Negative binomial distribution with the log link. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 \item{\code{tweedielogfam()}: }{Tweedie distribution using log link. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}}, where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
-\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution using a log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
-\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution using a log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is a single, species-specific quantity that is estimated.}
+\item{\code{zipoisson()}: }{Zero-inflated Poisson distribution using a log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is also modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
+\item{\code{zinb2()}: }{Zero-inflated negative binomial distribution using a log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is also modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
 \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution using a log link. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution as described above. The mean of the Poisson distribution is modeled against covariates and basis functions.}
 
 \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution using a log link. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution as described above. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
@@ -397,7 +406,7 @@ dat_train <- dat[1:500,]
 dat_test <- dat[501:1000,]
 simy_train <- simy[1:500,]
 simy_test <- simy[501:1000,]
-rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
+rm(X, spp_loadings, true_lvs, xy, simy, dat)
 
 
 # Fit stacked GLM as a baseline
@@ -416,6 +425,7 @@ test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) \%>\%
 predict(newx = dat_test[,c("x","y")]) \%>\% 
 as.matrix \%>\%
 {.[,-c(1)]} 
+
 
 # Fit CBFM 
 tic <- proc.time()
@@ -529,12 +539,6 @@ str
 # Example of plotting smooth model terms
 fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species \%>\%
 fct_inorder
-ggplot(fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(temp)"), 
-aes(x = temp, y = est, color = species)) +
-geom_line(show.legend = FALSE) +
-labs(x = "temp", y = "Effect") +
-theme_bw()
-
 ggplot(fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(depth)"), 
 aes(x = depth, y = est, color = species)) +
 geom_line(show.legend = FALSE) +
@@ -764,17 +768,22 @@ theme_bw()
 ##------------------------------
 ## **Example 1e: Repeat Example 1a but illustrate applications to ZIP count data** 
 ##------------------------------
+library(gamlss)
 library(pscl)
 
 # Probability of zero-inflation 
-spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5) 
+spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
+spp_ziintercepts <- runif(num_spp, -0.5, 0)
 
 # Simulate spatial multivariate abundance data
+# Note the deliberate "+2" on the linear predictor: This creates data that is a bit more 
+# clearly overdispersed and zero-inflated...
+zieta <- tcrossprod(cbind(1,mm), cbind(spp_ziintercepts,spp_zislopes))
 component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, 
-prob = matrix(spp_zeroinfl_prob, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
-simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta) * (1-component_ind)), 
+prob = matrix(plogis(zieta), num_sites, num_spp, byrow = TRUE)), num_sites,num_spp)
+simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta+2) * (1-component_ind)), 
 num_sites, num_spp)
-rm(component_ind)
+rm(component_ind, zieta)
 
 # Form training and test sets
 simy_train <- simy[1:500,]
@@ -784,7 +793,7 @@ simy_test <- simy[501:1000,]
 # Fit stacked zero-inflated Poisson regression models as a baseline
 fitstacked <- NULL 
 for(j in 1:num_spp) {
-fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2 | 1, 
+fitstacked[[j]] <- zeroinfl(resp ~ temp + depth + chla + O2, 
 data = data.frame(resp = simy_train[,j], dat_train))
 }
 
@@ -802,10 +811,11 @@ predict(newx = dat_test[,c("x","y")]) \%>\%
 as.matrix \%>\%
 {.[,-c(1)]} 
 
+
 # Fit zero-inflated Poisson CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, ziformula = useformula, data = dat_train, 
 B_space = train_basisfunctions, family = zipoisson(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -817,8 +827,8 @@ str
 # Calculate predictions onto test dataset
 predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
 newdata = dat_test, type = "response"))
-predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
-new_B_space = test_basisfunctions)
+predictions_cbfm <- exp(predict(fitcbfm, newdata = dat_test, type = "response", 
+new_B_space = test_basisfunctions))
 
 # Evaluation predictions
 # Pseudo R-squared across species
@@ -842,20 +852,23 @@ labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
 theme_bw()
 
 # Predictive deviance across species (lower is better)
-# Need to define density of zero-inflated Poisson distribution first (or get it from a package)
-dlzipois <- function(y, lambda, p0) {
-logp <- log(1-p0) + dpois(y, lambda = lambda, log=TRUE)
-logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
-return(logp)
-}
+countpredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "count"))
+zipredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "zero"))
+countpredictions_cbfm <- exp(predict(fitcbfm, newdata = dat_test, type = "link", 
+new_B_space = test_basisfunctions))
+zipredictions_cbfm <- plogis(tcrossprod(
+predict(fitcbfm, newdata = dat_test, type = "zilpmatrix"), fitcbfm$zibetas))
+
 preddeviance <- data.frame(
 stacked = sapply(1:num_spp, function(j) { 
--2*sum(dlzipois(simy_test[,j], lambda = predictions_stacked[,j], 
-p0 = plogis(fitstacked[[j]]$coefficients$zero)))
+-2*sum(dZIP(simy_test[,j], mu = countpredictions_stacked[,j], 
+sigma = zipredictions_stacked[,j], log = TRUE))
 }),
 cbfm = sapply(1:num_spp, function(j) { 
--2*sum(dlzipois(simy_test[,j], lambda = predictions_cbfm[,j], 
-p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j])))
+-2*sum(dZIP(simy_test[,j], mu = countpredictions_cbfm[,j], 
+sigma = zipredictions_cbfm[,j], log = TRUE))
 })
 )
 
@@ -867,10 +880,13 @@ geom_abline(intercept = 0, slope = 1, linetype = 2) +
 labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 theme_bw()
 
+rm(countpredictions_stacked, zipredictions_stacked, 
+countpredictions_cbfm, zipredictions_cbfm)
 
 
 ##------------------------------
 ## **Example 1f: Repeat Example 1a but illustrate applications to ZINB count data**
+## **This time, we use constant species-specific probabilities of zero inflation**
 ##------------------------------
 # Probability of zero-inflation 
 spp_zeroinfl_prob <- runif(num_spp, 0.1, 0.5) 
@@ -915,7 +931,7 @@ as.matrix \%>\%
 # Fit zero-inflated negative binomial CBFM
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
+fitcbfm <- CBFM(y = simy_train, formula = useformula, ziformula = ~ 1, data = dat_train, 
 B_space = train_basisfunctions, family = zinb2(), control = list(trace = 1))
 toc <- proc.time()
 toc - tic
@@ -952,22 +968,23 @@ labs(x = "Stacked SDM", y = "CBFM", main = "Pseudo-R2") +
 theme_bw()
 
 # Predictive deviance across species (lower is better)
-# Need to define density of zero-inflated Poisson distribution first (or get it from a package)
-dlzinb <- function(y, lambda, p0, phi) {
-logp <- log(1-p0) + dnbinom(y, mu = lambda, size = 1/phi, log=TRUE)
-logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
-return(logp)
-}
+countpredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "count"))
+zipredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+newdata = dat_test, type = "zero"))
+countpredictions_cbfm <- exp(predict(fitcbfm, newdata = dat_test, type = "link", 
+new_B_space = test_basisfunctions))
+zipredictions_cbfm <- plogis(tcrossprod(
+predict(fitcbfm, newdata = dat_test, type = "zilpmatrix"), fitcbfm$zibetas))
+
 preddeviance <- data.frame(
 stacked = sapply(1:num_spp, function(j) { 
--2*sum(dlzinb(simy_test[,j], lambda = predictions_stacked[,j], 
-p0 = plogis(fitstacked[[j]]$coefficients$zero),
-phi = 1/fitstacked[[j]]$theta))
+-2*sum(dZINBI(simy_test[,j], mu = countpredictions_stacked[,j], 
+nu = zipredictions_stacked[,j], sigma = 1/fitstacked[[j]]$theta), log = TRUE)
 }),
 cbfm = sapply(1:num_spp, function(j) { 
--2*sum(dlzinb(simy_test[,j], lambda = predictions_cbfm[,j], 
-p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j]),
-phi = fitcbfm$dispparam[j]))
+-2*sum(dZINBI(simy_test[,j], mu = countpredictions_cbfm[,j], 
+nu = zipredictions_cbfm[,j], sigma = fitcbfm$dispparam[j]), log = TRUE)
 })
 )
 
@@ -1103,9 +1120,6 @@ xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- rmvnorm(num_sites, mean = rep(0,4)) 
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
-mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 
-scale \%>\% 
-as.matrix
 
 # Simulate latent variable component
 # We will use this information in later examples as well
