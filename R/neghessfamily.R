@@ -61,12 +61,14 @@
           if(domore) {
                # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
 
-               dhat <- exp(zieta+lambda) / (exp(zieta+lambda) + 1)
+               expetalambda <- exp(zieta+lambda)
+               expetalambda[expetalambda > .Machine$double.xmax] <- .Machine$double.xmax
+               dhat <- expetalambda / (expetalambda + 1)
                phat <- plogis(zieta)
                out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
                out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
                   
-               out_zeroinflbetas <- -(exp(zieta+lambda) * lambda) / (exp(zieta+lambda) + 1)^2
+               out_zeroinflbetas <- -(expetalambda * lambda) / (expetalambda + 1)^2
                out_zeroinflbetas[y > 0] <- 0
                }
              }
@@ -75,9 +77,9 @@
              phat <- plogis(zieta)
              
              score_beta <- function(x, phi, phat) {
-                exp(x) * (1 + phi * exp(x))^(-1) / (1 + phat * (1 + phi * exp(x))^(1/phi))     
+                exp(x) * (1 + phi * exp(x))^(-1) / (1 + exp(zieta) * (1 + phi * exp(x))^(1/phi))     
                 }
-             out <- grad(score_beta, x = eta, phi = phi, phat = phat)  * as.numeric(y == 0) # Being lazy here!
+             out <- grad(score_beta, x = eta, phi = phi, phat = phat) * as.numeric(y == 0) # Being lazy here!
              out <- out + (lambda * (1 + phi * y) / (1 + phi * lambda)^2) * as.numeric(y > 0)
 
              if(domore) {
@@ -87,7 +89,7 @@
                      out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat
                      out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
                      
-                     out_zeroinflbetas <- -(exp(zieta+lambda) * lambda) / (exp(zieta+lambda) + 1)^2
+                     out_zeroinflbetas <- -(exp(zieta) * lambda * (1+phi*lambda)^(-1/phi-1)) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
                      out_zeroinflbetas[y > 0] <- 0
              }
         }
@@ -99,11 +101,14 @@
      if(domore) {
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                return(list(out = as.vector(out)))
-          if(family$family[1] %in% c("zipoisson","zinegative.binomial"))
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+               out_zeroinflzeroinfl[!is.finite(out_zeroinflzeroinfl)] <- 0 
+               out_zeroinflbetas[!is.finite(out_zeroinflbetas)] <- 0 
                return(list(out = as.vector(out), 
                            out_zeroinflzeroinfl = out_zeroinflzeroinfl, # matrix of the same dimension as y
                            out_zeroinflbetas = out_zeroinflbetas # matrix of the same dimension as y)
-               )) 
+                           )) 
+               }
           }
      }
 

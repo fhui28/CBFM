@@ -184,7 +184,7 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
                }
           getall_WsqrtXB <- foreach(j = 1:num_spp) %dopar% WsqrtXB(j = j)
           bigXBWXB <- cbind(bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtX)), bdiag(lapply(getall_WsqrtXB, function(x) x$WsqrtB))) 
-          bigXBWXB <- crossprod(bigsqrtWXB)
+          bigXBWXB <- crossprod(bigXBWXB)
           }
 
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {

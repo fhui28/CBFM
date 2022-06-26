@@ -517,6 +517,7 @@
 #' as.matrix %>%
 #' {.[,-c(1)]} 
 #' 
+#' 
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
@@ -629,12 +630,6 @@
 #' # Example of plotting smooth model terms
 #' fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species %>%
 #' fct_inorder
-#' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(temp)"), 
-#' aes(x = temp, y = est, color = species)) +
-#' geom_line(show.legend = FALSE) +
-#' labs(x = "temp", y = "Effect") +
-#' theme_bw()
-#' 
 #' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
 #' aes(x = depth, y = est, color = species)) +
 #' geom_line(show.legend = FALSE) +
@@ -865,6 +860,7 @@
 #' ##------------------------------
 #' ## **Example 1e: Repeat Example 1a but illustrate applications to ZIP count data** 
 #' ##------------------------------
+#' library(gamlss)
 #' library(pscl)
 #' 
 #' # Probability of zero-inflation 
@@ -872,6 +868,8 @@
 #' spp_ziintercepts <- runif(num_spp, -0.5, 0)
 #' 
 #' # Simulate spatial multivariate abundance data
+#' # Note the deliberate "+2" on the linear predictor: This creates data that is a bit more 
+#' # clearly overdispersed and zero-inflated...
 #' zieta <- tcrossprod(cbind(1,mm), cbind(spp_ziintercepts,spp_zislopes))
 #' component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, 
 #' prob = matrix(plogis(zieta), num_sites, num_spp, byrow = TRUE)), num_sites,num_spp)
@@ -905,6 +903,7 @@
 #' as.matrix %>%
 #' {.[,-c(1)]} 
 #' 
+#' 
 #' # Fit zero-inflated Poisson CBFM
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
@@ -920,11 +919,9 @@
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
 #' newdata = dat_test, type = "response"))
-#' zipredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
-#' newdata = dat_test, type = "zero"))
-#' predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
-#' new_B_space = test_basisfunctions)
-#' 
+#' predictions_cbfm <- exp(predict(fitcbfm, newdata = dat_test, type = "response", 
+#' new_B_space = test_basisfunctions))
+#'
 #' # Evaluation predictions
 #' # Pseudo R-squared across species
 #' pseudoR2 <- data.frame(
@@ -947,20 +944,23 @@
 #' theme_bw()
 #' 
 #' # Predictive deviance across species (lower is better)
-#' # Need to define density of zero-inflated Poisson distribution first (or get it from a package)
-#' dlzipois <- function(y, lambda, p0) {
-#' logp <- log(1-p0) + dpois(y, lambda = lambda, log=TRUE)
-#' logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
-#' return(logp)
-#' }
+#' countpredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+#' newdata = dat_test, type = "count"))
+#' zipredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+#' newdata = dat_test, type = "zero"))
+#' countpredictions_cbfm <- exp(predict(fitcbfm, newdata = dat_test, type = "link", 
+#' new_B_space = test_basisfunctions))
+#' zipredictions_cbfm <- plogis(tcrossprod(
+#' predict(fitcbfm, newdata = dat_test, type = "zilpmatrix"), fitcbfm$zibetas))
+#' 
 #' preddeviance <- data.frame(
 #' stacked = sapply(1:num_spp, function(j) { 
-#' -2*sum(dlzipois(simy_test[,j], lambda = predictions_stacked[,j], 
-#' p0 = zipredictions_stacked[,j]))
+#' -2*sum(dZIP(simy_test[,j], mu = countpredictions_stacked[,j], 
+#' sigma = zipredictions_stacked[,j], log = TRUE))
 #' }),
 #' cbfm = sapply(1:num_spp, function(j) { 
-#' -2*sum(dlzipois(simy_test[,j], lambda = predictions_cbfm[,j], 
-#' p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j])))
+#' -2*sum(dZIP(simy_test[,j], mu = countpredictions_cbfm[,j], 
+#' sigma = zipredictions_cbfm[,j], log = TRUE))
 #' })
 #' )
 #' 
@@ -972,6 +972,8 @@
 #' labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 #' theme_bw()
 #' 
+#' rm(countpredictions_stacked, zipredictions_stacked, 
+#' countpredictions_cbfm, zipredictions_cbfm)
 #' 
 #' 
 #' ##------------------------------
@@ -1033,8 +1035,6 @@
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
 #' newdata = dat_test, type = "response"))
-#' zipredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
-#' newdata = dat_test, type = "zero"))
 #' predictions_cbfm <- predict(fitcbfm, newdata = dat_test, type = "response", 
 #' new_B_space = test_basisfunctions)
 #' 
@@ -1060,21 +1060,23 @@
 #' theme_bw()
 #' 
 #' # Predictive deviance across species (lower is better)
-#' # Need to define density of zero-inflated Poisson distribution first (or get it from a package)
-#' dlzinb <- function(y, lambda, p0, phi) {
-#' logp <- log(1-p0) + dnbinom(y, mu = lambda, size = 1/phi, log=TRUE)
-#' logp[y == 0] <- log(exp(logp[y == 0]) + p0) 
-#' return(logp)
-#' }
+#' countpredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+#' newdata = dat_test, type = "count"))
+#' zipredictions_stacked <- sapply(1:num_spp, function(j) predict(fitstacked[[j]], 
+#' newdata = dat_test, type = "zero"))
+#' countpredictions_cbfm <- exp(predict(fitcbfm, newdata = dat_test, type = "link", 
+#' new_B_space = test_basisfunctions))
+#' zipredictions_cbfm <- plogis(tcrossprod(
+#' predict(fitcbfm, newdata = dat_test, type = "zilpmatrix"), fitcbfm$zibetas))
+#' 
 #' preddeviance <- data.frame(
 #' stacked = sapply(1:num_spp, function(j) { 
-#' -2*sum(dlzinb(simy_test[,j], lambda = predictions_stacked[,j], 
-#' p0 = zipredictions_stacked[,j], phi = 1/fitstacked[[j]]$theta))
+#' -2*sum(dZINBI(simy_test[,j], mu = countpredictions_stacked[,j], 
+#' nu = zipredictions_stacked[,j], sigma = 1/fitstacked[[j]]$theta), log = TRUE)
 #' }),
 #' cbfm = sapply(1:num_spp, function(j) { 
-#' -2*sum(dlzinb(simy_test[,j], lambda = predictions_cbfm[,j], 
-#' p0 = plogis(fitcbfm$zeroinfl_prob_intercept[j]),
-#' phi = fitcbfm$dispparam[j]))
+#' -2*sum(dZINBI(simy_test[,j], mu = countpredictions_cbfm[,j], 
+#' nu = zipredictions_cbfm[,j], sigma = fitcbfm$dispparam[j]), log = TRUE)
 #' })
 #' )
 #' 
@@ -3182,7 +3184,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           
           zieta <- NULL
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
-               zieta <- as.vector(tcrossprod(ziX, out_CBFM$zibetas))
+               zieta <- tcrossprod(ziX, out_CBFM$zibetas)
                }
           
           weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictors, y = y, 

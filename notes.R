@@ -232,11 +232,11 @@ theme_bw()
 ## Custom testing
 ##----------------------------------
 y = simy_train
-useformula <- ~ temp + s(depth) + chla + s(O2)
+useformula <- ~ temp + depth + chla + O2
 formula <- useformula
-ziformula <- ~ 1
+ziformula <- useformula
 data = dat_train
-family =  zinb2() 
+family =  zipoisson() 
 B_space = train_basisfunctions
 B_time = NULL
 B_spacetime = NULL
