@@ -8,7 +8,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
         if(num_spp == 1) 
                 return(solve(Ginv))
      
-        G_control$method <- match.arg(G_control$method, choices = c("simple","LA")) 
+        G_control$method <- match.arg(G_control$method, choices = c("simple","REML","ML")) 
         G_control$inv_method <- "chol2inv" #match.arg(G_control$inv_method, choices = c("chol2inv","schulz"))
         A_Sigmain_AT <- basis_effects_mat %*% tcrossprod(Sigmainv, basis_effects_mat)
 
@@ -21,7 +21,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                 new_G <- A_Sigmain_AT / num_basisfns
                 }
      
-        if(G_control$method == "LA") {
+        if(G_control$method %in% c("REML","ML")) {
              zieta <- NULL
              if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                   zieta <- as.vector(tcrossprod(ziX, zibetas))
@@ -30,15 +30,22 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
              weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
                                            powerparam = rep(powerparam, each = nrow(B)), zieta = zieta, trial_size = trial_size)
 
-                ## Set up REML as opposed to ML
+                ## Set up REML and ML
                 weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
-                inner_fn <- function(j) {
-                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                        BTWX <- crossprod(B, X*weights_mat[,j])               
-                        return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
-                        }
-          
+                if(G_control$method == "REML") {
+                     inner_fn <- function(j) {
+                             XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
+                             BTWX <- crossprod(B, X*weights_mat[,j])               
+                             return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                         }
+                    }
+                if(G_control$method == "ML") {
+                     inner_fn <- function(j) {
+                          return(crossprod(B*sqrt(weights_mat[,j])))
+                         }
+                    }
+                
                 BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
                 BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
                 gc()
@@ -196,8 +203,8 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
         num_basisfns <- ncol(Sigmainv)
         trial_size <- as.vector(trial_size)
      
-        Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","LA")) #,"REML-LA"
-        Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) #,"REML-LA"
+        Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","REML","ML")) 
+        Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) 
      
         AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
      
@@ -211,7 +218,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                 new_Sigma <- AT_Ginv_A / num_spp
                 }
 
-        if(Sigma_control$method == "LA") {
+        if(Sigma_control$method %in% c("REML","ML")) {
              zieta <- NULL
              if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                   zieta <- as.vector(tcrossprod(ziX, zibetas))
@@ -220,14 +227,22 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                 weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
                                               powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
 
-                ## Set up to REML as opposed to ML
+                ## Set up to REML and ML
                 weights_mat[is.na(y_vec)] <- 0
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
-                inner_fn <- function(j) {
-                        XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                        BTWX <- crossprod(B, X*weights_mat[,j])               
-                        return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
-                        }
+                if(Sigma_control$method == "REML") {
+                     inner_fn <- function(j) {
+                          XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
+                          BTWX <- crossprod(B, X*weights_mat[,j])               
+                          return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                         }
+                    }
+                if(Sigma_control$method == "ML") {
+                     inner_fn <- function(j) {
+                          return(crossprod(B*sqrt(weights_mat[,j])))
+                          }
+                    }
+                
                
                 BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
                 BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)

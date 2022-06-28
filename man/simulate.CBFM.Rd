@@ -43,7 +43,7 @@ simulate(object, ...)
 A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 Simulate new spatio-temporal multivariate abundance data based on a fitted \code{CBFM} or \code{CBFM_hurdle} object.
 }

@@ -75,7 +75,7 @@ If \code{only_y = TRUE}, then the simulated spatio-temporal multivariate abundan
 }
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 Simulates spatio-temporal multivariate abundance data based on a CBFM and given the various parameter values as appropriate.
 }
@@ -114,10 +114,6 @@ Currently the following response distributions are permitted:
 Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration.
 }
 }
-\section{Warning}{
-Note \strong{no} checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
-}
-
 \examples{
 \donttest{
 library(autoFRK)
@@ -303,4 +299,8 @@ simy_hurdlenb <- simy_pa$y *  simy_ztnb$y
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
+}
+\section{Warning}{
+
+Note \strong{no} checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
 }

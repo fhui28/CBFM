@@ -10,7 +10,7 @@ ztnb2()
 An object of class "gamlss.family" and "family"
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 A specified family object for the zero-truncated negative binomial distribution, using the log link function for the negative binomial distribution component.
 }
