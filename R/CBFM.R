@@ -84,7 +84,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
-#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
+#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note that the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -106,7 +106,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
-#' \item{method: }{The method by which to update the correlation matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
+#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note that the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -242,7 +242,7 @@
 #' 
 #' 
 #' ## A note on estimation and inference
-#' Because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-species correlation and community-level covariance matrices are estimated by maximum Laplace approximated residual maximum likelihood (REML) estimation (Wood, 2011; Wood, 2017). Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this. 
+#' Because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-species correlation and community-level covariance matrices are by default estimated via Laplace approximated restricted maximum likelihood estimation (Wood, 2011; Wood, 2017), although standard unrestricted maximum likelihood is also available. Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this. 
 #' 
 #' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works alright, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are not always easy fixes for such situations (as it may reflect an underlying, perhaps intriguing feature of the proposed model for the predictors, data, or it may genuinely be that the stacked species distribution model is already fitting incredibly well!). One *ad-hoc* fix is available through \code{control$initial_betas_dampen}, but it is not guaranteed to work.  
 #' 
