@@ -274,7 +274,7 @@
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$method))
-          control$method <- "LA"
+          control$method <- "REML"
      if(is.null(control$inv_method))
           control$inv_method <- "chol2inv"
      if(is.null(control$trace))
@@ -303,7 +303,7 @@
         control$which_custom_G_used[3] <- 1
         }
 
-    control$method<- match.arg(control$method, choices = c("LA","simple"))
+    control$method<- match.arg(control$method, choices = c("REML","simple"))
     #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
      
     return(control)
@@ -324,7 +324,7 @@
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$method))
-          control$method <- "LA"
+          control$method <- "REML"
      if(is.null(control$inv_method))
           control$inv_method <- "chol2inv"
      if(is.null(control$trace))
@@ -356,7 +356,7 @@
         control$which_custom_Sigma_used[3] <- 1
         }
 
-     control$method<- match.arg(control$method, choices = c("LA","simple"))
+     control$method<- match.arg(control$method, choices = c("REML","simple"))
      #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
 
      return(control)

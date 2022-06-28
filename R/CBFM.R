@@ -84,7 +84,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
-#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
+#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -106,7 +106,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
-#' \item{method: }{The method by which to update the correlation matrices. The current options are "LA" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
+#' \item{method: }{The method by which to update the correlation matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood (REML), and "simple" which uses a fast large sample covariance update. *The latter is \emph{much} faster than the former, but is much less accurate and we only recommend using it for pilot testing.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -1860,8 +1860,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
                     seed = NULL, ridge = 0, ziridge = 0, trace = 0), 
-     Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "LA", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
-     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "LA", trace = 0, 
+     Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
+     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
                       custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
      k_check_control = list(subsample = 5000, n.rep = 400)
      ) { 
