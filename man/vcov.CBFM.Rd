@@ -18,7 +18,7 @@ A list containing with the following components:
 \item{bottomright: }{A matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.}
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 Extracts the so-called Bayesian posterior covariance matrix of the parameters estimators from a \code{CBFM} fit.
 }

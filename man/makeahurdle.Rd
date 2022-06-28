@@ -20,7 +20,7 @@ An object of class "CBFM_hurdle" which includes the following two components:
 \item{count_fit: }{Equivalent to \code{count_object} i.e., a CBFM fitted using a zero-truncated count family.}
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\verb{r lifecycle::badge("experimental")}
 
 Given one CBFM fitted to presence-absence data, and a second CBFM fitted to zero-truncated count data, this function simply links the two fitted CBFM to create a hurdle CBFM object.
 }
@@ -47,10 +47,6 @@ where a log link function is used and all the covariates, basis functions, and c
 
 Note that because the user is "forced" into fitting two components CBFMs separately (yes we purposefully do this!), then different covariates and basis functions are allowed for the two components.
 }
-\section{Warning}{
-Just because a hurdle CBFM is available does not necessarily mean you should always use it! It is a relatively sophisticated model with a large number of parameters, and when appropriate it may be better to adopt a simpler model such as the negative binomial CBFM instead; please see \code{\link[=CBFM]{CBFM()}} for other families for handling spatio-temporal multivariate count data.
-}
-
 \examples{
 \donttest{
 library(autoFRK)
@@ -441,4 +437,8 @@ Welsh, A. H., Cunningham, R. B., Donnelly, C. F., and Lindenmayer, D. B. (1996).
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
+}
+\section{Warning}{
+
+Just because a hurdle CBFM is available does not necessarily mean you should always use it! It is a relatively sophisticated model with a large number of parameters, and when appropriate it may be better to adopt a simpler model such as the negative binomial CBFM instead; please see \code{\link[=CBFM]{CBFM()}} for other families for handling spatio-temporal multivariate count data.
 }
