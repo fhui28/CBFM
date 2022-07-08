@@ -45,12 +45,12 @@ A list with the following components is returned:
 \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the residual correlations.}
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} object calculates the residual between-species correlation matrix due to (all) the spatial and/temporal basis functions, along with corresponding uncertainty intervals. Both are constructed via a simulation-based approach. Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different sets of basis functions to those used to actually fit the model. Additionally, the user can supplied two sets of spatial and/or temporal basis functions, in which case the function calculates cross-correlations (between and within species) between these two sets of basis functions.
 }
 \details{
-This function is somewhat similar to \code{\link[boral:get.residual.cor]{boral::get.residual.cor()}} and \code{\link[gllvm:getResidualCor]{gllvm::getResidualCor()}}, in calculating a residual between-species correlation matrix due to (all) the basis functions i.e., residual spatio-temporal correlations, along with corresponding uncertainty intervals. Recall the general form of the mean regression model for the CBFM is given by
+This function is somewhat similar to \code{\link[boral:get.residual.cor]{boral::get.residual.cor()}} and \code{\link[gllvm:getResidualCor.gllvm]{gllvm::getResidualCor()}}, in calculating a residual between-species correlation matrix due to (all) the basis functions i.e., residual spatio-temporal correlations, along with corresponding uncertainty intervals. Recall the general form of the mean regression model for the CBFM is given by
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
@@ -64,6 +64,12 @@ With the above definition of the residual between-species spatio-temporal correl
 
 NOTE: A residual cross-correlation matrix is not going to be a standard residual correlation matrix in the sense of having the ones alone the diagonal. This is because even for the same species \eqn{j = j'}, the correlation is not guaranteed to be equal to one as the covariates being considered can be different.
 }
+\section{Warning}{
+The approach this function takes to construct a residual spatio-temporal correlation matrix between species is \strong{by no means the only approach}. Indeed, with CBFMs the approach taken here to construct residual correlations can be seen as a basis-function analogue of equation 4 in Pollock et al., (2014), as well as Warton et al., (2015) and Hui (2016) among others, for calculating correlations due to measured predictors i.e., except we replace the measure predictors with basis functions.
+
+An alternative approach, and arguably more in line with how residual correlations are calculated in latent variable models (e.g., Warton et al., 2015; Niku et al., 2017; Ovaskainen et al., 2017, Niku et al., 2019), would be to calculate residual spatio-temporal correlations based directly off the community-level covariance matrices \code{Sigma_space/Sigma_time/Sigma_spacetime} and baseline between-species correlation matrices \code{G_space/G_time/G_spacetime} characterizing the random effects covariance of the species-specific coefficients \eqn{(a_1,\ldots,a_m)}. Such an approach is currently not available in CBFM...sorry!
+}
+
 \examples{
 \donttest{
 library(autoFRK)
@@ -192,10 +198,4 @@ Warton, D. I., Blanchet, F. G., O'Hara, R. B., Ovaskainen, O., Taskinen, S., Wal
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
-}
-\section{Warning}{
-
-The approach this function takes to construct a residual spatio-temporal correlation matrix between species is \strong{by no means the only approach}. Indeed, with CBFMs the approach taken here to construct residual correlations can be seen as a basis-function analogue of equation 4 in Pollock et al., (2014), as well as Warton et al., (2015) and Hui (2016) among others, for calculating correlations due to measured predictors i.e., except we replace the measure predictors with basis functions.
-
-An alternative approach, and arguably more in line with how residual correlations are calculated in latent variable models (e.g., Warton et al., 2015; Niku et al., 2017; Ovaskainen et al., 2017, Niku et al., 2019), would be to calculate residual spatio-temporal correlations based directly off the community-level covariance matrices \code{Sigma_space/Sigma_time/Sigma_spacetime} and baseline between-species correlation matrices \code{G_space/G_time/G_spacetime} characterizing the random effects covariance of the species-specific coefficients \eqn{(a_1,\ldots,a_m)}. Such an approach is currently not available in CBFM...sorry!
 }
