@@ -57,24 +57,23 @@ true_Sigma_space <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_b
 true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>%
 cov2cor
 
-simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
                          B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
-fitcbfm_sp <- CBFM(y = simy$y, formula_X = ~ temp + depth + chla + O2, data = dat,
-                   B_space = basisfunctions, 
-                   family = binomial(), control = list(trace = 1),
-                   G_control = list(rank = 5), Sigma_control = list(rank = 5, custom_space = true_Sigma_space))
+fitcbfm_sp <- CBFM(y = simy$y, formula = ~ s(temp, bs = "gp") + depth + chla + O2, data = dat,
+                   B_space = basisfunctions,  family = binomial(), 
+                   control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
 
-# Fit CBFM
-useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat,
-B_space = basisfunctions, B_time = X_year, 
-family = binomial(), control = list(trace = 1),
-Sigma_control = list(rank = c(5,1)),
-G_control = list(rank = c(5,5))
-)
+
+fitcbfm_smooth <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data = dat,
+                   B_space = basisfunctions,  family = binomial(), 
+                   control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
+
+
+
+
 
 library(ggmatplot)
 ggmatplot(spp_slopes, fitcbfm_sp$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
@@ -170,7 +169,7 @@ fitcbfm_zip <- CBFM(y = simy_train,
 # Calculate predictions onto test dataset
 predictions_cbfm_gold <- predict(fitcbfm_zip, type = "response")
 predictions_cbfm_test <- predict(fitcbfm_zip, type = "response", se_fit = TRUE)
-matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "xy"); abline(0,1)
+matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "|xy"); abline(0,1)
 
 
 predictions_cbfm_pure <- predict(fitcbfm_zip, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
