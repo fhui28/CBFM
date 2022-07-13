@@ -2280,7 +2280,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(control$trace > 0)
           message("Commencing model fitting...")
      
-     while(diff > control$tol & counter < control$maxit) {
+     while(diff > control$tol & counter <= control$maxit) {
           make_tidibits_data <- function() {
                out <- list(B = B)
                if(identical(which_B_used, c(1,0,0))) {
@@ -2333,21 +2333,23 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     betas = start_params$betas,
                     basis_effects_mat = start_params$basis_effects_mat,
                     zibetas = start_params$zibetas,
-                    dispparam = start_params$dispparam,
-                    powerparam = start_params$powerparam,
                     mean_B_space = start_params$mean_B_space, # NULL if which_B_used[1] == 0
                     mean_B_time = start_params$mean_B_time, # NULL if which_B_used[2] == 0
-                    mean_B_spacetime = start_params$mean_B_spacetime, # NULL if which_B_used[3] == 0
+                    mean_B_spacetime = start_params$mean_B_spacetime, # ]NULL if which_B_used[3] == 0
+                    dispparam = start_params$dispparam,
+                    powerparam = start_params$powerparam,
                     logLik = start_params$logLik
                     )
                     
                cw_params <- as.vector(unlist(new_fit_CBFM_ptest))
                cw_params <- cw_params[-length(cw_params)] # Get rid of the logLik term
+               cw_inner_params <- cw_params
                cw_logLik <- new_fit_CBFM_ptest$logLik
                rm(start_params)
                }
           if(counter > 0) {          
                tidbits_data <- make_tidibits_data()
+               cw_inner_params <- cw_params
                }
 
           cw_logLik <- cw_inner_logL <- -Inf
@@ -2356,7 +2358,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(control$trace > 0)
                message("Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).")         
           while(inner_err > 1e-3) {
-               if(inner_counter > 10)
+               if(inner_counter > 10) # So inner updates only occur for bit
                     break;
                
                ##-------------------------
@@ -2647,11 +2649,25 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     new_fit_CBFM_ptest$zibetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$zicoefficients))
                     }
                new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
+
+                              
+               ##-------------------------
+               ## Check whether to finish inner EM algorithm
+               ##-------------------------
+               new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
+                               new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) 
+               inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
+               if(control$convergence_type == "parameters")
+                    inner_err <- mean((inner_params_diff)^2) 
+               if(control$convergence_type == "parameters_relative")
+                    inner_err <- mean((inner_params_diff)^2)/mean(cw_inner_params^2) 
+               if(control$convergence_type == "logLik_relative")
+                    inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)  
                
-               inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
                cw_inner_logL <- new_fit_CBFM_ptest$logLik
+               cw_inner_params <- new_inner_params
                inner_counter <- inner_counter + 1
-               rm(all_update_coefs, update_Xcoefsspp_fn)
+               rm(all_update_coefs, update_Xcoefsspp_fn, inner_params_diff)
                
                if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                     break;
@@ -2797,8 +2813,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           ##-------------------------
           ## Finish iteration 
           ##-------------------------
-          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), new_fit_CBFM_ptest$zibetas, 
-                          new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) # Stop checking log(new_fit_CBFM_ptest$dispparam), new_fit_CBFM_ptest$powerparam?
+          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
+                          new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) # Stop checking dispersion and power parameters
+          
           new_logLik <- new_fit_CBFM_ptest$logLik
           if(which_B_used[1]) {
                centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
@@ -2860,6 +2877,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      tidbits_data <- make_tidibits_data()
      inner_err <- 100
      cw_inner_logL <- -Inf
+     cw_inner_params <- cw_params
      while(inner_err > control$tol) {
           getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX)
 
@@ -2895,18 +2913,29 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                new_fit_CBFM_ptest$ziedf <- sapply(all_update_coefs, function(x) x$fitzi$edf)
                new_fit_CBFM_ptest$ziedf1 <- sapply(all_update_coefs, function(x) x$fitzi$edf1)    
                new_fit_CBFM_ptest$zipen_edf <- lapply(all_update_coefs, function(x) pen.edf(x$fitzi)) 
-          }
+               }
           
           new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
           new_fit_CBFM_ptest$logLik_perspp <- sapply(all_update_coefs, function(x) x$logLik)         
           
-          inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)
+          new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
+                          new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) 
+          inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
+          if(control$convergence_type == "parameters")
+               inner_err <- mean((inner_params_diff)^2) 
+          if(control$convergence_type == "parameters_relative")
+               inner_err <- mean((inner_params_diff)^2)/mean(cw_inner_params^2) 
+          if(control$convergence_type == "logLik_relative")
+               inner_err <- abs(new_fit_CBFM_ptest$logLik/cw_inner_logL-1)  
+          
           cw_inner_logL <- new_fit_CBFM_ptest$logLik
+          cw_inner_params <- new_inner_params
+          inner_counter <- inner_counter + 1
           
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                break;
           }
-     
+
      all_S <- sapply(all_update_coefs, function(x) x$S)
      all_ziS <- sapply(all_update_coefs, function(x) x$ziS)
      all_k_check <- foreach(j = 1:num_spp) %dopar% k.check(all_update_coefs[[j]]$fit, subsample = k_check_control$subsample, n.rep = k_check_control$n.rep)
@@ -2925,7 +2954,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
           )))
      names(all_vcomp) <- colnames(y)
-     rm(all_update_coefs, tidbits_data, inner_err, cw_inner_logL, cw_logLik, cw_params, new_params, diff, counter)
+     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, counter)
      gc()
      
      
