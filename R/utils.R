@@ -209,19 +209,21 @@
 
 ## A local pseudo-inverse function -- straight from summary.gam in mgcv package. Full credit goes to Simon Wood for this!
 .pinv <- function(V, M, rank.tol = 1e-6) {
-    D <- eigen(V, symmetric = TRUE)
-    M1 <- length(D$values[D$values > rank.tol * D$values[1]])
-    if(M > M1)
-        M<-M1 # avoid problems with zero eigen-values
-    if(M+1 <= length(D$values))
-        D$values[(M+1):length(D$values)]<-1
-    D$values<- 1/D$values
-    if(M+1 <= length(D$values))
-        D$values[(M+1):length(D$values)]<-0
-    res <- D$vectors %*% diag(x = D$values, nrow = length(D$values)) %*% t(D$vectors)
+     if(missing(M))
+          M <- ncol(V)
+     D <- eigen(V, symmetric = TRUE)
+     M1 <- length(D$values[D$values > rank.tol * D$values[1]])
+     if(M > M1)
+          M<-M1 # avoid problems with zero eigen-values
+     if(M+1 <= length(D$values))
+          D$values[(M+1):length(D$values)]<-1
+     D$values<- 1/D$values
+     if(M+1 <= length(D$values))
+          D$values[(M+1):length(D$values)]<-0
+     res <- D$vectors %*% diag(x = D$values, nrow = length(D$values)) %*% t(D$vectors)
 
-    return(res)
-    }
+     return(res)
+     }
 
 
 ## Tries chol2inv then, which will fail for singular matrices. If it does fail then go to use .pinv. 
@@ -233,6 +235,8 @@
 #    
 #    return(out)
 #    }
+
+
 
 # schulz_inversion_fn <- function(mat, max_iter = 100) {
 #      diff <- 10
