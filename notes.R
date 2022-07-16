@@ -62,8 +62,8 @@ simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
-fitcbfm_sp <- CBFM(y = simy$y, formula = ~ s(temp, bs = "gp") + depth + chla + O2, data = dat,
-                   B_space = basisfunctions,  family = binomial(), 
+fitcbfm_sp <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2, data = dat,
+                   B_spacetime = basisfunctions,  family = binomial(), 
                    control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
 
 
@@ -230,15 +230,15 @@ theme_bw()
 ##----------------------------------
 ## Custom testing
 ##----------------------------------
-y = simy_train
+y = simy$y
 useformula <- ~ temp + depth + chla + O2
 formula <- useformula
-ziformula <- useformula
-data = dat_train
-family =  zipoisson() 
-B_space = train_basisfunctions
+ziformula <- NULL
+data = dat
+family =  binomial() 
+B_space = NULL
 B_time = NULL
-B_spacetime = NULL
+B_spacetime = basisfunctions
 offset = NULL
 ncores = NULL
 gamma = 1

@@ -2224,7 +2224,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                start_params$G_space <- NULL
                new_LoadingnuggetG_space <- list(covinv = .cholthenpinv(V = G_control$custom_space))
                }
-          start_params$mean_B_space <- numeric(num_spacebasisfns)
+          start_params[["mean_B_space"]] <- numeric(num_spacebasisfns)
           }
      if(which_B_used[2]) {
           if(is.null(Sigma_control$custom_time)) {
@@ -2243,7 +2243,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                start_params$G_time <- NULL
                new_LoadingnuggetG_time <- list(covinv = .cholthenpinv(V = G_control$custom_time))
                }
-          start_params$mean_B_time <- numeric(num_timebasisfns)
+          start_params[["mean_B_time"]] <- numeric(num_timebasisfns)
           }
      if(which_B_used[3]) {
           if(is.null(Sigma_control$custom_spacetime)) {
@@ -2258,11 +2258,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                start_params$G_spacetime <- diag(1, nrow = num_spp)
                new_LoadingnuggetG_spacetime <- list(covinv = start_params$G_spacetime)
                }
-          if(!is.null(G_control$custom_spacwtime)) {
+          if(!is.null(G_control$custom_spacetime)) {
                start_params$G_spacetime <- NULL
                new_LoadingnuggetG_spacetime <- list(covinv = .cholthenpinv(V = G_control$custom_spacetime))
                }
-          start_params$mean_B_spacetime <- numeric(num_spacetimebasisfns)
+          start_params[["mean_B_spacetime"]] <- numeric(num_spacetimebasisfns)
           }
      start_params$logLik <- -Inf
      
@@ -2333,9 +2333,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     betas = start_params$betas,
                     basis_effects_mat = start_params$basis_effects_mat,
                     zibetas = start_params$zibetas,
-                    mean_B_space = start_params$mean_B_space, # NULL if which_B_used[1] == 0
-                    mean_B_time = start_params$mean_B_time, # NULL if which_B_used[2] == 0
-                    mean_B_spacetime = start_params$mean_B_spacetime, # ]NULL if which_B_used[3] == 0
+                    mean_B_space = start_params[["mean_B_space"]], # NULL if which_B_used[1] == 0
+                    mean_B_time = start_params[["mean_B_time"]], # NULL if which_B_used[2] == 0
+                    mean_B_spacetime = start_params[["mean_B_spacetime"]], # ]NULL if which_B_used[3] == 0
                     dispparam = start_params$dispparam,
                     powerparam = start_params$powerparam,
                     logLik = start_params$logLik
@@ -2361,6 +2361,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(inner_counter > 10) # So inner updates only occur for bit
                     break;
                
+               
                ##-------------------------
                ## For zero-inflated distributions, E-step + updating zero-inflation probabilities for distributions that require it. 
                ## Otherwise, effectively do nothing
@@ -2380,33 +2381,33 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     tidbits_data$estep_weights <- as.vector(getweights[,j])
                     tidbits_data$offset <- offset[,j]
                     if(sum(which_B_used) == 1) {
-                         tidbits_data$mean_basis_effects <- c(new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime)
+                         tidbits_data$mean_basis_effects <- c(new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]])
                          tidbits_data$other_centered_basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat - matrix(tidbits_data$mean_basis_effects, nrow = num_spp, ncol = num_basisfns, byrow = TRUE)
                          }
                     if(sum(which_B_used) == 2) {
                          if(identical(which_B_used, c(1,1,0))) { 
-                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_space
-                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_time
+                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest[["mean_B_space"]]
+                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest[["mean_B_time"]]
                               tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                               tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                               }
                          if(identical(which_B_used, c(1,0,1))) { 
-                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_space
-                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_spacetime
+                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest[["mean_B_space"]]
+                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest[["mean_B_spacetime"]]
                               tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                               tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                               }
                          if(identical(which_B_used, c(0,1,1))) { 
-                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_time
-                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_spacetime
+                              tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest[["mean_B_time"]]
+                              tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest[["mean_B_spacetime"]]
                               tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                               tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                               }
                          }
                     if(sum(which_B_used) == 3) {
-                         tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest$mean_B_space
-                         tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest$mean_B_time
-                         tidbits_data$mean_basis_effects_B3 <- new_fit_CBFM_ptest$mean_B_spacetime
+                         tidbits_data$mean_basis_effects_B1 <- new_fit_CBFM_ptest[["mean_B_space"]]
+                         tidbits_data$mean_basis_effects_B2 <- new_fit_CBFM_ptest[["mean_B_time"]]
+                         tidbits_data$mean_basis_effects_B3 <- new_fit_CBFM_ptest[["mean_B_spacetime"]]
                          tidbits_data$other_centered_basis_effects_mat_B1 <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                          tidbits_data$other_centered_basis_effects_mat_B2 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+(1:num_timebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B1, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                          tidbits_data$other_centered_basis_effects_mat_B3 <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns+num_timebasisfns+(1:num_spacetimebasisfns),drop=FALSE] - matrix(tidbits_data$mean_basis_effects_B2, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
@@ -2655,7 +2656,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                ## Check whether to finish inner EM algorithm
                ##-------------------------
                new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
-                               new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) 
+                               new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
                inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
                if(control$convergence_type == "parameters")
                     inner_err <- mean((inner_params_diff)^2) 
@@ -2683,21 +2684,21 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                onemIq <- kronecker(matrix(1, nrow = num_spp, ncol = 1), Diagonal(n = num_spacebasisfns))
                MM <- crossprod(onemIq, kronecker(new_LoadingnuggetG_space$covinv, new_LoadingnuggetSigma_space$covinv))       
                rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE])) 
-               new_fit_CBFM_ptest$mean_B_space <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
+               new_fit_CBFM_ptest[["mean_B_space"]] <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
                rm(rhs, MM, onemIq)
                }
           if(control$nonzeromean_B_time) {
                onemIq <- kronecker(matrix(1, nrow = num_spp, ncol = 1), Diagonal(n = num_timebasisfns))
                MM <- crossprod(onemIq, kronecker(new_LoadingnuggetG_time$covinv, new_LoadingnuggetSigma_time$covinv))       
                rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE])) 
-               new_fit_CBFM_ptest$mean_B_time <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
+               new_fit_CBFM_ptest[["mean_B_time"]] <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
                rm(rhs, MM, onemIq)
                }
           if(control$nonzeromean_B_spacetime) {
                onemIq <- kronecker(matrix(1, nrow = num_spp, ncol = 1), Diagonal(n = num_spacetimebasisfns))
                MM <- crossprod(onemIq, kronecker(new_LoadingnuggetG_spacetime$covinv, new_LoadingnuggetSigma_spacetime$covinv))       
                rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE])) 
-               new_fit_CBFM_ptest$mean_B_spacetime <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
+               new_fit_CBFM_ptest[["mean_B_spacetime"]] <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
                rm(rhs, MM, onemIq)
                }
 
@@ -2711,7 +2712,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(is.null(G_control$custom_space)) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol
                     if(control$nonzeromean_B_space)
-                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
                     new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, basis_effects_mat = centered_BF_mat, 
                          Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
@@ -2727,7 +2728,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(is.null(G_control$custom_time)) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+G_control$tol
                     if(control$nonzeromean_B_time)
-                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
                     new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, basis_effects_mat = centered_BF_mat, 
                           Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
@@ -2743,7 +2744,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(is.null(G_control$custom_spacetime)) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+G_control$tol
                     if(control$nonzeromean_B_spacetime)
-                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
                     new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, basis_effects_mat = centered_BF_mat, 
                          Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
@@ -2766,7 +2767,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(is.null(Sigma_control$custom_space)) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+Sigma_control$tol
                     if(control$nonzeromean_B_space)
-                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
                     new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, basis_effects_mat = centered_BF_mat, 
                          Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
@@ -2781,7 +2782,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(is.null(Sigma_control$custom_time)) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+Sigma_control$tol
                     if(control$nonzeromean_B_time)
-                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
                     new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, basis_effects_mat = centered_BF_mat, 
                          Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
@@ -2796,7 +2797,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(is.null(Sigma_control$custom_spacetime)) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+Sigma_control$tol
                     if(control$nonzeromean_B_spacetime)
-                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+                         centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
                     new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, basis_effects_mat = centered_BF_mat, 
                          Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
@@ -2814,27 +2815,27 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           ## Finish iteration 
           ##-------------------------
           new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
-                          new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) # Stop checking dispersion and power parameters
+                          new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) # Stop checking dispersion and power parameters
           
           new_logLik <- new_fit_CBFM_ptest$logLik
           if(which_B_used[1]) {
                centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
                if(control$nonzeromean_B_space)
-                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
                                                                               Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
                }
           if(which_B_used[2]) {
                centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]
                if(control$nonzeromean_B_time)
-                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
                                                                               Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
                }
           if(which_B_used[3]) {
                centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]
                if(control$nonzeromean_B_spacetime)
-                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+                    centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                new_logLik <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat,
                                                                               Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
                }
@@ -2919,7 +2920,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           new_fit_CBFM_ptest$logLik_perspp <- sapply(all_update_coefs, function(x) x$logLik)         
           
           new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
-                          new_fit_CBFM_ptest$mean_B_space, new_fit_CBFM_ptest$mean_B_time, new_fit_CBFM_ptest$mean_B_spacetime) 
+                          new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
           inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
           if(control$convergence_type == "parameters")
                inner_err <- mean((inner_params_diff)^2) 
@@ -2969,21 +2970,21 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(which_B_used[1]) {
           centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]
           if(control$nonzeromean_B_space)
-               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_space, nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
+               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
           new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
                                                                              Ginv = new_LoadingnuggetG_space$covinv, Sigmainv = new_LoadingnuggetSigma_space$covinv)
           }
      if(which_B_used[2]) {
           centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]
           if(control$nonzeromean_B_time)
-               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_time, nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
+               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
           new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat, 
                                                                              Ginv = new_LoadingnuggetG_time$covinv, Sigmainv = new_LoadingnuggetSigma_time$covinv)
           }
      if(which_B_used[3]) {
           centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]
           if(control$nonzeromean_B_time)
-               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest$mean_B_spacetime, nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
+               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
           new_logLik_pql <- new_logLik + .calc_pqlquadraticterm_basiseffects(basis_effects_mat = centered_BF_mat,
                                                                              Ginv = new_LoadingnuggetG_spacetime$cov, Sigmainv = new_LoadingnuggetSigma_spacetime$covinv)
           }
@@ -3037,9 +3038,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
      out_CBFM$powerparam <- new_fit_CBFM_ptest$powerparam
-     out_CBFM$mean_B_space <- new_fit_CBFM_ptest$mean_B_space
-     out_CBFM$mean_B_time <- new_fit_CBFM_ptest$mean_B_time
-     out_CBFM$mean_B_spacetime <- new_fit_CBFM_ptest$mean_B_spacetime
+     out_CBFM$mean_B_space <- new_fit_CBFM_ptest[["mean_B_space"]]
+     out_CBFM$mean_B_time <- new_fit_CBFM_ptest[["mean_B_time"]]
+     out_CBFM$mean_B_spacetime <- new_fit_CBFM_ptest[["mean_B_spacetime"]]
      out_CBFM$linear_predictors <- new_fit_CBFM_ptest$linear_predictors
      rm(new_fit_CBFM_ptest, getweights, converged, all_k_check)
 
@@ -3112,7 +3113,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           
           if(control$nonzeromean_B_space)
-               names(out_CBFM$mean_B_space) <- colnames(B_space)
+               names(out_CBFM[["mean_B_space"]]) <- colnames(B_space)
           }          
      if(which_B_used[2]) {
           if(is.null(Sigma_control$custom_time)) {
@@ -3150,7 +3151,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           
           if(control$nonzeromean_B_time)
-               names(out_CBFM$mean_B_time) <- colnames(B_time)
+               names(out_CBFM[["mean_B_time"]]) <- colnames(B_time)
           }
      if(which_B_used[3]) {
           if(is.null(Sigma_control$custom_spacetime)) {
@@ -3187,7 +3188,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           
           if(control$nonzeromean_B_spacetime)
-               names(out_CBFM$mean_B_spacetime) <- colnames(B_spacetime)
+               names(out_CBFM[["mean_B_spacetime"]]) <- colnames(B_spacetime)
           }
 
      rownames(out_CBFM$betas) <- rownames(out_CBFM$basis_effects_mat) <- colnames(out_CBFM$linear_predictors) <- colnames(out_CBFM$fitted) <- colnames(y)
@@ -3345,11 +3346,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(!(family$family %in% c("zipoisson","zinegative.binomial")))                        
           out_CBFM$zibetas <- NULL
      if(!control$nonzeromean_B_space)
-          out_CBFM$mean_B_space <- NULL
+          out_CBFM[["mean_B_space"]] <- NULL
      if(!control$nonzeromean_B_time)
-          out_CBFM$mean_B_time <- NULL
+          out_CBFM[["mean_B_time"]] <- NULL
      if(!control$nonzeromean_B_spacetime)
-          out_CBFM$mean_B_spacetime <- NULL
+          out_CBFM[["mean_B_spacetime"]] <- NULL
           
      
      out_CBFM$time_taken <- toc[3] - tic[3] 
