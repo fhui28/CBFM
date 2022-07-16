@@ -203,7 +203,7 @@
      if(!inverse)
           return(out)
      if(inverse)
-          return(.cholthenpinv(out))
+          return(.pinv(out))
      }
 
 
@@ -224,15 +224,15 @@
     }
 
 
-# Tries chol2inv then, which will fail for singular matrices. If it does fail then go to use .pinv. 
-# One could use .pinv directly, but I suspect chol2inv is more scalable (when it works) and so is preferred as a first option?
-.cholthenpinv <- function(V) {
-   out <- try(chol2inv(chol(V)), silent = TRUE)
-   if(inherits(out, "try-error"))
-      out <- .pinv(V = V, M = ncol(V))
-   
-   return(out)
-   }
+## Tries chol2inv then, which will fail for singular matrices. If it does fail then go to use .pinv. 
+## This was originally used over just .pinv as it is more scalable and for positive definite matrices is marginally more accurate [difference is very very small though]. However since July 2022 it is no longer used and .pinv is now used instead, because .choltheninv has the problem that for positive-semidefinite matrices, if you apply it twice then it may not return the original matrix [it does .pinv in the first inverse then does chol2inv in the second inverse]
+# .cholthenpinv <- function(V) {
+#    out <- try(chol2inv(chol(V)), silent = TRUE)
+#    if(inherits(out, "try-error"))
+#       out <- .pinv(V = V, M = ncol(V))
+#    
+#    return(out)
+#    }
 
 # schulz_inversion_fn <- function(mat, max_iter = 100) {
 #      diff <- 10
