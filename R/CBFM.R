@@ -2214,7 +2214,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(!is.null(Sigma_control$custom_space)) { 
                start_params$Sigma_space <- NULL
-               new_LoadingnuggetSigma_space <- list(covinv = .cholthenpinv(V = Sigma_control$custom_space))
+               new_LoadingnuggetSigma_space <- list(covinv = .pinv(V = Sigma_control$custom_space))
                }
           if(is.null(G_control$custom_space)) {
                start_params$G_space <- diag(1, nrow = num_spp)
@@ -2222,7 +2222,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(!is.null(G_control$custom_space)) {
                start_params$G_space <- NULL
-               new_LoadingnuggetG_space <- list(covinv = .cholthenpinv(V = G_control$custom_space))
+               new_LoadingnuggetG_space <- list(covinv = .pinv(V = G_control$custom_space))
                }
           start_params[["mean_B_space"]] <- numeric(num_spacebasisfns)
           }
@@ -2233,7 +2233,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(!is.null(Sigma_control$custom_time)) { # Could pass these if required, but trying to save memory for now
                start_params$Sigma_time <- NULL
-               new_LoadingnuggetSigma_time <- list(covinv = .cholthenpinv(V = Sigma_control$custom_time))
+               new_LoadingnuggetSigma_time <- list(covinv = .pinv(V = Sigma_control$custom_time))
                }
           if(is.null(G_control$custom_time)) {
                start_params$G_time <- diag(1, nrow = num_spp)
@@ -2241,7 +2241,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(!is.null(G_control$custom_time)) {
                start_params$G_time <- NULL
-               new_LoadingnuggetG_time <- list(covinv = .cholthenpinv(V = G_control$custom_time))
+               new_LoadingnuggetG_time <- list(covinv = .pinv(V = G_control$custom_time))
                }
           start_params[["mean_B_time"]] <- numeric(num_timebasisfns)
           }
@@ -2252,7 +2252,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(!is.null(Sigma_control$custom_spacetime)) { # Could pass these if required, but trying to save memory for now
                start_params$Sigma_spacetime <- NULL
-               new_LoadingnuggetSigma_spacetime <- list(covinv = .cholthenpinv(V = Sigma_control$custom_spacetime))
+               new_LoadingnuggetSigma_spacetime <- list(covinv = .pinv(V = Sigma_control$custom_spacetime))
                }
           if(is.null(G_control$custom_spacetime)) {
                start_params$G_spacetime <- diag(1, nrow = num_spp)
@@ -2260,7 +2260,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(!is.null(G_control$custom_spacetime)) {
                start_params$G_spacetime <- NULL
-               new_LoadingnuggetG_spacetime <- list(covinv = .cholthenpinv(V = G_control$custom_spacetime))
+               new_LoadingnuggetG_spacetime <- list(covinv = .pinv(V = G_control$custom_spacetime))
                }
           start_params[["mean_B_spacetime"]] <- numeric(num_spacetimebasisfns)
           }
@@ -3238,7 +3238,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           D1minusCAinvB_fn <- function(j) {                
                if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
                     XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = control$ridge+1e-15, n = num_X) + all_S[[j]]
-                    XTWX_inv <- .cholthenpinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
+                    XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
                     BTWX <- crossprod(B, X*weights_mat[,j])               
                     return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
                     }
@@ -3248,7 +3248,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
                     bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
                     XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = rep(c(control$ridge+1e-15,control$ziridge+1e-15), c(num_X,ncol(ziX)))) + bdiag(all_ziS[[j]], all_S[[j]])
-                    XTWX_inv <- .cholthenpinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
+                    XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
                     BTWX <- crossprod(B, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% Xi               
                     return(crossprod(B*sqrt(weights_mat_betabeta[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
                     }
@@ -3256,11 +3256,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           all_D1minusCAinvB <- foreach(j = 1:num_spp) %dopar% D1minusCAinvB_fn(j = j)
           all_D1minusCAinvB <- bdiag(all_D1minusCAinvB)
           if(identical(which_B_used, c(1,0,0)))
-               DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(.cholthenpinv(out_CBFM$G_space), .cholthenpinv(out_CBFM$Sigma_space)))
+               DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(.pinv(out_CBFM$G_space), .pinv(out_CBFM$Sigma_space)))
           if(identical(which_B_used, c(0,1,0)))
-               DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(.cholthenpinv(out_CBFM$G_time), .cholthenpinv(out_CBFM$Sigma_time)))
+               DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(.pinv(out_CBFM$G_time), .pinv(out_CBFM$Sigma_time)))
           if(identical(which_B_used, c(0,0,1)))
-               DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(.cholthenpinv(out_CBFM$G_spacetime), .cholthenpinv(out_CBFM$Sigma_spacetime)))
+               DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + kronecker(.pinv(out_CBFM$G_spacetime), .pinv(out_CBFM$Sigma_spacetime)))
           if(identical(which_B_used, c(1,1,0)))
                DminusCAinvB_inv <- forceSymmetric(all_D1minusCAinvB + 
                     .kkproduct(G1 = out_CBFM$G_space, G2 = out_CBFM$G_time, Sigma1 = out_CBFM$Sigma_space, Sigma2 = out_CBFM$Sigma_time)) 
@@ -3276,13 +3276,13 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          Sigma1 = out_CBFM$Sigma_space, Sigma2 = out_CBFM$Sigma_time, Sigma3 = out_CBFM$Sigma_spacetime)) 
           
           rm(all_D1minusCAinvB, D1minusCAinvB_fn)
-          DminusCAinvB_inv <- .cholthenpinv(DminusCAinvB_inv) ## Bottleneck! 
+          DminusCAinvB_inv <- .pinv(DminusCAinvB_inv) ## Bottleneck! 
 
           # Top right of covariance matrix
           AinvandB_fn <- function(j) {
                if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
                     XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x=control$ridge+1e-15, n = num_X) + all_S[[j]]
-                    XTWX_inv <- .cholthenpinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
+                    XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
                     XTWB <- crossprod(X*weights_mat[,j], B)
                     }
                if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
@@ -3290,7 +3290,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
                     bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
                     XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = rep(c(control$ridge+1e-15,control$ziridge+1e-15), c(num_X,ncol(ziX)))) + bdiag(all_ziS[[j]], all_S[[j]])
-                    XTWX_inv <- .cholthenpinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
+                    XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
                     XTWB <- crossprod(Xi, rbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% B
                     }
                return(list(Ainv = XTWX_inv, B = XTWB))

@@ -26,6 +26,7 @@ library(ROCR)
 library(sp)
 library(RandomFields)
 library(tidyverse)
+library(ggmatplot)
 
 ##------------------------------
 ## **Example 0: Fitting a CBFM to data from a spatial CBFM
@@ -70,7 +71,8 @@ fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data 
 
 fake_gam <- gam(simy$y[,1] ~ s(temp), data = dat)
 MM_temp <- model.matrix(fake_gam)[,-1]
-Sigma_temp <- .cholthenpinv(fake_gam$smooth[[1]]$S[[1]])
+Sigma_temp <- .pinv(fake_gam$smooth[[1]]$S[[1]])
+
 
 fitcbfm_random <- CBFM(y = simy$y, formula = ~ depth + chla + O2, data = dat,
                    B_space = basisfunctions, B_time = MM_temp, family = binomial(), 
@@ -87,11 +89,11 @@ fitcbfm_random <- CBFM(y = simy$y, formula = ~ depth + chla + O2, data = dat,
 
 
 
-library(ggmatplot)
+ggmatplot(fitcbfm_fixed$betas[,-(1:4)], fitcbfm_random$basis_effects_mat[,-c(1:24)]) + geom_abline(intercept = 0, slope = 1)
+
 ggmatplot(cbind(spp_slopes,spp_gear), fitcbfm_fixed$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(cbind(spp_slopes,spp_gear), cbind(fitcbfm_random$betas[,-1], fitcbfm_random$basis_effects_mat[,1])) + geom_abline(intercept = 0, slope = 1)
 
-ggmatplot(fitcbfm_fixed$betas[,-(1:4)], fitcbfm_random$basis_effects_mat[,-c(1:24)]) + geom_abline(intercept = 0, slope = 1)
 
 
 
