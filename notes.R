@@ -45,7 +45,7 @@ xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(450,50)))
 colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
 dat <- data.frame(xy, X)
-useformula <- ~ temp + depth + chla + O2 + gear
+useformula <- ~ temp + depth + chla + O2
 
 # Set up spatial basis functions for CBFM 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
@@ -58,21 +58,31 @@ true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>%
 cov2cor
 
 simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
-                         B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes, spp_gear),
+                         B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
 # Fit models
-fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2 + gear, data = dat,
+fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data = dat,
                    B_space = basisfunctions, family = binomial(), 
                    control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
 
 
-fitcbfm_random <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2, data = dat,
-                   B_spacetime = basisfunctions, B_time = matrix(dat$gear, ncol = 1), family = binomial(), 
-                   control = list(trace = 1, nonzeromean_B_time = TRUE), 
-                   G_control = list(rank = c(1,5), custom_time = diag(nrow = num_spp)), 
-                   Sigma_control = list(rank = c("full",5)))
+fake_gam <- gam(simy$y[,1] ~ s(temp), data = dat)
+MM_temp <- model.matrix(fake_gam)[,-1]
+Sigma_temp <- .cholthenpinv(fake_gam$smooth[[1]]$S[[1]])
+
+fitcbfm_random <- CBFM(y = simy$y, formula = ~ depth + chla + O2, data = dat,
+                   B_space = basisfunctions, B_time = MM_temp, family = binomial(), 
+                   control = list(trace = 1), 
+                   G_control = list(rank = c(5,"full")), 
+                   Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp))
+
+# fitcbfm_random <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2, data = dat,
+#                    B_spacetime = basisfunctions, B_time = matrix(dat$gear, ncol = 1), family = binomial(), 
+#                    control = list(trace = 1, nonzeromean_B_time = TRUE), 
+#                    G_control = list(rank = c(1,5), custom_time = diag(nrow = num_spp)), 
+#                    Sigma_control = list(rank = c("full",5)))
 
 
 
@@ -80,6 +90,10 @@ fitcbfm_random <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2, data = 
 library(ggmatplot)
 ggmatplot(cbind(spp_slopes,spp_gear), fitcbfm_fixed$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(cbind(spp_slopes,spp_gear), cbind(fitcbfm_random$betas[,-1], fitcbfm_random$basis_effects_mat[,1])) + geom_abline(intercept = 0, slope = 1)
+
+ggmatplot(fitcbfm_fixed$betas[,-(1:4)], fitcbfm_random$basis_effects_mat[,-c(1:24)]) + geom_abline(intercept = 0, slope = 1)
+
+
 
 mean(fitcbfm_fixed$betas[,6])
 var(fitcbfm_fixed$betas[,6])
@@ -240,14 +254,14 @@ theme_bw()
 ## Custom testing
 ##----------------------------------
 y = simy$y
-useformula <- ~ temp + depth + chla + O2
+useformula <- ~ depth + chla + O2
 formula <- useformula
 ziformula <- NULL
 data = dat
 family =  binomial() 
-B_space = NULL
-B_time = NULL
-B_spacetime = basisfunctions
+B_space = basisfunctions
+B_time = MM_temp
+B_spacetime = NULL
 offset = NULL
 ncores = NULL
 gamma = 1
@@ -260,8 +274,8 @@ ziselect = FALSE
 start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
 control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-Sigma_control = list(rank = c(5), trace = 0)
-G_control = list(rank = c(2), trace = 0)
+G_control = list(rank = c(5,"full"))
+Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 
