@@ -26,6 +26,7 @@ library(ROCR)
 library(sp)
 library(RandomFields)
 library(tidyverse)
+library(ggmatplot)
 
 ##------------------------------
 ## **Example 0: Fitting a CBFM to data from a spatial CBFM
@@ -38,12 +39,12 @@ num_X <- 4 # Number of regression slopes
  
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- runif(num_spp, -2, 0)
-#spp_gear <- rnorm(num_spp, mean = 1.5, sd = 0.2)
+spp_gear <- rnorm(num_spp, mean = 1.5, sd = 1)
 
 # Simulate spatial coordinates and environmental covariate components
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4))
-colnames(X) <- c("temp", "depth", "chla", "O2")
+X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(450,50)))
+colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
 dat <- data.frame(xy, X)
 useformula <- ~ temp + depth + chla + O2
 
@@ -57,29 +58,52 @@ true_Sigma_space <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_b
 true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>%
 cov2cor
 
-simy <- create_CBFM_life(family = binomial(), formula_X = useformula, data = dat,
+simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
                          B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
-fitcbfm_sp <- CBFM(y = simy$y, formula_X = ~ temp + depth + chla + O2, data = dat,
-                   B_space = basisfunctions, 
-                   family = binomial(), control = list(trace = 1),
-                   G_control = list(rank = 5), Sigma_control = list(rank = 5, custom_space = true_Sigma_space))
+# Fit models
+fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data = dat,
+                   B_space = basisfunctions, family = binomial(), 
+                   control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
 
-# Fit CBFM
-useformula <- ~ temp + depth + chla + O2
-fitcbfm <- CBFM(y = simy, formula_X = useformula, data = dat,
-B_space = basisfunctions, B_time = X_year, 
-family = binomial(), control = list(trace = 1),
-Sigma_control = list(rank = c(5,1)),
-G_control = list(rank = c(5,5))
-)
 
-library(ggmatplot)
-ggmatplot(spp_slopes, fitcbfm_sp$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
+fake_gam <- gam(simy$y[,1] ~ s(temp), data = dat)
+MM_temp <- model.matrix(fake_gam)[,-1]
+Sigma_temp <- .pinv(fake_gam$smooth[[1]]$S[[1]])
+
+
+fitcbfm_random <- CBFM(y = simy$y, formula = ~ depth + chla + O2, data = dat,
+                   B_space = basisfunctions, B_time = MM_temp, family = binomial(), 
+                   control = list(trace = 1), 
+                   G_control = list(rank = c(5,"full")), 
+                   Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp))
+
+# fitcbfm_random <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2, data = dat,
+#                    B_spacetime = basisfunctions, B_time = matrix(dat$gear, ncol = 1), family = binomial(), 
+#                    control = list(trace = 1, nonzeromean_B_time = TRUE), 
+#                    G_control = list(rank = c(1,5), custom_time = diag(nrow = num_spp)), 
+#                    Sigma_control = list(rank = c("full",5)))
+
+
+
+
+ggmatplot(fitcbfm_fixed$betas[,-(1:4)], fitcbfm_random$basis_effects_mat[,-c(1:24)]) + geom_abline(intercept = 0, slope = 1)
+
+ggmatplot(cbind(spp_slopes,spp_gear), fitcbfm_fixed$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
+ggmatplot(cbind(spp_slopes,spp_gear), cbind(fitcbfm_random$betas[,-1], fitcbfm_random$basis_effects_mat[,1])) + geom_abline(intercept = 0, slope = 1)
+
+
+
+
+mean(fitcbfm_fixed$betas[,6])
+var(fitcbfm_fixed$betas[,6])
+fitcbfm_random$mean_B_time
+fitcbfm_random$Sigma_time
+
+
 ggmatplot(simy$basis_effects_mat, fitcbfm_sp$basis_effects_mat, shape = 1) + geom_abline(intercept = 0, slope = 1)
-
 ggmatplot(true_Sigma_space[lower.tri(true_Sigma_space)], fitcbfm_sp$Sigma_space[lower.tri(fitcbfm_sp$Sigma_space)]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fitcbfm_sp$G_space)]) + geom_abline(intercept = 0, slope = 1)
 
@@ -170,7 +194,7 @@ fitcbfm_zip <- CBFM(y = simy_train,
 # Calculate predictions onto test dataset
 predictions_cbfm_gold <- predict(fitcbfm_zip, type = "response")
 predictions_cbfm_test <- predict(fitcbfm_zip, type = "response", se_fit = TRUE)
-matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "xy"); abline(0,1)
+matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "|xy"); abline(0,1)
 
 
 predictions_cbfm_pure <- predict(fitcbfm_zip, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
@@ -231,14 +255,14 @@ theme_bw()
 ##----------------------------------
 ## Custom testing
 ##----------------------------------
-y = simy_train
-useformula <- ~ temp + depth + chla + O2
+y = simy$y
+useformula <- ~ depth + chla + O2
 formula <- useformula
-ziformula <- useformula
-data = dat_train
-family =  zipoisson() 
-B_space = train_basisfunctions
-B_time = NULL
+ziformula <- NULL
+data = dat
+family =  binomial() 
+B_space = basisfunctions
+B_time = MM_temp
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
@@ -252,8 +276,8 @@ ziselect = FALSE
 start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
 control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-Sigma_control = list(rank = c(5), trace = 0)
-G_control = list(rank = c(2), trace = 0)
+G_control = list(rank = c(5,"full"))
+Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp)
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 

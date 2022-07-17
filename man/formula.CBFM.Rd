@@ -15,12 +15,12 @@
 A object of class \code{formula}. Note there will be nothing on the left hand side of the "~".
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Extract the \code{formula}, and \code{ziformula} if appropriate, argument from a fitted \code{CBFM} object.
 }
 \details{
-This function works in a similar manner to functions such as \code{\link[stats:formula.lm]{stats::formula.lm()}} and \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}. Recall that in the main CBFM fitting function, the argument \code{formula} is a symbolic description of the model matrix of covariates to be created, while for zero-inflated distributions \code{ziformula} is a symbolic description of the model matrix to be created for the zero-inflation component.
+This function works in a similar manner to functions such as \code{\link[stats:lm.summaries]{stats::formula.lm()}} and \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}. Recall that in the main CBFM fitting function, the argument \code{formula} is a symbolic description of the model matrix of covariates to be created, while for zero-inflated distributions \code{ziformula} is a symbolic description of the model matrix to be created for the zero-inflation component.
 
 Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} for more details.
 }

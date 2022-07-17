@@ -18,7 +18,7 @@ predict_PA_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space 
           warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula_X and/or newdata.")
           }
      if(is.null(manualX)) {
-          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula_X),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
           nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
           if(is.null(newdata))
                new_X <- predict.gam(nullfit, type = "lpmatrix")
