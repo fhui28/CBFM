@@ -63,52 +63,80 @@ simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
-# Fit models
+##------------------------------
+## Example 0.5: Try to address the above problem by exploring a single species GAM versus CBFM fits
+##------------------------------
+fit0 <- gam(response ~ s(temp) + depth + chla + O2, data = data.frame(response = simy$y[,2], dat), method = "REML", family = binomial())
+fit0 %>% coef
+fit0$sp
+
+MM_temp <- model.matrix(fit0)[,-c(1:4)]
+Sigma_temp <- .pinv(fit0$smooth[[1]]$S[[1]])
+fitcbfm <- CBFM(y = simy$y[,1,drop=FALSE], formula = ~ depth + chla + O2, data = dat,
+                   B_space = MM_temp, family = binomial(), 
+                   control = list(trace = 1), G_control = list(rank = "full"), Sigma_control = list(rank = 1, custom_space = Sigma_temp))
+
+
+y = simy$y[,2,drop=FALSE]
+useformula <- ~ depth + chla + O2
+formula <- useformula
+ziformula <- NULL
+data = dat
+family =  binomial() 
+B_space = MM_temp
+B_time = NULL
+B_spacetime = NULL
+offset = NULL
+ncores = NULL
+gamma = 1
+zigamma = 1
+trial_size = 1
+dofit = TRUE
+stderrors = TRUE
+select = FALSE
+ziselect = FALSE
+start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+G_control = list(rank = c("full"))
+Sigma_control = list(rank = c(1), custom_space = Sigma_temp)
+k_check_control = list(subsample = 5000, n.rep = 400)
+
+
+
+
+
+
+##------------------------------
+## END Example 0.5. Return to CBFM fits
+##------------------------------
+
+# Fit CBFMs
 fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data = dat,
                    B_space = basisfunctions, family = binomial(), 
                    control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
-
 
 fake_gam <- gam(simy$y[,1] ~ s(temp), data = dat)
 MM_temp <- model.matrix(fake_gam)[,-1]
 Sigma_temp <- .pinv(fake_gam$smooth[[1]]$S[[1]])
 
-
 fitcbfm_random <- CBFM(y = simy$y, formula = ~ depth + chla + O2, data = dat,
                    B_space = basisfunctions, B_time = MM_temp, family = binomial(), 
-                   control = list(trace = 1), 
+                   control = list(trace = 1, initial_betas_dampen = 1), 
                    G_control = list(rank = c(5,"full")), 
                    Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp))
 
-# fitcbfm_random <- CBFM(y = simy$y, formula = ~ temp + depth + chla + O2, data = dat,
-#                    B_spacetime = basisfunctions, B_time = matrix(dat$gear, ncol = 1), family = binomial(), 
-#                    control = list(trace = 1, nonzeromean_B_time = TRUE), 
-#                    G_control = list(rank = c(1,5), custom_time = diag(nrow = num_spp)), 
-#                    Sigma_control = list(rank = c("full",5)))
-
-
-
-
-ggmatplot(fitcbfm_fixed$betas[,-(1:4)], fitcbfm_random$basis_effects_mat[,-c(1:24)]) + geom_abline(intercept = 0, slope = 1)
+ggmatplot(fitcbfm_fixed$betas[,-(1:4)], fitcbfm_random$basis_effects_mat[,-c(1:24)], shape = 19) + 
+     geom_abline(intercept = 0, slope = 1) +
+     scale_color_viridis_d()
 
 ggmatplot(cbind(spp_slopes,spp_gear), fitcbfm_fixed$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(cbind(spp_slopes,spp_gear), cbind(fitcbfm_random$betas[,-1], fitcbfm_random$basis_effects_mat[,1])) + geom_abline(intercept = 0, slope = 1)
 
 
-
-
-mean(fitcbfm_fixed$betas[,6])
-var(fitcbfm_fixed$betas[,6])
-fitcbfm_random$mean_B_time
-fitcbfm_random$Sigma_time
-
-
 ggmatplot(simy$basis_effects_mat, fitcbfm_sp$basis_effects_mat, shape = 1) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(true_Sigma_space[lower.tri(true_Sigma_space)], fitcbfm_sp$Sigma_space[lower.tri(fitcbfm_sp$Sigma_space)]) + geom_abline(intercept = 0, slope = 1)
 ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fitcbfm_sp$G_space)]) + geom_abline(intercept = 0, slope = 1)
-
-
-
 
 
 ##------------------------------

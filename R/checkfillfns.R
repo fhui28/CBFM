@@ -243,7 +243,7 @@
          stop("If B_spacetime is not supplied, then control$nonzeromean_B_spacetime can not be set to TRUE.")
      
      if(is.null(control$convergence_type))
-          control$convergence_type <- "parameters"
+          control$convergence_type <- "parameters_MSE"
      if(is.null(control$gam_method))
           control$gam_method <- "REML"
      if(is.null(control$ridge))
@@ -253,7 +253,7 @@
      if(is.null(control$trace))
           control$trace <- 0
 
-     control$convergence_type <- match.arg(control$convergence_type, choices = c("parameters","parameters_relative", "logLik_relative"))
+     control$convergence_type <- match.arg(control$convergence_type, choices = c("parameters_MSE","parameters_norm","parameters_relative","logLik_relative"))
      control$gam_method <- match.arg(control$gam_method, choices = c("ML","REML", "GCV.Cp", "GACV.Cp"))
      return(control)
      }
