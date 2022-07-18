@@ -356,7 +356,7 @@
         control$which_custom_Sigma_used[3] <- 1
         }
 
-     control$method<- match.arg(control$method, choices = c("REML","simple","ML"))
+     control$method <- match.arg(control$method, choices = c("REML","simple","ML"))
      #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
 
      return(control)
