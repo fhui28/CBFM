@@ -245,7 +245,7 @@
      if(is.null(control$convergence_type))
           control$convergence_type <- "parameters_MSE"
      if(is.null(control$gam_method))
-          control$gam_method <- "REML"
+          control$gam_method <- "ML"
      if(is.null(control$ridge))
           control$ridge <- 0
      if(is.null(control$ziridge))
@@ -274,7 +274,7 @@
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$method))
-          control$method <- "REML"
+          control$method <- "ML"
      if(is.null(control$inv_method))
           control$inv_method <- "chol2inv"
      if(is.null(control$trace))
@@ -324,7 +324,7 @@
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$method))
-          control$method <- "REML"
+          control$method <- "ML"
      if(is.null(control$inv_method))
           control$inv_method <- "chol2inv"
      if(is.null(control$trace))
