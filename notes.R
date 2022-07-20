@@ -4,7 +4,7 @@
 ## 1. Do all changes
 ## 1. Consider moving calls of other packages from :: to using importFrom
 ## 2. Delete all Rd files in man (but not figures!), the NAMESPACE file, and any compiled C++ files
-## 3. Check package (Ctrl+Shift+E)
+## 3. Check package
 ##4. Build (optional)
 ## 5. Push to github
 
@@ -31,7 +31,7 @@ library(doParallel)
 library(foreach)
 registerDoParallel(cores = detectCores()-2)
 ##------------------------------
-## **Example 0: Fitting a CBFM to data from a spatial CBFM
+## **Example 0: Fitting a CBFM to data from a spatial CBFM[]
 ## Estimate betas and basis functions alright, but as expected (although it's worse than I thought) estimation of G and Sigma is pretty poor. It maybe something to do with estimating the scale issue when they are estimated separately
 ##------------------------------
 set.seed(2022)
@@ -48,7 +48,8 @@ xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(450,50)))
 colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
 dat <- data.frame(xy, X)
-useformula <- ~ temp + depth + chla + O2
+useformula <- ~ depth + chla + O2 + temp
+
 
 # Set up spatial basis functions for CBFM 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
@@ -58,10 +59,10 @@ as.matrix %>%
 
 true_Sigma_space <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
 true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>%
-cov2cor
+     cov2cor
 
 simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
-                         B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
+                         B_space = basisfunctions*0, betas = cbind(spp_intercepts, spp_slopes),
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
@@ -70,37 +71,30 @@ simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 ##------------------------------
 stackedgams_fn <- function(j, y, formula_X, data) {
     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-    fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), method = "ML", family = binomial()), silent = FALSE)
+    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), method = "ML", family = binomial())
     return(fit0)
     }
 
-stackedgams <- foreach(j = 1:ncol(simy$y)) %dopar% stackedgams_fn(j = j, y = simy$y, formula_X = ~ s(temp) + depth + chla + O2, data = dat)
+stackedgams <- foreach(j = 1:ncol(simy$y)) %dopar% stackedgams_fn(j = j, y = simy$y, formula_X = ~ depth + chla + O2 + s(temp), data = dat)
 stackedgams_coef <- sapply(stackedgams, coef)[-(1:4),] %>% t
+
 
 MM_temp <- model.matrix(stackedgams[[1]])[,-c(1:4)]
 Sigma_temp <- .pinv(stackedgams[[1]]$smooth[[1]]$S[[1]])
 G_temp <- sapply(stackedgams, function(x) gam.vcomp(x, rescale = FALSE)[[1]][1]^2)
+
 fitcbfm <- CBFM(y = simy$y[,1:3,drop=FALSE], formula = ~ depth + chla + O2, data = dat,
-                B_space = MM_temp, family = binomial(), 
+                B_space = MM_temp, 
+                family = binomial(), 
                 control = list(trace = 1, convergence_type = "parameters_norm", tol = 1e-6),
                 #G_control = list(rank = "full", custom_space = diag(x = G_temp[1], nrow = 1)),
                 G_control = list(rank = "full", method = "ML", trace = 1, tol = 1e-6),
                 Sigma_control = list(rank = 1, custom_space = Sigma_temp))
 
 
-fitcbfm_singlespp <- CBFM(y = simy$y[,1,drop=FALSE], formula = ~ depth + chla + O2, data = dat,
-                B_space = MM_temp, family = binomial(), 
-                control = list(trace = 1, convergence_type = "parameters_norm", tol = 1e-6),
-                #G_control = list(rank = "full", custom_space = diag(x = G_temp[1], nrow = 1)),
-                G_control = list(rank = "full", method = "ML", trace = 1, tol = 1e-6),
-                Sigma_control = list(rank = 1, custom_space = Sigma_temp))
 
-
-fitcbfm$G_space
 fitcbfm$basis_effects_mat
-
-fitcbfm_singlespp$G_space
-fitcbfm_singlespp$basis_effects_mat
+fitcbfm$G_space
 
 
 ggmatplot(stackedgams_coef, fitcbfm$basis_effects_mat, shape = 19) + 
@@ -345,22 +339,13 @@ k_check_control = list(subsample = 5000, n.rep = 400)
 
 
 Ginv = new_LoadingnuggetG_space$covinv
-basis_effects_mat = new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol
+basis_effects_mat = centered_BF_mat
 Sigmainv = new_LoadingnuggetSigma_space$covinv
 B = B_space
 y_vec = as.vector(y)
-linpred_vec = c(new_fit_CBFM_ptest$linear_predictor)
+linpred_vec = c(new_fit_CBFM_ptest$linear_predictors)
 dispparam = new_fit_CBFM_ptest$dispparam
 powerparam = new_fit_CBFM_ptest$powerparam
-zeroinfl_prob_intercept = new_fit_CBFM_ptest$zeroinfl_prob_intercept
-return_correlation = TRUE
-
-library(ggmatplot)
-ggmatplot(spp_slopes, fitcbfm$betas[,-1]) + geom_abline(intercept = 0, slope = 1)
-qplot(spp_intercepts, fitcbfm$betas[,1]) + geom_abline(intercept = 0, slope = 1)
-qplot(spp_gear, fitcbfm$basis_effects_mat[,25]) + geom_abline(intercept = 0, slope = 1)
-fitcbfm$basis_effects_mat[,25] %>% summary
-fitcbfm$basis_effects_mat[,25] %>% sd
-fitcbfm$G_time
-fitcbfm$Sigma_time
+zibetas = new_fit_CBFM_ptest$zibetas
+return_correlation = is.null(Sigma_control$custom_space)
 
