@@ -46,7 +46,7 @@
 #' 
 #' Although the first option is employed as a default, the second and third choices are often used in to assess convergence in other, likelihood-based optimization problems (e.g., Green, 1984).}
 
-#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defalts to "REML", which is restricted maximum likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
+#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
 
@@ -1860,8 +1860,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
                     seed = NULL, ridge = 0, ziridge = 0, trace = 0), 
-     Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
-     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
+     Sigma_control = list(rank = 5, maxit = 100, tol = 1e-5, method = "REML", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
+     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-5, method = "REML", trace = 0, 
                       custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
      k_check_control = list(subsample = 5000, n.rep = 400)
      ) { 
@@ -2354,7 +2354,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                cw_inner_params <- cw_params
                }
 
-          cw_logLik <- cw_inner_logL <- -Inf
+          cw_inner_logL <- -Inf
           inner_err <- 100
           inner_counter <- 0
           if(control$trace > 0)
@@ -2446,13 +2446,25 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     return(new_fit_CBFM)
                     }
                update_basiscoefsspp_cmpfn <- compiler::cmpfun(update_basiscoefsspp_fn)
-                    
+
                all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
                for(j in 1:num_spp) {
-                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par 
+                    new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par
                     }
                rm(all_update_coefs, update_basiscoefsspp_fn)
 
+
+               # update_basiscoefsspp_fn2 <- function() {
+               #      all_eta <- as.vector(tcrossprod(X, new_fit_CBFM_ptest$betas))
+               #      megadat <- kronecker(Diagonal(n = num_spp), B)
+               #      colnames(megadat) <- paste0("spp",rep(1:num_spp,each=num_basisfns),"_",rep(colnames(B),num_spp))
+               #      Hmat <- kronecker(new_LoadingnuggetG_space$covinv, new_LoadingnuggetSigma_space$covinv)
+               #      megadat <- as.matrix(megadat)
+               #      bigfit <- gam(as.vector(y) ~ megadat - 1, offset = all_eta, family = binomial(), paraPen = list(megadat=list(Hmat, sp = 1)))
+               #      return(bigfit)
+               #      }
+               #  
+               # new_fit_CBFM_ptest$basis_effects_mat <- matrix(update_basiscoefsspp_fn2()$coefficients, nrow = num_spp, byrow = TRUE)
      
                ##-------------------------
                ## Update coefficients related to covariate model matrix X, and other nuisance parameters, one response at a time
@@ -2723,10 +2735,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_space))
-                    new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1,
-                                                                   correlation = is.null(Sigma_control$custom_space))
+                    new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1, correlation = is.null(Sigma_control$custom_space))
                     rm(new_G_space, centered_BF_mat)
                     }
+               print(new_LoadingnuggetG_space$cov)
                }
           if(which_B_used[2]) {
                if(is.null(G_control$custom_time)) {
@@ -2895,6 +2907,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par
                }
           rm(all_update_coefs)
+          # new_fit_CBFM_ptest$basis_effects_mat <- matrix(update_basiscoefsspp_fn2()$coefficients, nrow = num_spp, byrow = TRUE)
           
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
           new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
