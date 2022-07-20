@@ -50,13 +50,13 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
              BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
              gc()
              
-             vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Matrix::Diagonal(n = num_spp), Sigmainv[,k]))) 
+             vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Matrix::Diagonal(n = num_spp), Sigmainv[,k])))
              Q2 <- kronecker(Matrix::Diagonal(n = num_spp), vecPsi)
              needonly_cols <- unlist(sapply(1:num_spp, function(j) return((j-1)*num_spp + j:num_spp)))
              Q2 <- Q2[, needonly_cols, drop = FALSE]
              rm(vecPsi, weights_mat)
              gc()
-          
+
              counter <- 0
              diff <- 10
              cw_G <- chol2inv(chol(Ginv))
@@ -65,20 +65,20 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
 
                   if(G_control$inv_method == "chol2inv")
                        Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
-                         
+
 #                if(G_control$inv_method == "schulz") {
 #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
 #                     Q1 <- as.vector(.schulz_inversion_cmpfn(mat = mat))
 #                     rm(mat)
 #                     }
-               
+
                   new_G <- matrix(0, nrow = num_spp, ncol = num_spp)
                   new_G[lower.tri(new_G, diag = TRUE)] <- crossprod(Q2, Q1)
 
                   new_G <- new_G + t(new_G) - diag(x = diag(new_G), nrow = num_spp)
                   new_G <- (new_G + A_Sigmain_AT)/num_basisfns
-                  new_G <- Matrix::forceSymmetric(new_G) 
-               
+                  new_G <- Matrix::forceSymmetric(new_G)
+
                   diff <- 0.5 * mean(as.vector((new_G - cw_G)^2))
                   if(G_control$trace > 0)
                        message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
@@ -92,6 +92,21 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
           
         return(as.matrix(new_G))
         }
+
+## SEPARARE TESTING CODE TO ESTIMATE THE SPECIAL CASE OF A DIAGONAL G. DO DIRECT NUMERICAL OPTIMIZATION SINCE IT IS FASTER
+# objfn <- function(x) {
+#      M <- matrix(0, num_spp, num_spp)
+#      diag(M) <- exp(x)
+#      out <- 0.5*num_basisfns*determinant(M, logarithm = TRUE)$mod - 0.5*sum(diag(M %*% basis_effects_mat %*% tcrossprod(Sigmainv, basis_effects_mat)))
+#      out <- out - 0.5*determinant(BWB_minus_BWX_XWXinv_XWB + kronecker(M, Sigmainv), logarithm = TRUE)$mod
+#      -out
+#      }
+# 
+# check_optim <- optim(par = numeric(num_spp), fn = objfn, control = list(trace = 1, maxit = 1000), method = "BFGS")
+# 
+# new_Ginv <- matrix(0, num_spp, num_spp)
+# diag(new_Ginv) <- exp(check_optim$par)
+# new_G <- chol2inv(chol(new_Ginv))
      
      
 update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRUE) {
