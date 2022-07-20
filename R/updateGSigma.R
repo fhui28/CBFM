@@ -84,7 +84,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                        message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
                   cw_G <- new_G
                   counter <- counter + 1
-               }
+                    }
              }
 
         if(return_correlation)
@@ -92,8 +92,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
           
         return(as.matrix(new_G))
         }
-
-## SEPARARE TESTING CODE TO ESTIMATE THE SPECIAL CASE OF A DIAGONAL G. DO DIRECT NUMERICAL OPTIMIZATION SINCE IT IS FASTER
+# # SEPARATE TESTING CODE TO ESTIMATE THE SPECIAL CASE OF A DIAGONAL G. DO DIRECT NUMERICAL OPTIMIZATION SINCE IT IS FASTER
 # objfn <- function(x) {
 #      M <- matrix(0, num_spp, num_spp)
 #      diag(M) <- exp(x)
@@ -102,7 +101,8 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
 #      -out
 #      }
 # 
-# check_optim <- optim(par = numeric(num_spp), fn = objfn, control = list(trace = 1, maxit = 1000), method = "BFGS")
+# check_optim <- nlminb(start = numeric(num_spp), objective = objfn, control = list(trace = 1), 
+#                       lower = rep(log(1e-8),num_spp), upper = rep(log(1e8),num_spp))
 # 
 # new_Ginv <- matrix(0, num_spp, num_spp)
 # diag(new_Ginv) <- exp(check_optim$par)
