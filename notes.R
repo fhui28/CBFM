@@ -48,7 +48,7 @@ xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(450,50)))
 colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
 dat <- data.frame(xy, X)
-useformula <- ~ depth + chla + O2 + temp
+useformula <- ~ temp + depth + chla + O2
 
 
 # Set up spatial basis functions for CBFM 
@@ -71,7 +71,7 @@ simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
 ##------------------------------
 stackedgams_fn <- function(j, y, formula_X, data) {
     tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), method = "ML", family = binomial())
+    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), method = "REML", family = binomial())
     return(fit0)
     }
 
@@ -79,31 +79,42 @@ stackedgams <- foreach(j = 1:ncol(simy$y)) %dopar% stackedgams_fn(j = j, y = sim
 stackedgams_coef <- sapply(stackedgams, coef)[-(1:4),] %>% t
 
 
-MM_temp <- model.matrix(stackedgams[[1]])[,-c(1:4)]
+
+MM_temp <- model.matrix(stackedgams[[1]])[,-c(1:4),drop=FALSE]
 Sigma_temp <- .pinv(stackedgams[[1]]$smooth[[1]]$S[[1]])
 G_temp <- sapply(stackedgams, function(x) gam.vcomp(x, rescale = FALSE)[[1]][1]^2)
 
-fitcbfm <- CBFM(y = simy$y[,1:3,drop=FALSE], formula = ~ depth + chla + O2, data = dat,
+fitcbfm <- CBFM(y = simy$y[,1:5,drop=FALSE], formula = ~ 1, data = dat,
                 B_space = MM_temp, 
                 family = binomial(), 
                 control = list(trace = 1, convergence_type = "parameters_norm", tol = 1e-6),
-                #G_control = list(rank = "full", custom_space = diag(x = G_temp[1], nrow = 1)),
-                G_control = list(rank = "full", method = "ML", trace = 1, tol = 1e-6),
+                #G_control = list(rank = "full", custom_space = diag(x = G_temp[1:10])),
+                G_control = list(rank = "full", trace = 1),
+                Sigma_control = list(rank = "full", custom_space = Sigma_temp))
+
+
+fitcbfm_singlespp <- CBFM(y = simy$y[,5,drop=FALSE], formula = ~ depth + chla + O2, data = dat,
+                B_space = MM_temp, 
+                family = binomial(), 
+                control = list(trace = 1, convergence_type = "parameters_norm", tol = 1e-6),
+                #G_control = list(rank = "full", custom_space = diag(x = G_temp[1:10])),
+                G_control = list(rank = "full", trace = 1),
                 Sigma_control = list(rank = 1, custom_space = Sigma_temp))
 
-
+fitcbfm_singlespp$basis_effects_mat
 
 fitcbfm$basis_effects_mat
 fitcbfm$G_space
+fitcbfm$Sigma_space
 
 
-ggmatplot(stackedgams_coef, fitcbfm$basis_effects_mat, shape = 19) + 
+ggmatplot(t(stackedgams_coef[1:5,]), t(fitcbfm$basis_effects_mat), shape = 19) + 
      geom_abline(intercept = 0, slope = 1) +
      scale_color_viridis_d()
 
 
 
-y = simy$y[,1:3,drop=FALSE]
+y = simy$y
 useformula <- ~ depth + chla + O2
 formula <- useformula
 ziformula <- NULL
