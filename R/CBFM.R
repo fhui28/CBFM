@@ -42,11 +42,11 @@
 
 #' \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by [mgcv::gam.control()] itself.}
 
-#' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "parameters_relative" which assesses convergence based on the relative change in mean squared error of the difference between estimated parameters from successive iterations, and "logLik_relative", which assess convergence based on the relative change in the PQL value between successive iterations. 
+#' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters_MSE" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "parameters_norm" which assesses convergence based on the sum of the squared error (i.e., the squared norm) of the difference between estimated parameters from successive iterations, "parameters_relative" which assesses convergence based on the relative change in mean squared error of the difference between estimated parameters from successive iterations, and "logLik_relative", which assess convergence based on the relative change in the PQL value between successive iterations. 
 #' 
 #' Although the first option is employed as a default, the second and third choices are often used in to assess convergence in other, likelihood-based optimization problems (e.g., Green, 1984).}
 
-#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defalts to "REML", which is restricted maximum likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
+#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
 
@@ -1856,10 +1856,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      select = FALSE, gamma = 1, ziselect = FALSE, zigamma = 1,
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters", gam_method = "REML", tol = 1e-4, 
+     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters_MSE", gam_method = "REML", tol = 1e-4, 
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
-                    seed = NULL, ridge = 0, ziridge = 0, trace = 0), 
+                    seed = NULL, ridge = 0, ziridge = 0, trace = 0),
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
      G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
                       custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
@@ -1877,6 +1877,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      .check_family(family = family, y = y, trial_size = trial_size) 
      trial_size_length <- as.numeric(length(trial_size) == 1)
           
+     
      if(!is.matrix(y))
           stop("y should be a matrix.")
      if(is.null(colnames(y)))
@@ -1921,7 +1922,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
      B <- cbind(B_space, B_time, B_spacetime)
      B <- Matrix(B, sparse = TRUE)
-
+     underlying_B_colnames <- colnames(B)
+     colnames(B) <- paste0("B_", 1:ncol(B))
+     
+     
      control <- .fill_control(control = control, num_spp = ncol(y), which_B_used = which_B_used)
      Sigma_control <- .fill_Sigma_control(control = Sigma_control, which_B_used = which_B_used, 
                                           num_spacebasisfns = num_spacebasisfns, num_timebasisfns = num_timebasisfns, num_spacetimebasisfns = num_spacetimebasisfns)
@@ -2003,7 +2007,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
      initfit_fn <- function(j, formula) {
           tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
-          
+
+                    
           if(family$family %in% c("gaussian","poisson","Gamma")) {
                fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
@@ -2352,7 +2357,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                cw_inner_params <- cw_params
                }
 
-          cw_logLik <- cw_inner_logL <- -Inf
+          cw_inner_logL <- -Inf
           inner_err <- 100
           inner_counter <- 0
           if(control$trace > 0)
@@ -2658,8 +2663,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
                                new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
                inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
-               if(control$convergence_type == "parameters")
+               if(control$convergence_type == "parameters_MSE")
                     inner_err <- mean((inner_params_diff)^2) 
+               if(control$convergence_type == "parameters_norm")
+                    inner_err <- sum((inner_params_diff)^2) 
                if(control$convergence_type == "parameters_relative")
                     inner_err <- mean((inner_params_diff)^2)/mean(cw_inner_params^2) 
                if(control$convergence_type == "logLik_relative")
@@ -2710,7 +2717,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                message("Updating between response correlaton (covariance) matrices, G.")
           if(which_B_used[1]) {
                if(is.null(G_control$custom_space)) {
-                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+G_control$tol
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+.Machine$double.eps
                     if(control$nonzeromean_B_space)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
@@ -2719,14 +2726,13 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_space))
-                    new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1,
-                                                                   correlation = is.null(Sigma_control$custom_space))
+                    new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1, correlation = is.null(Sigma_control$custom_space))
                     rm(new_G_space, centered_BF_mat)
                     }
                }
           if(which_B_used[2]) {
                if(is.null(G_control$custom_time)) {
-                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+G_control$tol
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+.Machine$double.eps
                     if(control$nonzeromean_B_time)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
@@ -2742,7 +2748,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(which_B_used[3]) {
                if(is.null(G_control$custom_spacetime)) {
-                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+G_control$tol
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+.Machine$double.eps
                     if(control$nonzeromean_B_spacetime)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
@@ -2765,7 +2771,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                message("Updating covariance matrices for basis functions, Sigma, if required.")
           if(which_B_used[1]) {
                if(is.null(Sigma_control$custom_space)) {
-                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+Sigma_control$tol
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+.Machine$double.eps
                     if(control$nonzeromean_B_space)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
@@ -2780,7 +2786,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(which_B_used[2]) {
                if(is.null(Sigma_control$custom_time)) {
-                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+Sigma_control$tol
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + (1:num_timebasisfns),drop=FALSE]+.Machine$double.eps
                     if(control$nonzeromean_B_time)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
@@ -2795,7 +2801,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           if(which_B_used[3]) {
                if(is.null(Sigma_control$custom_spacetime)) {
-                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+Sigma_control$tol
+                    centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,num_spacebasisfns + num_timebasisfns + (1:num_spacetimebasisfns),drop=FALSE]+.Machine$double.eps
                     if(control$nonzeromean_B_spacetime)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
@@ -2843,8 +2849,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
           
           params_diff <- suppressWarnings(new_params - cw_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
-          if(control$convergence_type == "parameters")
+          if(control$convergence_type == "parameters_MSE")
                diff <- mean((params_diff)^2) 
+          if(control$convergence_type == "parameters_norm")
+               inner_err <- sum((inner_params_diff)^2) 
           if(control$convergence_type == "parameters_relative")
                diff <- mean((params_diff)^2)/mean(cw_params^2) 
           if(control$convergence_type == "logLik_relative")
@@ -2852,8 +2860,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           #if(control$convergence_type == "linear_predictors")
           #     diff <- mean((new_fit_CBFM_ptest$linear_predictors - cw_linpred)^2) 
           if(control$trace > 0) {
-               if(control$convergence_type == "parameters")
-                    message("Iteration: ", counter, "\t Difference in parameter estimates: ", round(diff,5))
+               if(control$convergence_type == "parameters_MSE")
+                    message("Iteration: ", counter, "\t Difference in parameter estimates (mean squared error): ", round(diff,5))
+               if(control$convergence_type == "parameters_norm")
+                    message("Iteration: ", counter, "\t Difference in parameter estimates (squared norm): ", round(diff,5))
                if(control$convergence_type == "parameters_relative")
                     message("Iteration: ", counter, "\t Relative difference in parameter estimates: ", round(diff,5))
                if(control$convergence_type == "logLik_relative")
@@ -2994,6 +3004,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      ##-----------------
      ## Format output
      ##-----------------
+     colnames(B) <- underlying_B_colnames
      out_CBFM <- list(call = match.call())
      out_CBFM$family <- family
      out_CBFM$y <- y
