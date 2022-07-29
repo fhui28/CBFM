@@ -5,8 +5,8 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
         num_basisfns <- ncol(Sigmainv)
         trial_size <- as.vector(trial_size)
 
-        if(num_spp == 1) 
-                return(solve(Ginv))
+        #if(num_spp == 1) 
+        #        return(solve(Ginv))
      
         G_control$method <- match.arg(G_control$method, choices = c("simple","REML","ML")) 
         G_control$inv_method <- "chol2inv" #match.arg(G_control$inv_method, choices = c("chol2inv","schulz"))
