@@ -2677,8 +2677,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                inner_counter <- inner_counter + 1
                rm(all_update_coefs, update_Xcoefsspp_fn, inner_params_diff)
                
-               if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
-                    break;
+               #if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
+               #     break;
                }          
           
           
@@ -2932,8 +2932,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
                           new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
           inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
-          if(control$convergence_type == "parameters")
+          if(control$convergence_type == "parameters_MSE")
                inner_err <- mean((inner_params_diff)^2) 
+          if(control$convergence_type == "parameters_norm")
+               inner_err <- sum((inner_params_diff)^2) 
           if(control$convergence_type == "parameters_relative")
                inner_err <- mean((inner_params_diff)^2)/mean(cw_inner_params^2) 
           if(control$convergence_type == "logLik_relative")
@@ -2943,8 +2945,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           cw_inner_params <- new_inner_params
           inner_counter <- inner_counter + 1
           
-          if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
-               break;
+          #if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
+          #     break;
           }
 
      all_S <- sapply(all_update_coefs, function(x) x$S)
