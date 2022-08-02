@@ -1,14 +1,15 @@
 update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
-                        trial_size, family, G_control, return_correlation = TRUE) {
+                        trial_size, family, G_control, use_rank_element, return_correlation = TRUE) {
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
-
+     use_structure <- G_control$structure[use_rank_element]
+     
      #if(num_spp == 1) 
      #        return(solve(Ginv))
      
      G_control$method <- match.arg(G_control$method, choices = c("simple","REML","ML")) 
-     G_control$structure <- match.arg(G_control$structure, choices = c("unstructured","identity")) 
+     use_structure <- match.arg(use_structure, choices = c("unstructured","identity")) 
      G_control$inv_method <- "chol2inv" #match.arg(G_control$inv_method, choices = c("chol2inv","schulz"))
      A_Sigmain_AT <- basis_effects_mat %*% tcrossprod(Sigmainv, basis_effects_mat)
 
@@ -18,9 +19,9 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
           }
 
      if(G_control$method == "simple") {
-          if(G_control$structure == "unstructured") 
+          if(use_structure == "unstructured") 
                new_G <- A_Sigmain_AT / num_basisfns
-          if(G_control$structure == "identity") 
+          if(use_structure == "identity") 
                new_G <- sum(diag(A_Sigmain_AT)) / (num_basisfns*num_spp)
           }
      
@@ -50,7 +51,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     }
                }
           
-          if(G_control$structure == "unstructured") {
+          if(use_structure == "unstructured") {
                BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
                BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
                gc()
@@ -94,7 +95,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     }
                }
           
-          if(G_control$structure == "identity") {
+          if(use_structure == "identity") {
                BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
                BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
                gc()
@@ -120,6 +121,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
 update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRUE) {
      num_spp <- nrow(G)
      num_rank <- G_control$rank[use_rank_element]
+     use_structure <- G_control$rank[use_rank_element]
      if(num_rank != "full")
              num_rank <- as.numeric(num_rank)
      
@@ -128,11 +130,12 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
                stop("All values in nugget_profile should be between 0 and 1.")
           }
      
-     if(G_control$structure == "identity") {
+     if(use_structure == "identity") {
           out <- list(Loading = NULL, nugget = NULL, cov = G)
           out$covinv <- chol2inv(chol(out$cov))
           return(out)
           }
+     
      if(num_spp <= 2) {
         out <- list(Loading = NULL, nugget = NULL, cov = G)
         out$covinv <- chol2inv(chol(out$cov))

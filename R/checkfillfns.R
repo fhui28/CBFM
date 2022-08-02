@@ -266,7 +266,10 @@
           control$rank <- rep(control$rank, sum(which_B_used))
      if(sum(which_B_used) != length(control$rank))
           stop("G_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$rank should be a vector with length 2.
-               Please note ranks still needs to be supplied even when custom Gs are used (although the corresponding rank is ignored in such case).")
+               Please note ranks still needs to be supplied even when custom Gs are used (although the corresponding element is ignored in such case).")
+     if(sum(which_B_used) != length(control$structure))
+          stop("G_control$structure should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the structure of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$structure should be a vector with length 2.
+               Please note structure still needs to be supplied even when custom Gs are used (although the corresponding element is ignored in such case).")
      if(is.null(control$nugget_profile))          
           control$nugget_profile = seq(0.05, 0.95, by = 0.05)
      if(is.null(control$maxit))

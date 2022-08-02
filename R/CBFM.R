@@ -108,6 +108,8 @@
 
 #' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note that the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.*} 
 
+#' \item{structure: }{The structure to assume for the between-species correlation matrix if it is estimated. This either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. The current options for each element are "unstructured" (default) which assumes an unstructured form subject to the corresponding element in \code{G_control$rank}, and "identity" which assumes a constant multiplied by an identity matrix. The latter should *not* be used unless you know what are doing in terms of what you want to achieve from the basis functions.} 
+
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
 #' \item{custom_space: }{A custom, pre-specified baseline between-species correlation matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
@@ -1861,7 +1863,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
                     seed = NULL, ridge = 0, ziridge = 0, trace = 0),
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
-     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
+     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "REML", structure = "unstructured", trace = 0, 
                       custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
      k_check_control = list(subsample = 5000, n.rep = 400)
      ) { 
@@ -1959,7 +1961,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                    vec_num_basisfns = c(num_spacebasisfns,num_timebasisfns,num_spacetimebasisfns), Sigma_control = Sigma_control)
      
      
-     ## If required, Form covariate model matrix for zero-inflation component
+     ## If required, form covariate model matrix for zero-inflation component
      if(is.null(ziformula)) {
           ziX <- NULL          
           }
@@ -2725,7 +2727,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
-                         trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_space))
+                         trial_size = trial_size, family = family, G_control = G_control, use_rank_element = 1, 
+                         return_correlation = is.null(Sigma_control$custom_space))
                     new_LoadingnuggetG_space <- update_LoadingG_fn(G = new_G_space, G_control = G_control, use_rank_element = 1, correlation = is.null(Sigma_control$custom_space))
                     rm(new_G_space, centered_BF_mat)
                     }
@@ -2740,7 +2743,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                           Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
                           linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                           powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
-                          trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_time))
+                          trial_size = trial_size, family = family, G_control = G_control, use_rank_element = sum(which_B_used[1:2]),
+                          return_correlation = is.null(Sigma_control$custom_time))
                     new_LoadingnuggetG_time <- update_LoadingG_fn(G = new_G_time, G_control = G_control, use_rank_element = sum(which_B_used[1:2]), 
                                                                    correlation = is.null(Sigma_control$custom_time))
                     rm(new_G_time, centered_BF_mat)
@@ -2756,7 +2760,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
-                         trial_size = trial_size, family = family, G_control = G_control, return_correlation = is.null(Sigma_control$custom_spacetime))
+                         trial_size = trial_size, family = family, G_control = G_control, use_rank_element = sum(which_B_used[1:3]),
+                         return_correlation = is.null(Sigma_control$custom_spacetime))
                     new_LoadingnuggetG_spacetime <- update_LoadingG_fn(G = new_G_spacetime, G_control = G_control, use_rank_element = sum(which_B_used[1:3]),
                                                                        correlation = is.null(Sigma_control$custom_spacetime))
                     rm(new_G_spacetime, centered_BF_mat)
@@ -2795,7 +2800,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
-                    new_LoadingnuggetSigma_time <- update_LoadingSigma_fn(Sigma = new_Sigma_time, Sigma_control = Sigma_control, use_rank_element = sum(which_B_used[1:2]))
+                    new_LoadingnuggetSigma_time <- update_LoadingSigma_fn(Sigma = new_Sigma_time, Sigma_control = Sigma_control, 
+                                                                          use_rank_element = sum(which_B_used[1:2]))
                     rm(new_Sigma_time, centered_BF_mat)
                     }
                }
@@ -2811,7 +2817,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
                     new_LoadingnuggetSigma_spacetime <- update_LoadingSigma_fn(Sigma = new_Sigma_spacetime, Sigma_control = Sigma_control, 
-                         use_rank_element = sum(which_B_used[1:3]))
+                                                                               use_rank_element = sum(which_B_used[1:3]))
                     rm(new_Sigma_spacetime, centered_BF_mat)
                     }
                }
@@ -3111,7 +3117,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(is.null(G_control$custom_space)) {
                out_CBFM$G_space <- new_LoadingnuggetG_space$cov
                rownames(out_CBFM$G_space) <- colnames(out_CBFM$G_space) <- colnames(y)
-               if(G_control$rank[1] != "full") {
+               if(G_control$rank[1] != "full" & G$control$structure[1] == "unstructured") {
                     out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
                     out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
                     if(num_spp > 2)
@@ -3149,7 +3155,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(is.null(G_control$custom_time)) {
                out_CBFM$G_time <- new_LoadingnuggetG_time$cov
                rownames(out_CBFM$G_time) <- colnames(out_CBFM$G_time) <- colnames(y)
-               if(G_control$rank[sum(which_B_used[1:2])] != "full") {
+               if(G_control$rank[sum(which_B_used[1:2])] != "full" & G_control$structure[sum(which_B_used[1:2])] == "unstructured") {
                     out_CBFM$Loading_G_time <- as.matrix(new_LoadingnuggetG_time$Loading)
                     out_CBFM$nugget_G_time <- new_LoadingnuggetG_time$nugget
                     rownames(out_CBFM$Loading_G_time) <- colnames(y)
@@ -3187,7 +3193,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(is.null(G_control$custom_spacetime)) {
                out_CBFM$G_spacetime <- new_LoadingnuggetG_spacetime$cov
                rownames(out_CBFM$G_spacetime) <- colnames(out_CBFM$G_spacetime) <- colnames(y)
-               if(G_control$rank[sum(which_B_used[1:3])] != "full") {
+               if(G_control$rank[sum(which_B_used[1:3])] != "full" & G_control$structure[sum(which_B_used[1:3])] != "unstructured") {
                     out_CBFM$Loading_G_spacetime <- as.matrix(new_LoadingnuggetG_spacetime$Loading)
                     out_CBFM$nugget_G_spacetime <- new_LoadingnuggetG_spacetime$nugget
                     if(num_spp > 2)
