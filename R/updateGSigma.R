@@ -106,7 +106,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     }
                
                update_invnew_G <- optimise(f = fn, interval = c(1e-8,1e8), maximum = TRUE)
-               new_G <- 1/update_invnew_G$maximum
+               new_G <- (1/update_invnew_G$maximum)*Matrix::Diagonal(n = num_spp)
                }     
           }
           
@@ -130,7 +130,7 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
      
      if(G_control$structure == "identity") {
           out <- list(Loading = NULL, nugget = NULL, cov = G)
-          out$covinv <- 1/G
+          out$covinv <- chol2inv(chol(out$cov))
           return(out)
           }
      if(num_spp <= 2) {
