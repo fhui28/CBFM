@@ -78,7 +78,7 @@
 #' \itemize{
 #' \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single scalar or character string, then it is assumed that the same rank is used for all the community-level covariance matrices. 
 #' 
-#' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible; please see details below for more information. If the character string "full" is used, then a full-rank (or equivalently, an unstructured) covariance matrix is estimated. } 
+#' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank covariance matrix is estimated.} 
 
 #' \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.} 
 
@@ -98,7 +98,11 @@
 #' \itemize{
 #' \item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices. 
 #' 
-#' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible; please see details below for more information. If the character string "full" is used, then a full-rank (or equivalently, an unstructured) correlation matrix is estimated. } 
+#' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank correlation matrix is estimated. 
+#' 
+#' Finally. note if a particular element in \code{G_control$structure} is set to "identity", then a corresponding element in \code{G_control$rank} must still be supplied, but it is ignored.} 
+
+#' \item{structure: }{The structure to assume for the between-species correlation matrix if it is estimated. This either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. The current options for each element are "unstructured" (default) which assumes an unstructured form subject to the corresponding element in \code{G_control$rank}, and "identity" which assumes a constant multiplied by an identity matrix. The latter should *not* be used unless you know what are doing in terms of what you want to achieve from the basis functions.} 
 
 #' \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.} 
 
@@ -107,8 +111,6 @@
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
 #' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note that the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.*} 
-
-#' \item{structure: }{The structure to assume for the between-species correlation matrix if it is estimated. This either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. The current options for each element are "unstructured" (default) which assumes an unstructured form subject to the corresponding element in \code{G_control$rank}, and "identity" which assumes a constant multiplied by an identity matrix. The latter should *not* be used unless you know what are doing in terms of what you want to achieve from the basis functions.} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -180,18 +182,16 @@
 #' and
 #' \deqn{(a_{1,time},\ldots,a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time})).} 
 #' 
-#' To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced structure is by default adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly. 
+#' To reduce the number of parameters needed to be estimated in both the \eqn{G}'s and \eqn{\Sigma}'s, a rank-reduced form is by default adopted in both (inspired by the rank-reduced covariance matrices characterizing LVMs). In detail, we assume \eqn{G = \Lambda_{G}\Lambda_{G}^top + \kappa_G I_m} where \eqn{\Lambda_{G}} is an \eqn{m \times d_G} loading matrix and \eqn{\kappa_G > 0} is a nugget effect, with \eqn{I_m} being an identity matrix with dimension \eqn{m}. The quantity \eqn{d_G << m} is the rank, and similar to LVMs we often choose this to be small relative to the number of species. Similarly, we have \eqn{\Sigma = \Lambda_{\Sigma}\Lambda_{\Sigma}^top + \kappa_{\Sigma} I_{q}}, where \eqn{\Lambda_{\Sigma}} is an \eqn{q \times d_{\Sigma}} loading matrix, and \eqn{q} is the number of basis functions included in the model. When multiple sets of basis functions are included e.g., both \code{B_space} and \code{B_time}, then rank-reduced structures are used accordingly. 
 #'
 #' The ranks \eqn{d_G} and \eqn{d_{\Sigma}} are chosen generally to be smaller than the number of species and basis functions, respectively. Generally speaking, provided the rank/s is large enough, then results should not depend much on their choice. The nugget effect is included to ensure that resulting rank-reduced forms of \eqn{G} and \eqn{\Sigma} remain positive definite and generally a bit more stable. They can also have the interpretation of adjusting for the relative strength of correlation between species, say (Shirota, 2019).
 #' 
-#' It is also possible to assume full-rank (or equivalently, unstructured) covariance and correlation matrices for the \eqn{G}'s and \eqn{\Sigma}'s, via the character string "full" in \code{G_control$rank} and \code{Sigma_control$rank}. 
+#' It is also possible to assume full-rank covariance and correlation matrices for the \eqn{G}'s and \eqn{\Sigma}'s, via the character string "full" in \code{G_control$rank} and \code{Sigma_control$rank}. Other structures may gradually be implemented in future versions of the package.
 #' 
-#' Finally, if is also possible for the user to specific their own custom matrices for the community-level basis function covariance matrices \eqn{\Sigma} and/or the baseline between-species correlation matrices \eqn{G}. These are supplied through the \code{custom_space/custom_time/custom_spacetime} arguments as part of \code{Sigma_control} and \code{G_control}, respectively. In \eqn{\Sigma} is supplied, then only the corresponding \eqn{G} is estimated, and note importantly that the corresponding \eqn{G} is now estimated to be a baseline between-species *covariance* matrix instead of correlation matrix (it is no longer constrained to be correlation matrix). Conversely, if \eqn{G} is supplied, then only the corresponding \eqn{\Sigma} is estimated. There is rarely any reason why one wish to supply both \eqn{\Sigma} and \eqn{G} simultaneously.
+#' It is also possible for the user to specific their own custom matrices for the community-level basis function covariance matrices \eqn{\Sigma} and/or the baseline between-species correlation matrices \eqn{G}. These are supplied through the \code{custom_space/custom_time/custom_spacetime} arguments as part of \code{Sigma_control} and \code{G_control}, respectively. In \eqn{\Sigma} is supplied, then only the corresponding \eqn{G} is estimated, and note importantly that the corresponding \eqn{G} is now estimated to be a baseline between-species *covariance* matrix instead of correlation matrix (it is no longer constrained to be correlation matrix). Conversely, if \eqn{G} is supplied, then only the corresponding \eqn{\Sigma} is estimated. There is rarely any reason why one wish to supply both \eqn{\Sigma} and \eqn{G} simultaneously.
 #' 
-#' Using custom, pre-specified structures for \eqn{\Sigma} may be useful if the corresponding basis functions should be ``equipped" with a particular structure. For example, if one or more sets of basis functions are constructed from, say, the [mgcv::smooth.terms()] package (although see later on some defaults for constructing basis functions), then they are usually equipped with a corresponding, fixed penalty (inverse \eqn{\Sigma}) matrix. Perhaps a more common example is, say, if a user wanted to include species-specific random intercepts for time. Then one would set \code{B_time} as a model-matrix formed from treating time as a factor, and set \code{Sigma_control$custom_time} to an identity matrix with dimension equal to \code{ncol(B_time)}; see Example 3b in the help file below. After fitting, the estimated diagonal elements of \eqn{G_{time}} would then be the species-specific variance components for the time random intercept, while the off-diagonal elements may be interpreted as the corresponding between-species covariation.  
+#' Using custom, pre-specified structures for \eqn{\Sigma} may be useful if the corresponding basis functions should be "equipped" with a particular structure. For example, if one or more sets of basis functions are constructed from, say, the [mgcv::smooth.terms()] package (although see later on some defaults for constructing basis functions), then they are usually equipped with a corresponding, fixed penalty (inverse \eqn{\Sigma}) matrix. Perhaps a more common example is, say, if a user wanted to include species-specific random intercepts for time. Then one would set \code{B_time} as a model-matrix formed from treating time as a factor, and set \code{Sigma_control$custom_time} to an identity matrix with dimension equal to \code{ncol(B_time)}; see Example 3b in the help file below. After fitting, the estimated diagonal elements of \eqn{G_{time}} would then be the species-specific variance components for the time random intercept, while the off-diagonal elements may be interpreted as the corresponding between-species covariation.  
 #' 
-#' Why would you wish to supply a custom \eqn{G}? This is TBA =P
-#'
 #'
 #' ## Distributions
 #' 
@@ -1371,7 +1371,7 @@
 #' 
 #' 
 #' # Evaluate in-sample performance (similar to what was done in the Hmsc vignette)
-#' # with the = evaluateModelFit() function 
+#' # with the evaluateModelFit() function 
 #' predictions_stacked <- fitstacked$fitted
 #' predictions_cbfm <- fitcbfm$fitted 
 #' 
@@ -1444,7 +1444,7 @@
 #' 
 #' 
 #' # Evaluate in-sample performance (similar to what was done in the Hmsc vignette)
-#' # with the = evaluateModelFit() function 
+#' # with the evaluateModelFit() function 
 #' predictions_stacked <- fitstacked$fitted
 #' predictions_cbfm <- fitcbfm$fitted 
 #' 
@@ -1572,7 +1572,8 @@
 #' time_knots <- seq(0, 10, length = num_time_basisfunctions)
 #' time_basisfunctions <- local_basis(manifold = real_line(), loc = as.matrix(time_knots),
 #' scale = rep(2, length(time_knots)), type = "bisquare")
-#' time_basisfunctions <- eval_basis(time_basisfunctions, s = as.matrix(dat$time)) 
+#' time_basisfunctions <- eval_basis(time_basisfunctions, s = as.matrix(dat$time)) %>%
+#' as.matrix
 #' train_time_basisfunctions <- time_basisfunctions[1:500,] 
 #' test_time_basisfunctions <- time_basisfunctions[501:1000,] 
 #' rm(time_basisfunctions, time_knots)
@@ -1702,7 +1703,8 @@
 #' fitcbfm_additive <- CBFM(y = simy_train, formula = useformula, data = dat_train, 
 #' B_space = train_space_basisfunctions, B_time = train_time_basisfunctions, family = binomial(), 
 #' G_control = list(rank = c(5,5)), 
-#' Sigma_control = list(rank = c(5,1), custom_time = custom_Sigma_time), control = list(trace = 1))
+#' Sigma_control = list(rank = c(5,"full"), custom_time = custom_Sigma_time), 
+#' control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
 #' 
@@ -1862,8 +1864,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
                     seed = NULL, ridge = 0, ziridge = 0, trace = 0),
-     Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
-     G_control = list(rank = 5, nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, tol = 1e-4, method = "REML", structure = "unstructured", trace = 0, 
+     Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
+                          custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
+     G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, 
+                      tol = 1e-4, method = "REML", trace = 0, 
                       custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
      k_check_control = list(subsample = 5000, n.rep = 400)
      ) { 
@@ -1930,7 +1934,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      
      control <- .fill_control(control = control, num_spp = ncol(y), which_B_used = which_B_used)
      Sigma_control <- .fill_Sigma_control(control = Sigma_control, which_B_used = which_B_used, 
-                                          num_spacebasisfns = num_spacebasisfns, num_timebasisfns = num_timebasisfns, num_spacetimebasisfns = num_spacetimebasisfns)
+                                          num_spacebasisfns = num_spacebasisfns, num_timebasisfns = num_timebasisfns, 
+                                          num_spacetimebasisfns = num_spacetimebasisfns)
      G_control <- .fill_G_control(control = G_control, which_B_used = which_B_used, num_spp = ncol(y))
      which_nonzeromean_B <- 1*c(control$nonzeromean_B_space, control$nonzeromean_B_time, control$nonzeromean_B_spacetime)
 
@@ -3117,7 +3122,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(is.null(G_control$custom_space)) {
                out_CBFM$G_space <- new_LoadingnuggetG_space$cov
                rownames(out_CBFM$G_space) <- colnames(out_CBFM$G_space) <- colnames(y)
-               if(G_control$rank[1] != "full" & G$control$structure[1] == "unstructured") {
+               if(G_control$rank[1] != "full" & G_control$structure[1] == "unstructured") {
                     out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
                     out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
                     if(num_spp > 2)
@@ -3214,7 +3219,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      rownames(out_CBFM$linear_predictors) <- rownames(out_CBFM$fitted) <- rownames(X)
      colnames(out_CBFM$betas) <- colnames(X)
      colnames(out_CBFM$basis_effects_mat) <- colnames(B)     
-     if(family$family[1] %in% c("zipoisson","ztnegative.binomial")) {
+     if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           rownames(out_CBFM$zibetas) <- colnames(y)
           colnames(out_CBFM$zibetas) <- colnames(ziX)
           }

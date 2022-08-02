@@ -106,7 +106,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     return(out)
                     }
                
-               update_invnew_G <- optimise(f = fn, interval = c(1e-8,1e8), maximum = TRUE)
+               update_invnew_G <- stats::optimise(f = fn, interval = c(1e-8,1e8), maximum = TRUE)
                new_G <- (1/update_invnew_G$maximum)*Matrix::Diagonal(n = num_spp)
                }     
           }
@@ -232,7 +232,7 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
         num_spp <- nrow(basis_effects_mat)
         num_basisfns <- ncol(Sigmainv)
         trial_size <- as.vector(trial_size)
-     
+
         Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","REML","ML")) 
         Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) 
      

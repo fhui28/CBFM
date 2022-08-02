@@ -321,14 +321,14 @@ theme_bw()
 ##----------------------------------
 ## Custom testing
 ##----------------------------------
-y = simy$y
-useformula <- ~ depth + chla + O2
+y = simy_train
+useformula <- ~ temp + depth + chla + O2
 formula <- useformula
 ziformula <- NULL
-data = dat
-family =  binomial() 
-B_space = basisfunctions
-B_time = MM_temp
+data = dat_train
+family =  ztnb2() 
+B_space = train_basisfunctions
+B_time = NULL
 B_spacetime = NULL
 offset = NULL
 ncores = NULL
@@ -341,9 +341,9 @@ select = FALSE
 ziselect = FALSE
 start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
 TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, convergence_type = "parameters", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-G_control = list(rank = c(5,"full"))
-Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp)
+control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+G_control = list(rank = c(5), structure = "unstructured")
+Sigma_control = list(rank = c(5))
 k_check_control = list(subsample = 5000, n.rep = 400)
 
 
