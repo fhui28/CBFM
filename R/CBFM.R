@@ -2863,7 +2863,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(control$convergence_type == "parameters_MSE")
                diff <- mean((params_diff)^2) 
           if(control$convergence_type == "parameters_norm")
-               inner_err <- sum((inner_params_diff)^2) 
+               inner_err <- sum((params_diff)^2) 
           if(control$convergence_type == "parameters_relative")
                diff <- mean((params_diff)^2)/mean(cw_params^2) 
           if(control$convergence_type == "logLik_relative")
