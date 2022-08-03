@@ -46,9 +46,9 @@
 #' 
 #' Although the first option is employed as a default, the second and third choices are often used in to assess convergence in other, likelihood-based optimization problems (e.g., Green, 1984).}
 
-#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
-
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
+
+#' \item{final_maxit: }{The maximum number of iterations to do for the final estimation step after the PQL algorithm has converged. By default this is set to \code{Inf} as the final estimation step generally converges relatively quickly. But this can be set to finite number for more customization.} 
 
 #' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. This can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. 
 #' To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas}, due to the stacked species distribution model being severely overfitted. An *ad-hoc* fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.8} means the magnitudes of the staring values for the \code{betas} are reduced to 0.8 of their full values. This includes the species-specific intercepts. 
@@ -64,6 +64,8 @@
 #' \item{nonzeromean_B_time: }{This is an experimental feature at this point. *Please leave it as it as at the moment i.e., set to \code{FALSE}!*}
 
 #' \item{nonzeromean_B_spacetime: }{This is an experimental feature at this point. *Please leave it as it as at the moment i.e., set to \code{FALSE}!*}
+
+#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
 
@@ -244,7 +246,7 @@
 #' 
 #' 
 #' ## A note on estimation and inference
-#' Because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-species correlation and community-level covariance matrices are by default estimated via Laplace approximated restricted maximum likelihood estimation (Wood, 2011; Wood, 2017), although standard unrestricted maximum likelihood is also available. Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this. 
+#' Because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017), while the baseline between-species correlation and community-level covariance matrices are by default estimated via Laplace approximated restricted maximum likelihood estimation (Wood, 2011; Wood, 2017). Currently, CBFM makes use of both the machinery available in the [mgcv] package (Wood, 2017) as well as that of Template Model Builder (TMB, Kristensen et al., 2016) to facilitate this entire algorithm. After the PQL algorithm has converged, a final estimation step is performed purely to update regression/basis function coefficients (and dispersion parameters if appropriate).
 #' 
 #' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works alright, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are not always easy fixes for such situations (as it may reflect an underlying, perhaps intriguing feature of the proposed model for the predictors, data, or it may genuinely be that the stacked species distribution model is already fitting incredibly well!). One *ad-hoc* fix is available through \code{control$initial_betas_dampen}, but it is not guaranteed to work.  
 #' 
@@ -1860,10 +1862,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      select = FALSE, gamma = 1, ziselect = FALSE, zigamma = 1,
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -50, optim_upper = 50, convergence_type = "parameters_MSE", gam_method = "REML", tol = 1e-4, 
+     control = list(maxit = 100, optim_lower = -50, optim_upper = 50, convergence_type = "parameters_MSE", tol = 1e-4, final_maxit = Inf,   
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
-                    seed = NULL, ridge = 0, ziridge = 0, trace = 0),
+                    gam_method = "REML", seed = NULL, ridge = 0, ziridge = 0, trace = 0),
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
                           custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
      G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, 
@@ -2898,9 +2900,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           converged <- TRUE
      tidbits_data <- make_tidibits_data()
      inner_err <- 100
+     final_counter <- 0
      cw_inner_logL <- -Inf
      cw_inner_params <- cw_params
-     while(inner_err > control$tol) {
+     
+     while(inner_err > control$tol & final_counter <= control$final_maxit) {
           getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX)
 
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
@@ -2954,7 +2958,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           
           cw_inner_logL <- new_fit_CBFM_ptest$logLik
           cw_inner_params <- new_inner_params
-          inner_counter <- inner_counter + 1
+          final_counter <- final_counter + 1
           
           #if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
           #     break;
@@ -2978,7 +2982,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
           )))
      names(all_vcomp) <- colnames(y)
-     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, counter)
+     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, inner_counter, counter, final_counter)
      gc()
      
      
