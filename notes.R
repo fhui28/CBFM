@@ -248,7 +248,7 @@ theme_bw()
 ## Please note the data generation process (thus) differs from CBFM.
 ## This example was constructed to test the G_control$structure = "identity" argument, which is like fitting a hierarchical GAM
 ##------------------------------
-set.seed(2022)
+set.seed(082022)
 num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
 num_spp <- 20 # Number of species. Need to keep this lower than usual as factor smooths do not scale very well with the number of factor levels
 num_X <- 4 # Number of regression slopes
@@ -348,7 +348,7 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
           geom_line() +
      facet_wrap(. ~ species, nrow = 5)
      
-
+## Not perfect but it's not too bad either? Setting optim_lower/upper is pretty critical for this
 
 
 function() {
@@ -377,15 +377,6 @@ function() {
      Sigma_control = list(rank = c("full"), custom_space = penmat_useincbfm)
      k_check_control = list(subsample = 5000, n.rep = 400)
 }
-
-
-# Calculate predictions onto test dataset
-predictions_cbfm_gold <- predict(fitcbfm_zip, type = "response")
-predictions_cbfm_test <- predict(fitcbfm_zip, type = "response", se_fit = TRUE)
-matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "|xy"); abline(0,1)
-
-
-predictions_cbfm_pure <- predict(fitcbfm_zip, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
 
 
 
