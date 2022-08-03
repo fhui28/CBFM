@@ -67,85 +67,6 @@ simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
                          Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
 
 
-##------------------------------
-## Example 0.5: Try to address the above problem by exploring a single species GAM versus CBFM fits
-##------------------------------
-stackedgams_fn <- function(j, y, formula_X, data) {
-    tmp_formula <- as.formula(paste("response", paste(as.character(formula_X),collapse="") ) )
-    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), method = "REML", family = binomial())
-    return(fit0)
-    }
-
-stackedgams <- foreach(j = 1:ncol(simy$y)) %dopar% stackedgams_fn(j = j, y = simy$y, formula_X = ~ depth + chla + O2 + s(temp), data = dat)
-stackedgams_coef <- sapply(stackedgams, coef)[-(1:4),] %>% t
-
-
-
-MM_temp <- model.matrix(stackedgams[[1]])[,-c(1:4),drop=FALSE]
-Sigma_temp <- .pinv(stackedgams[[1]]$smooth[[1]]$S[[1]])
-G_temp <- sapply(stackedgams, function(x) gam.vcomp(x, rescale = FALSE)[[1]][1]^2)
-
-fitcbfm <- CBFM(y = simy$y[,1:5,drop=FALSE], formula = ~ 1, data = dat,
-                B_space = MM_temp, 
-                family = binomial(), 
-                control = list(trace = 1, convergence_type = "parameters_norm", tol = 1e-6),
-                #G_control = list(rank = "full", custom_space = diag(x = G_temp[1:10])),
-                G_control = list(rank = "full", trace = 1),
-                Sigma_control = list(rank = "full", custom_space = Sigma_temp))
-
-
-fitcbfm_singlespp <- CBFM(y = simy$y[,5,drop=FALSE], formula = ~ depth + chla + O2, data = dat,
-                B_space = MM_temp, 
-                family = binomial(), 
-                control = list(trace = 1, convergence_type = "parameters_norm", tol = 1e-6),
-                #G_control = list(rank = "full", custom_space = diag(x = G_temp[1:10])),
-                G_control = list(rank = "full", trace = 1),
-                Sigma_control = list(rank = 1, custom_space = Sigma_temp))
-
-fitcbfm_singlespp$basis_effects_mat
-
-fitcbfm$basis_effects_mat
-fitcbfm$G_space
-fitcbfm$Sigma_space
-
-
-ggmatplot(t(stackedgams_coef[1:5,]), t(fitcbfm$basis_effects_mat), shape = 19) + 
-     geom_abline(intercept = 0, slope = 1) +
-     scale_color_viridis_d()
-
-
-
-y = simy$y
-useformula <- ~ depth + chla + O2
-formula <- useformula
-ziformula <- NULL
-data = dat
-family =  binomial() 
-B_space = MM_temp
-B_time = NULL
-B_spacetime = NULL
-offset = NULL
-ncores = NULL
-gamma = 1
-zigamma = 1
-trial_size = 1
-dofit = TRUE
-stderrors = TRUE
-select = FALSE
-ziselect = FALSE
-start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
-TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, convergence_type = "parameters_norm", tol = 1e-6, seed = NULL, trace = 1, ridge = 0)
-G_control = list(rank = c("full"), trace = 1, method = "ML", tol = 1e-6)
-Sigma_control = list(rank = c(1), custom_space = Sigma_temp)
-k_check_control = list(subsample = 5000, n.rep = 400)
-
-
-
-
-##------------------------------
-## END Example 0.5. Return to CBFM and stacked fits
-##------------------------------
 # Fit CBFMs
 fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data = dat,
                    B_space = basisfunctions, family = binomial(), 
@@ -177,12 +98,13 @@ ggmatplot(true_Sigma_space[lower.tri(true_Sigma_space)], fitcbfm_sp$Sigma_space[
 ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fitcbfm_sp$G_space)]) + geom_abline(intercept = 0, slope = 1)
 
 
+
 ##------------------------------
-## **Example 1 modified: Fitting a CBFM to spatial multivariate presence-absence data**
+## **Example 1 modified: Fitting a CBFM to spatial multivariate data**
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
 ##------------------------------
-set.seed(072022)
+set.seed(2022)
 num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
 num_spp <- 50 # Number of species
 num_X <- 4 # Number of regression slopes
@@ -228,6 +150,7 @@ simy_test <- simy[501:1000,]
 mm_train <- mm[1:500,,drop=FALSE]
 mm_test <- mm[501:1000,,drop=FALSE]
 rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
+
 
 
 # Set up spatial basis functions for CBFM -- Most users will start here!
@@ -315,6 +238,154 @@ geom_abline(intercept = 0, slope = 1, linetype = 2) +
 labs(x = "Stacked SDM", y = "CBFM", main = "AUC") +
 theme_bw()
 
+
+
+
+
+##------------------------------
+## **Example 2 modified: Fitting a CBFM to spatial multivariate presence-absence data**
+## simulated from a spatial latent variable model
+## Please note the data generation process (thus) differs from CBFM.
+## This example was constructed to test the G_control$structure = "identity" argument, which is like fitting a hierarchical GAM
+##------------------------------
+set.seed(2022)
+num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
+num_spp <- 20 # Number of species. Need to keep this lower than usual as factor smooths do not scale very well with the number of factor levels
+num_X <- 4 # Number of regression slopes
+
+# Simulate spatial coordinates and environmental covariate components
+# We will use this information in later examples as well
+xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
+X <- rmvnorm(num_sites, mean = rep(0,4))
+colnames(X) <- c("temp", "depth", "chla", "O2")
+dat <- data.frame(xy, X)
+f1 <- function(x, a, b) a * sin(pi * b * x)
+
+spp_slopes <- cbind(a = rnorm(num_spp)+2, b = rnorm(num_spp, sd = 0.5))
+spp_intercepts <- rnorm(num_spp, 0, sd = 0.5)
+
+
+# Simulate spatial multivariate abundance data
+eta <- matrix(spp_intercepts, nrow = num_sites, ncol = num_spp, byrow = TRUE) + sapply(1:num_spp, function(j) f1(dat$temp, a = spp_slopes[j,1], b = spp_slopes[j,2]))
+simy <- matrix(rbinom(num_sites * num_spp, size = 1, prob = plogis(eta)), num_sites, num_spp)
+colnames(simy) <- paste0("spp", 1:num_spp)
+
+# Form training and test sets
+dat_train <- dat[1:500,]
+dat_test <- dat[501:1000,]
+simy_train <- simy[1:500,]
+simy_test <- simy[501:1000,]
+rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
+
+
+# Fit a hierarchical GAM
+dat_long <- data.frame(simy_train, dat_train) %>% 
+     pivot_longer(spp1:spp20, names_to = "species") %>% 
+     mutate(species = fct_inorder(species))
+
+hgam <- mgcv::gam(value ~ s(temp, by = species, bs = "gp", id = 1), data = dat_long, family = "binomial", method = "REML")
+#hgam_select <- mgcv::gam(value ~ s(temp, by = species, id = 1), data = dat_long, select = TRUE, family = "binomial", method = "REML")
+#hgam_fs <- mgcv::gam(value ~ s(temp, species, bs = "fs"), data = dat_long, family = "binomial", method = "REML")
+
+hgam$sp
+data.frame(temp = dat_train$temp, hgam = matrix(hgam$linear.predictors, ncol = num_spp, byrow = TRUE)) %>% 
+     pivot_longer(-temp) %>% 
+     mutate(species = rep(paste0("spp",1:num_spp),500)) %>% 
+     ggplot(., aes(x = temp, y = value)) +
+     geom_line() +
+     facet_wrap(. ~ species, nrow = 5)
+
+
+sm <- smoothCon(s(temp, bs = "gp"), data = dat_train, knots = NULL, absorb.cons = TRUE)[[1]]
+
+hgam$smooth[[1]]$S[[1]] - sm$S[[1]] ## Basically matches
+hgam_mm <- model.matrix(hgam)[,2:12] # Extract only the first species (first column is an intercept), since a factor smooth basically Kronecker products (up to a permutation of the levels of the factor) this matrix num_spp times
+hgam_mm <- hgam_mm[seq(1,nrow(hgam_mm),by=20),]
+norm(hgam_mm - sm$X) ## matches
+
+## So hgam matches construction of a smoother for each species, where the identifiability constraints are absorbed into the basis, and the penalty is scaled. You should be able to get away without the latter (see scale.penalty argument in ?smoothCon). The former I am less sure about, but would be useful to do without in order to work with nicer penalty matrices?
+rm(sm)
+
+
+
+# Fit CBFMs
+# Set up spatial basis functions for CBFM -- Most users will start here!
+# We will also use this basis functions in some later examples
+sm_train_useincbfm <- smoothCon(s(temp, bs = "gp"), data = dat_train, knots = NULL, absorb.cons = TRUE)[[1]] 
+sm_train_useincbfm$X # Compare summary(sm$X) and summary(sm_useincbfm$X) and you can see the identifiability not being absorbed as the matrix is no longer mean centered. But note that by not absorbing the constraint, the intercept term of the smooth becomes clear
+
+# For CBFM, drop intercept as it is already contained in the formula argument -- needed when absorb.cons = FALSE
+# mm_train_useincbfm <- sm_train_useincbfm$X[,!apply(sm_train_useincbfm$X==1,2,all)]
+# penmat_useincbfm <- sm_train_useincbfm$S[[1]][!apply(sm_train_useincbfm$X==1,2,all),!apply(sm_train_useincbfm$X==1,2,all)]
+# mm_test_useincbfm <- PredictMat(sm_train_useincbfm, data = dat_test)
+# mm_test_useincbfm <- mm_test_useincbfm[,!apply(sm_train_useincbfm$X==1,2,all)]
+# rm(sm_train_useincbfm)
+     
+mm_train_useincbfm <- sm_train_useincbfm$X
+penmat_useincbfm <- sm_train_useincbfm$S[[1]]
+mm_test_useincbfm <- PredictMat(sm_train_useincbfm, data = dat_test)
+rm(sm_train_useincbfm)
+
+
+fitcbfm <- CBFM(y = simy_train, 
+                    formula = ~ 1, 
+                    data = dat_train,
+                    B_space = mm_train_useincbfm, 
+                    family = binomial(), 
+                    control = list(trace = 1, optim_lower = -5000, optim_upper = 5000),
+                    Sigma_control = list(rank = "full", custom_space = .pinv(penmat_useincbfm)), 
+                    G_control = list(rank = "full", structure = "identity")) #custom_space = diag(gam.vcomp(hgam, rescale = FALSE)[[1]][1]^2, nrow = num_spp)
+
+
+fitcbfm$G_space
+fitcbfm$basis_effects_mat
+
+data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matrix(hgam$linear.predictors, ncol = num_spp, byrow = TRUE)) %>% 
+     pivot_longer(-temp) %>% 
+     mutate(species = rep(rep(paste0("spp",1:num_spp),2),500)) %>% 
+     mutate(model = rep(rep(c("cbfm","gam"),each=num_spp),500)) %>% 
+     ggplot(., aes(x = temp, y = value, color = model)) +
+          geom_line() +
+     facet_wrap(. ~ species, nrow = 5)
+     
+
+
+
+function() {
+     y = simy_train
+     useformula <- ~ 1
+     formula <- useformula
+     ziformula <- NULL
+     data = dat_train
+     family =  binomial() 
+     B_space = mm_train_useincbfm
+     B_time = NULL
+     B_spacetime = NULL
+     offset = NULL
+     ncores = NULL
+     gamma = 1
+     zigamma = 1
+     trial_size = 1
+     dofit = TRUE
+     stderrors = TRUE
+     select = FALSE
+     ziselect = FALSE
+     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+     TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+     control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+     G_control = list(rank = c("full"), structure = "identity")
+     Sigma_control = list(rank = c("full"), custom_space = penmat_useincbfm)
+     k_check_control = list(subsample = 5000, n.rep = 400)
+}
+
+
+# Calculate predictions onto test dataset
+predictions_cbfm_gold <- predict(fitcbfm_zip, type = "response")
+predictions_cbfm_test <- predict(fitcbfm_zip, type = "response", se_fit = TRUE)
+matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "|xy"); abline(0,1)
+
+
+predictions_cbfm_pure <- predict(fitcbfm_zip, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
 
 
 
