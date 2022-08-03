@@ -309,8 +309,6 @@ rm(sm)
 
 
 # Fit CBFMs
-# Set up spatial basis functions for CBFM -- Most users will start here!
-# We will also use this basis functions in some later examples
 sm_train_useincbfm <- smoothCon(s(temp, bs = "gp"), data = dat_train, knots = NULL, absorb.cons = TRUE)[[1]] 
 sm_train_useincbfm$X # Compare summary(sm$X) and summary(sm_useincbfm$X) and you can see the identifiability not being absorbed as the matrix is no longer mean centered. But note that by not absorbing the constraint, the intercept term of the smooth becomes clear
 
