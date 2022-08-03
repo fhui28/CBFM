@@ -1860,7 +1860,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      select = FALSE, gamma = 1, ziselect = FALSE, zigamma = 1,
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -10, optim_upper = 10, convergence_type = "parameters_MSE", gam_method = "REML", tol = 1e-4, 
+     control = list(maxit = 100, optim_lower = -50, optim_upper = 50, convergence_type = "parameters_MSE", gam_method = "REML", tol = 1e-4, 
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
                     seed = NULL, ridge = 0, ziridge = 0, trace = 0),
