@@ -23,6 +23,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                new_G <- A_Sigmain_AT / num_basisfns
           if(use_structure == "identity") 
                new_G <- sum(diag(A_Sigmain_AT)) / (num_basisfns*num_spp)
+               new_G <- diag(x = new_G, nrow = num_spp)
           }
      
      if(G_control$method %in% c("REML","ML")) {
