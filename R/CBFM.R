@@ -2372,7 +2372,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(control$trace > 0)
                message("Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).")         
           while(inner_err > 1e-3) {
-               if(inner_counter > 10) # So inner updates only occur for bit
+               if(inner_counter > 1) # So inner updates only occur for bit
                     break;
                
                

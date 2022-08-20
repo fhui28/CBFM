@@ -381,33 +381,61 @@ function() {
 ##----------------------------------
 ## Custom testing
 ##----------------------------------
-y = simy_train
-useformula <- ~ temp + depth + chla + O2
-formula <- useformula
-ziformula <- NULL
-data = dat_train
-family =  ztnb2() 
-B_space = train_basisfunctions
-B_time = NULL
-B_spacetime = NULL
-offset = NULL
-ncores = NULL
-gamma = 1
-zigamma = 1
-trial_size = 1
-dofit = TRUE
-stderrors = TRUE
-select = FALSE
-ziselect = FALSE
-start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
-TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-G_control = list(rank = c(5), structure = "unstructured")
-Sigma_control = list(rank = c(5))
-k_check_control = list(subsample = 5000, n.rep = 400)
+function() {
+     y = simy_train
+     useformula <- ~ temp + depth + chla + O2
+     formula <- useformula
+     ziformula <- NULL
+     data = dat_train
+     family =  ztnb2() 
+     B_space = train_basisfunctions
+     B_time = NULL
+     B_spacetime = NULL
+     offset = NULL
+     ncores = NULL
+     gamma = 1
+     zigamma = 1
+     trial_size = 1
+     dofit = TRUE
+     stderrors = TRUE
+     select = FALSE
+     ziselect = FALSE
+     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+     TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+     control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+     G_control = list(rank = c(5), structure = "unstructured")
+     Sigma_control = list(rank = c(5))
+     k_check_control = list(subsample = 5000, n.rep = 400)
+     }
 
 
+function() {
+     y = Ypa[sel_training_units,]
+     formula <-  ~ s(monthly_mean_Po2_bott) + s(monthly_mean_salt_bott) + s(monthly_mean_salt_surf) + s(monthly_mean_temp_surf) #+ s(monthly_mean_temp_bott) + s(annual_max_temp_surf) + s(annual_min_temp_surf) + s(annual_max_temp_bott) + s(annual_min_temp_bott) + s(GRAINSIZE)
+     ziformula <- NULL
+     data = X[sel_training_units,]
+     family =  binomial() 
+     B_space =  mm_train_useincbfm
+     B_time = train_VESSELmat
+     B_spacetime = train_sptime_basisfunctions
+     offset = NULL
+     ncores = 8
+     gamma = 1
+     zigamma = 1
+     trial_size = 1
+     dofit = TRUE
+     stderrors = TRUE
+     select = FALSE
+     ziselect = FALSE
+     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+     TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+     control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0, nonzeromean_B_time = TRUE)
+     G_control = list(rank = c("full",1,10), structure = c("identity", "unstructured", "unstructured"), custom_time = custom_G_time)
+     Sigma_control = list(rank = c("full","full",5), custom_space = .pinv(penmat_useincbfm), control = list(trace = 1))
+     k_check_control = list(subsample = 5000, n.rep = 400)
+     }
 
+ 
 
 
 Ginv = new_LoadingnuggetG_space$covinv
