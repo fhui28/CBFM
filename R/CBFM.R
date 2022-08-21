@@ -255,7 +255,7 @@
 #' Also, the current estimation approach **does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}**, does not provide uncertainty estimates in the smoothing parameter. This is in line with the main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction, in a relatively computationally efficient and scalable manner. Future versions of package may seek to rectify this, but for now... apologies!  
 #' 
 #' 
-#' @return An object of class \code{CBFM} which includes the following components, not necessarily in the order below (and as appropriate):
+#' @return An object of class \code{CBFM} which includes the following components, not necessarily in the order below (and as appropriate). Note outputs resulting from experimental input arguments are now itemized below:
 #' \item{call: }{The matched function call.}
 
 #' \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
