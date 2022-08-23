@@ -206,7 +206,7 @@
      return(family_counter)
      }
           
-.fill_control <- function(control, num_spp, which_B_used) {
+.fill_control <- function(control, num_spp, which_B_used, nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime) {
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$optim_lower))
@@ -230,19 +230,12 @@
             stop("control$subsequent_betas_dampen should either be a scalar or a vector equal to the number of species i.e., ncol(y).")
         }
      
-     if(is.null(control$nonzeromean_B_space))
-         control$nonzeromean_B_space <- FALSE
-     if(is.null(control$nonzeromean_B_time))
-         control$nonzeromean_B_time <- FALSE
-     if(is.null(control$nonzeromean_B_spacetime))
-         control$nonzeromean_B_spacetime <- FALSE
-     
-     if(control$nonzeromean_B_space == TRUE & which_B_used[1] == 0)
-         stop("If B_space is not supplied, then control$nonzeromean_B_space can not be set to TRUE.")
-     if(control$nonzeromean_B_time == TRUE & which_B_used[2] == 0)
-         stop("If B_time is not supplied, then control$nonzeromean_B_time can not be set to TRUE.")
-     if(control$nonzeromean_B_spacetime == TRUE & which_B_used[3] == 0)
-         stop("If B_spacetime is not supplied, then control$nonzeromean_B_spacetime can not be set to TRUE.")
+     if(nonzeromean_B_space == TRUE & which_B_used[1] == 0)
+         stop("If B_space is not supplied, then nonzeromean_B_space can not be set to TRUE.")
+     if(nonzeromean_B_time == TRUE & which_B_used[2] == 0)
+         stop("If B_time is not supplied, then nonzeromean_B_time can not be set to TRUE.")
+     if(nonzeromean_B_spacetime == TRUE & which_B_used[3] == 0)
+         stop("If B_spacetime is not supplied, then nonzeromean_B_spacetime can not be set to TRUE.")
      
      if(is.null(control$convergence_type))
           control$convergence_type <- "parameters_MSE"

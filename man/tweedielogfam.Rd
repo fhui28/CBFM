@@ -16,7 +16,7 @@ An object of class "family" (which has a concise print method). This is a list w
 \item{variance }{The variance as a function of the mean. This itself is a function which two arguments, the mean \code{mu}, the dispersion parameter \code{phi}, and the power parameter \code{power}. The mean-variance relationship is given by \eqn{V = \phi\mu^\rho} where \eqn{\mu} denotes the mean,  \eqn{\phi} denotes the dispersion parameter, and \eqn{\rho} is the power parameter.}
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 A specified family object for the Tweedie distribution using the log link function and a power mean-variance relationship
 }
