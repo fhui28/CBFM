@@ -36,7 +36,7 @@ A list with the following items:
 \item{loadings: }{A matrix of species-specific loadings.}
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\verb{r lifecycle::badge("experimental")}
 
 Calculates observational unit-specific scores and corresponding species-specific loadings from a fitted \code{CBFM} object, potentially at new values of the basis functions. which in turn can be used as a means of spatio-temporal ordination.
 }
