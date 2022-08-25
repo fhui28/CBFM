@@ -2369,8 +2369,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(control$trace > 0)
                message("Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).")         
           while(inner_err > 1e-3) {
-               if(inner_counter > 1) # So inner updates only occur for bit
-                    break;
+               # if(inner_counter > 1) # So inner updates only occur for bit
+               #      break;
                
                
                ##-------------------------
@@ -2682,9 +2682,6 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                cw_inner_params <- new_inner_params
                inner_counter <- inner_counter + 1
                rm(all_update_coefs, update_Xcoefsspp_fn, inner_params_diff)
-               
-               #if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
-               #     break;
                }          
           
           
