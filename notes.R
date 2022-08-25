@@ -111,22 +111,15 @@ num_X <- 4 # Number of regression slopes
 
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- rnorm(num_spp, -3, sd = 0.5)
-spp_zislopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-spp_ziintercepts <- runif(num_spp, -0.5, 0)
+spp_gear <- rnorm(num_spp, sd = 0.5) %>% exp
 
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4))
-colnames(X) <- c("temp", "depth", "chla", "O2")
-# X <- matrix(rep(c(0,1), num_sites*c(0.4,0.6)), ncol = 1)
-# colnames(X) <- "gear"
+X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(0.7,0.3)*num_sites))
+colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
 dat <- data.frame(xy, X)
-mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) %>%
- scale %>%
- as.matrix
-# mm <- model.matrix(~ gear - 1, data = dat) %>%
-#       as.matrix
+mm <- model.matrix(~ temp + depth + chla + O2 + gear, data = dat)
 
 # Simulate latent variable component
 # We will use this information in later examples as well
@@ -134,111 +127,48 @@ true_lvs <- RFsimulate(model = RMexp(var=1, scale=2),
 x = xy$x, y = xy$y, n = 2)@data %>%
 as.matrix
 spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
-set.seed(NULL)
+
 
 # Simulate spatial multivariate abundance data (presence-absence)
-eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + tcrossprod(true_lvs, spp_loadings)
-zieta <- tcrossprod(cbind(1,mm), cbind(spp_ziintercepts,spp_zislopes))
-component_ind <- matrix(rbinom(num_sites * num_spp, size = 1, prob = matrix(plogis(zieta), num_sites, num_spp, byrow = TRUE)), num_sites,num_spp)
-simy <- matrix(rpois(num_sites * num_spp, lambda = exp(eta+2) * (1-component_ind)), num_sites, num_spp)
-
-# Form training and test sets
-dat_train <- dat[1:500,]
-dat_test <- dat[501:1000,]
-simy_train <- simy[1:500,]
-simy_test <- simy[501:1000,]
-mm_train <- mm[1:500,,drop=FALSE]
-mm_test <- mm[501:1000,,drop=FALSE]
-rm(X, mm, spp_loadings, true_lvs, xy, simy, dat)
-
+eta <- tcrossprod(mm, cbind(spp_intercepts,spp_slopes,spp_gear)) + tcrossprod(true_lvs, spp_loadings)
+simy <- matrix(rbinom(num_sites * num_spp, size = 1, prob = plogis(eta)), nrow = num_sites)
 
 
 # Set up spatial basis functions for CBFM -- Most users will start here!
 # We will also use this basis functions in some later examples
 num_basisfunctions <- 25 # Number of spatial basis functions to use
-# Training set basis functions
-train_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>%
+sp_basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>%
 as.matrix %>%
 {.[,-(1)]} # Remove the first intercept column
-# Testing set basis functions
-test_basisfunctions <- mrts(dat_train[,c("x","y")], num_basisfunctions) %>%
-predict(newx = dat_test[,c("x","y")]) %>%
-as.matrix %>%
-{.[,-c(1)]}
 
 
 # Fit CBFMs
-fitcbfm_zip <- CBFM(y = simy_train, 
-                     formula = ~ s(temp) + depth + s(chla) + O2, 
-                     ziformula = ~ s(temp) + depth + s(chla) + O2, 
-                     data = dat_train,
-                     B_space = train_basisfunctions, 
-                     family = zipoisson(), 
-                     control = list(trace = 1),
-                     Sigma_control = list(rank = 5), 
-                     G_control = list(rank = 2))
+fitcbfm <- CBFM(y = simy, 
+                formula = ~ temp + depth + chla + O2, 
+                data = dat,
+                B_space = sp_basisfunctions, 
+                B_time = matrix(dat$gear, ncol = 1),
+                family = binomial(), 
+                control = list(trace = 1),
+                Sigma_control = list(rank = c(5,"full")), 
+                G_control = list(rank = c(2,"full"), custom_time = diag(nrow = num_spp))
+                )
 
+fitcbfm$basis_effects_mat[,fitcbfm$num_B]
+out_CBFM$basis_effects_mat[,out_CBFM$num_B]
 
+qplot(fitcbfm$basis_effects_mat[,fitcbfm$num_B], out_CBFM$basis_effects_mat[,out_CBFM$num_B]) +
+     geom_abline(intercept = 0, slope = 1)
 
-# Calculate predictions onto test dataset
-predictions_cbfm_gold <- predict(fitcbfm_zip, type = "response")
-predictions_cbfm_test <- predict(fitcbfm_zip, type = "response", se_fit = TRUE)
-matplot(predictions_cbfm_gold, predictions_cbfm_test$fit, log = "|xy"); abline(0,1)
+data.frame(spp_gear, unconstrained = fitcbfm$basis_effects_mat[,fitcbfm$num_B], constrained = out_CBFM$basis_effects_mat[,out_CBFM$num_B]) %>% 
+     t %>% 
+     dist
 
+fitcbfm$logLik
+out_CBFM$logLik
 
-predictions_cbfm_pure <- predict(fitcbfm_zip, newdata = dat_test, type = "response", new_B_space = test_basisfunctions)
-
-
-# Evaluation predictions
-# Tjur R-squared across species
-tjurR2 <- data.frame(
-cbfm_pure = sapply(1:num_spp, function(j) {
-m1 <- predictions_cbfm_pure[which(simy_test[,j] > 0),j] %>%
-mean(na.rm = TRUE)
-m0 <- predictions_cbfm_pure[which(simy_test[,j] == 0),j] %>%
-mean(na.rm = TRUE)
-m1 - m0
-}),
-cbfm = sapply(1:num_spp, function(j) {
-m1 <- predictions_cbfm[which(simy_test[,j] > 0),j] %>%
-mean(na.rm = TRUE)
-m0 <- predictions_cbfm[which(simy_test[,j] == 0),j] %>%
-mean(na.rm = TRUE)
-m1 - m0
-})
-)
-
-boxplot(tjurR2, main = "Tjur-R2", names = c("CBFM_pure", "CBFM"))
-
-ggplot(tjurR2, aes(x = cbfm_pure, y = cbfm)) +
-geom_point() +
-geom_abline(intercept = 0, slope = 1, linetype = 2) +
-labs(x = "Stacked SDM", y = "CBFM", main = "Tjur-R2") +
-theme_bw()
-
-# AUC across species
-aucs <- data.frame(
-cbfm_pure = sapply(1:num_spp, function(j) {
-pred <- prediction(predictions_cbfm_pure[,j], labels = simy_test[,j]) %>%
-performance(measure = "auc")
-pred@y.values[[1]]
-}),
-cbfm = sapply(1:num_spp, function(j) {
-pred <- prediction(predictions_cbfm[,j], labels = simy_test[,j]) %>%
-performance(measure = "auc")
-pred@y.values[[1]]
-})
-)
-
-boxplot(aucs, main = "AUC", names = c("CBFM_pure", "CBFM"))
-
-ggplot(aucs, aes(x = cbfm_pure, y = cbfm)) +
-geom_point() +
-geom_abline(intercept = 0, slope = 1, linetype = 2) +
-labs(x = "Stacked SDM", y = "CBFM", main = "AUC") +
-theme_bw()
-
-
+diag(fitcbfm$covar_components$bottomright)[grep("B_time", names(diag(fitcbfm$covar_components$bottomright)))] 
+diag(out_CBFM$covar_components$bottomright)[grep("B_time", names(diag(out_CBFM$covar_components$bottomright)))] 
 
 
 
@@ -349,53 +279,29 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 ## Not perfect but it's not too bad either? Setting optim_lower/upper is pretty critical for this
 
 
-function() {
-     y = simy_train
-     useformula <- ~ 1
-     formula <- useformula
-     ziformula <- NULL
-     data = dat_train
-     family =  binomial() 
-     B_space = mm_train_useincbfm
-     B_time = NULL
-     B_spacetime = NULL
-     offset = NULL
-     ncores = NULL
-     gamma = 1
-     zigamma = 1
-     trial_size = 1
-     dofit = TRUE
-     stderrors = TRUE
-     select = FALSE
-     ziselect = FALSE
-     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
-     TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-     G_control = list(rank = c("full"), structure = "identity")
-     Sigma_control = list(rank = c("full"), custom_space = penmat_useincbfm)
-     k_check_control = list(subsample = 5000, n.rep = 400)
-}
-
 
 
 ##----------------------------------
 ## Custom testing
 ##----------------------------------
 function() {
-     y = simy_train
+     y = simy
      useformula <- ~ temp + depth + chla + O2
      formula <- useformula
      ziformula <- NULL
-     data = dat_train
-     family =  ztnb2() 
-     B_space = train_basisfunctions
-     B_time = NULL
+     data = dat
+     family =  binomial() 
+     B_space = sp_basisfunctions
+     B_time = matrix(dat$gear, ncol = 1)
      B_spacetime = NULL
      offset = NULL
      ncores = NULL
      gamma = 1
      zigamma = 1
      trial_size = 1
+     nonzeromean_B_space = FALSE
+     nonzeromean_B_time = FALSE
+     nonzeromean_B_spacetime = FALSE
      dofit = TRUE
      stderrors = TRUE
      select = FALSE
@@ -403,9 +309,10 @@ function() {
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-     G_control = list(rank = c(5), structure = "unstructured")
-     Sigma_control = list(rank = c(5))
+     G_control = list(rank = c(5,"full"), custom_time = diag(nrow = num_spp))
+     Sigma_control = list(rank = c(5,"full"))
      k_check_control = list(subsample = 5000, n.rep = 400)
+     
      }
 
 

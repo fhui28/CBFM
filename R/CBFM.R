@@ -2435,7 +2435,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          
                     CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                     
-                    new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr, lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
+                    new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr, 
+                                               lower = tidbits_constraints$lower, upper = tidbits_constraints$upper), silent = TRUE)
                     # Dampen Xbeta component and run it again...it is kind of ad-hoc but has been shown to be helpful especially with GAM fits to extremely overdispersed counts 
                     if(inherits(new_fit_CBFM, "try-error")) {
                          if(length(control$subsequent_betas_dampen) == 1)
