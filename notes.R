@@ -24,13 +24,14 @@ library(mvabund)
 library(mvtnorm)
 library(ROCR)
 library(sp)
+library(sp)
 library(RandomFields)
 library(tidyverse)
 library(ggmatplot)
 library(doParallel)
 library(foreach)
 registerDoParallel(cores = detectCores()-2)
-
+devtools::load_all(".")
 
 ##------------------------------
 ## **Example 0: Fitting a CBFM to data from a spatial CBFM
@@ -144,28 +145,25 @@ as.matrix %>%
 
 # Fit CBFMs
 fitcbfm <- CBFM(y = simy, 
-                formula = ~ temp + depth + chla + O2, 
+                formula = ~ temp + depth + chla + O2 + gear, 
                 data = dat,
                 B_space = sp_basisfunctions, 
-                B_time = matrix(dat$gear, ncol = 1),
                 family = binomial(), 
                 control = list(trace = 1),
-                Sigma_control = list(rank = c(5,"full")), 
-                G_control = list(rank = c(2,"full"), custom_time = diag(nrow = num_spp))
+                Sigma_control = list(rank = c(5)), 
+                G_control = list(rank = c(2))
                 )
 
-fitcbfm$basis_effects_mat[,fitcbfm$num_B]
-out_CBFM$basis_effects_mat[,out_CBFM$num_B]
 
-qplot(fitcbfm$basis_effects_mat[,fitcbfm$num_B], out_CBFM$basis_effects_mat[,out_CBFM$num_B]) +
+fitcbfm$betas
+
+qplot(cbind(spp_slopes, spp_gear), fitcbfm$betas[,-1]) +
      geom_abline(intercept = 0, slope = 1)
 
 data.frame(spp_gear, unconstrained = fitcbfm$basis_effects_mat[,fitcbfm$num_B], constrained = out_CBFM$basis_effects_mat[,out_CBFM$num_B]) %>% 
      t %>% 
      dist
 
-fitcbfm$logLik
-out_CBFM$logLik
 
 diag(fitcbfm$covar_components$bottomright)[grep("B_time", names(diag(fitcbfm$covar_components$bottomright)))] 
 diag(out_CBFM$covar_components$bottomright)[grep("B_time", names(diag(out_CBFM$covar_components$bottomright)))] 
@@ -292,8 +290,9 @@ function() {
      data = dat
      family =  binomial() 
      B_space = sp_basisfunctions
-     B_time = matrix(dat$gear, ncol = 1)
+     B_time = NULL
      B_spacetime = NULL
+     positiveX = matrix(dat$gear, ncol = 1)
      offset = NULL
      ncores = NULL
      gamma = 1
@@ -309,8 +308,8 @@ function() {
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-     G_control = list(rank = c(5,"full"), custom_time = diag(nrow = num_spp))
-     Sigma_control = list(rank = c(5,"full"))
+     G_control = list(rank = c(5))
+     Sigma_control = list(rank = c(5))
      k_check_control = list(subsample = 5000, n.rep = 400)
      
      }
