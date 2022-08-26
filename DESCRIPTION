@@ -37,6 +37,7 @@ Imports:
     stats,
     tdigest,
     tweedie,
+    zetadiv,
 Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
 RoxygenNote: 7.2.0

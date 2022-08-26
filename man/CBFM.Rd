@@ -12,6 +12,7 @@ CBFM(
   B_space = NULL,
   B_time = NULL,
   B_spacetime = NULL,
+  positiveX = NULL,
   offset = NULL,
   ncores = NULL,
   family = stats::gaussian(),
@@ -55,6 +56,8 @@ CBFM(
 \item{B_time}{An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
 
 \item{B_spacetime}{An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
+
+\item{positiveX}{This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default \code{NULL} value!}}
 
 \item{offset}{A matrix of offset terms.}
 
