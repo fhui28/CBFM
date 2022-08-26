@@ -105,25 +105,28 @@
 
                
 ## E-step functions for zero-inflated and zero-truncated distributions -- calculate the posterior probability of being in the zero-inflation component/posterior probability of observing a zero
-.estep_fn <- function(family, cwfit, y, X, B, ziX = NULL) {
+.estep_fn <- function(family, cwfit, y, X, B, positiveX = NULL, ziX = NULL) {
    num_units <- nrow(y)
    num_spp <- ncol(y)
    out <- Matrix::Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
    
    if(family$family %in% c("zipoisson","zinegative.binomial")) {
-                fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
-                zeroinfl_prob <- plogis(tcrossprod(ziX, cwfit$zibetas))
+        eta <- tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat)
+        if(!is.null(positiveX))
+             eta <- eta + tcrossprod(positiveX, cwfit$positivebetas)      
+        fitvals <- exp(eta)
+        rm(eta)
+        zeroinfl_prob <- plogis(tcrossprod(ziX, cwfit$zibetas))
                 
-                for(j in 1:num_spp) {
-                        sel_zerospp <- which(y[,j] == 0)
-                        if(family$family[1] == "zipoisson")
-                                out[sel_zerospp,j] <- zeroinfl_prob[sel_zerospp,j] / (zeroinfl_prob[sel_zerospp,j] + (1-zeroinfl_prob[sel_zerospp,j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
-                        if(family$family[1] == "zinegative.binomial")
-                                out[sel_zerospp,j] <- zeroinfl_prob[sel_zerospp,j] / (zeroinfl_prob[sel_zerospp,j] + (1-zeroinfl_prob[sel_zerospp,j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
-                        }
+        for(j in 1:num_spp) {
+          sel_zerospp <- which(y[,j] == 0)
+          if(family$family[1] == "zipoisson")
+               out[sel_zerospp,j] <- zeroinfl_prob[sel_zerospp,j] / (zeroinfl_prob[sel_zerospp,j] + (1-zeroinfl_prob[sel_zerospp,j])*dpois(0, lambda = fitvals[sel_zerospp,j]))
+          if(family$family[1] == "zinegative.binomial")
+               out[sel_zerospp,j] <- zeroinfl_prob[sel_zerospp,j] / (zeroinfl_prob[sel_zerospp,j] + (1-zeroinfl_prob[sel_zerospp,j])*dnbinom(0, mu = fitvals[sel_zerospp,j], size = 1/cwfit$dispparam[j]))
+               }
                 
-                }
-        
+        }
    return(out)
    }
 

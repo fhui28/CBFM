@@ -1,4 +1,4 @@
-update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
+update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, positiveX = NULL, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
                         trial_size, family, G_control, use_rank_element, return_correlation = TRUE) {
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
@@ -41,8 +41,8 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
           weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
           if(G_control$method == "REML") {
                inner_fn <- function(j) {
-                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                    BTWX <- crossprod(B, X*weights_mat[,j])               
+                    XTX_inv <- chol2inv(chol(crossprod(cbind(X,positiveX)*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(cbind(X,positiveX)))))
+                    BTWX <- crossprod(B, cbind(X,positiveX)*weights_mat[,j])               
                     return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                     }
                }
@@ -228,7 +228,7 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
      }
      
 
-update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
+update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, positiveX = NULL, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
                             trial_size, family, Sigma_control) {
         num_spp <- nrow(basis_effects_mat)
         num_basisfns <- ncol(Sigmainv)
@@ -263,8 +263,8 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                 weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
                 if(Sigma_control$method == "REML") {
                      inner_fn <- function(j) {
-                          XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                          BTWX <- crossprod(B, X*weights_mat[,j])               
+                          XTX_inv <- chol2inv(chol(crossprod(cbind(X,positiveX)*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(cbind(X,positiveX)))))
+                          BTWX <- crossprod(B, cbind(X,positiveX)*weights_mat[,j])               
                           return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                          }
                     }

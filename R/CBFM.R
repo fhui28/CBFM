@@ -12,6 +12,7 @@
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param positiveX This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. **Please do not use this and leave it at the default \code{NULL} value!**
 #' @param offset A matrix of offset terms.  
 #' @param ncores To speed up fitting, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
@@ -1851,10 +1852,11 @@
 #' @importFrom stats fitted dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix na.omit optim nlminb residuals 
 #' @importFrom TMB MakeADFun
 #' @importFrom utils capture.output
+#' @importFrom zetadiv glm.cons
 #' @md
 
 
-CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
+CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, positiveX = NULL,
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, 
      select = FALSE, gamma = 1, ziselect = FALSE, zigamma = 1,
      nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
@@ -1889,7 +1891,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           colnames(y) <- paste0("species", 1:ncol(y))
      if(is.null(rownames(y)))
           rownames(y) <- paste0("units", 1:nrow(y))
-          
+     
+     if(is.null(colnames(positiveX)))
+          colnames(positiveX) <- paste0("positiveX", 1:ncol(positiveX))
+     
      full_gamma <- gamma
      if(length(full_gamma) == 1)
           full_gamma <- rep(full_gamma, ncol(y))
@@ -1946,7 +1951,15 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      rm(tmp_formula, nullfit)
      rownames(X) <- rownames(y)
 
-     .check_BX(B = B, X = X) 
+     if(!is.null(positiveX)) {
+          if(family$family != "binomial")
+               stop("positiveX is currently only implemented for the binomial family. Sorry!")
+          if(!is.matrix(positiveX))
+               stop("positiveX should be a matrix with the same number of rows as y.")
+          rownames(positiveX) <- rownames(y)
+          }
+     
+     .check_BX(B = B, X = X, positiveX = positiveX) 
      .check_offset(offset = offset, y = y) 
      
      if(Sigma_control$method == "simple" || G_control$method == "simple")
@@ -1960,6 +1973,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      num_units <- nrow(y)
      num_spp <- ncol(y)
      num_X <- ncol(X)
+     num_positivebetas <- 0
+     if(!is.null(positiveX))
+          num_positivebetas <- ncol(positiveX)
      num_basisfns <- ncol(B)
      .check_ranks2(num_spp = num_spp, which_B_used = which_B_used, G_control = G_control, 
                    vec_num_basisfns = c(num_spacebasisfns,num_timebasisfns,num_spacetimebasisfns), Sigma_control = Sigma_control)
@@ -1967,13 +1983,15 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      
      ## If required, form covariate model matrix for zero-inflation component
      if(is.null(ziformula)) {
-          ziX <- NULL          
+          ziX <- NULL   
+          num_ziX <- 0
           }
      if(!is.null(ziformula)) {
           ziformula <- .check_X_formula(formula = ziformula, data = as.data.frame(data))          
           tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse="") ) )
           nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
           ziX <- model.matrix(nullfit)
+          num_ziX <- ncol(ziX)
           rm(tmp_formula, nullfit)
           rownames(ziX) <- rownames(y)
           }
@@ -2176,7 +2194,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(inherits(fit0, "try-error")) {
                fit0 <- list(coefficients = runif(num_X), dispparam = 1)
                if(family$family[1] %in% c("zipoisson","zinegative.binomial"))
-                    fit0$zicoefficients <- runif(ncol(ziX))
+                    fit0$zicoefficients <- runif(num_ziX)
                }
           
           return(fit0)
@@ -2191,6 +2209,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           start_params$betas <- start_params$betas * control$initial_betas_dampen # Should be OK even if control$initial_betas_dampen is vector equal to number of species
           gc()
           }
+     if(num_positivebetas > 0)
+          start_params$positivebetas <- matrix(0.001, nrow = num_spp, ncol = num_positivebetas)
+     if(num_positivebetas == 0)
+          start_params$positivebetas <- NULL
      if(is.null(start_params$basis_effects_mat))
           start_params$basis_effects_mat <- matrix(0, nrow = num_spp, ncol = num_basisfns)
      if(is.null(start_params$dispparam)) {
@@ -2344,6 +2366,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     betas = start_params$betas,
                     basis_effects_mat = start_params$basis_effects_mat,
                     zibetas = start_params$zibetas,
+                    positivebetas = start_params$positivebetas,
                     mean_B_space = start_params[["mean_B_space"]], # NULL if which_B_used[1] == 0
                     mean_B_time = start_params[["mean_B_time"]], # NULL if which_B_used[2] == 0
                     mean_B_spacetime = start_params[["mean_B_spacetime"]], # ]NULL if which_B_used[3] == 0
@@ -2368,7 +2391,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           inner_counter <- 0
           if(control$trace > 0)
                message("Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).")         
-          while(inner_err > 1e-3) {
+          while(inner_err > 1e-4) {
                # if(inner_counter > 1) # So inner updates only occur for bit
                #      break;
                
@@ -2377,7 +2400,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                ## For zero-inflated distributions, E-step + updating zero-inflation probabilities for distributions that require it. 
                ## Otherwise, effectively do nothing
                ##-------------------------
-               getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX) # Posterior probabilities of zero-inflation
+               getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, 
+                                       positiveX = positiveX, ziX = ziX) # Posterior probabilities of zero-inflation
 
                ##-------------------------
                ## Update smoothing coefficients for all basis functions, one species at a time
@@ -2387,6 +2411,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     
                     tidbits_data$y <- y[,j]
                     tidbits_data$Xbeta <- as.vector(X %*% new_fit_CBFM_ptest$betas[j,])
+                    if(num_positivebetas > 0)
+                         tidbits_data$Xbeta <- tidbits_data$Xbeta + as.vector(positiveX %*% new_fit_CBFM_ptest$positivebetas[j,])
                     tidbits_data$dispparam <- new_fit_CBFM_ptest$dispparam[j]
                     tidbits_data$powerparam <- new_fit_CBFM_ptest$powerparam[j]
                     tidbits_data$estep_weights <- as.vector(getweights[,j])
@@ -2465,11 +2491,32 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
      
                ##-------------------------
+               ## Update coefficients related to positiveX, if appropriate
+               ##-------------------------
+               if(num_positivebetas > 0) {
+                    update_positivebetasspp_fn <- function(j) {
+                         new_offset <- offset[,j] + as.vector(X %*% new_fit_CBFM_ptest$betas[j,]) + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
+                         
+                         #cw_par <- log(new_fit_CBFM_ptest$positivebetas[j,])
+                         fit0 <- zetadiv::glm.cons(response ~ . - 1, family = family, offset = new_offset, 
+                                                   data = data.frame(response = y[,j], positiveX), cons = 1)
+                         return(fit0)
+                         }
+                    update_positivebetasspp_cmpfn <- compiler::cmpfun(update_positivebetasspp_fn)
+                    
+                    all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_positivebetasspp_cmpfn(j = j)
+                    new_fit_CBFM_ptest$positivebetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
+                    rm(all_update_coefs, update_positivebetasspp_fn)
+                    }
+               
+               ##-------------------------
                ## Update coefficients related to covariate model matrix X, and other nuisance parameters, one response at a time
                ##-------------------------
                update_Xcoefsspp_fn <- function(j) {
                     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
                     new_offset <- offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
+                    if(!is.null(positiveX))
+                         new_offset <- new_offset + as.vector(positiveX %*% new_fit_CBFM_ptest$positivebetas[j,])
                     Hmat <- diag(control$ridge+1e-15, nrow = num_X)
                     
                     if(family$family %in% c("gaussian","poisson","Gamma")) {
@@ -2527,7 +2574,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          }
                     if(family$family %in% c("zipoisson")) { # M-step
                          tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula),collapse="") ) )
-                         ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
+                         ziHmat <- diag(control$ziridge+1e-15, nrow = num_ziX)
                          
                          if(control$ridge > 0)
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
@@ -2549,7 +2596,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          }
                     if(family$family %in% c("zinegative.binomial")) { # M-step
                          tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula),collapse="") ) )
-                         ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
+                         ziHmat <- diag(control$ziridge+1e-15, nrow = num_ziX)
                          
                          if(control$ridge > 0)
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
@@ -2627,7 +2674,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          }
 
                     
-                    out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = fit0$logLik, fit = fit0, S = .get_bigS(fit_gam = fit0, num_X = num_X))
+                    out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, 
+                                logLik = fit0$logLik, fit = fit0, S = .get_bigS(fit_gam = fit0, num_X = num_X))
                     if(family$family %in% c("gaussian","Gamma"))                        
                          out$dispparam <- fit0$sig2
                     if(family$family %in% c("negative.binomial","zinegative.binomial","ztnegative.binomial"))                        
@@ -2641,7 +2689,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(family$family %in% c("zipoisson","zinegative.binomial")) {
                          out$zicoefficients <- fitzi$coefficients
                          out$fitzi <- fitzi
-                         out$ziS <- .get_bigS(fit_gam = fitzi, num_X = ncol(ziX))
+                         out$ziS <- .get_bigS(fit_gam = fitzi, num_X = num_ziX)
                          }
                     
                     return(out)
@@ -2668,7 +2716,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                ## Check whether to finish inner EM algorithm
                ##-------------------------
                new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
-                               new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
+                                     c(new_fit_CBFM_ptest$positivebetas),
+                                     new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
                inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
                if(control$convergence_type == "parameters_MSE")
                     inner_err <- mean((inner_params_diff)^2) 
@@ -2726,7 +2775,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
                     new_G_space <- update_G_fn(Ginv = new_LoadingnuggetG_space$covinv, basis_effects_mat = centered_BF_mat, 
-                         Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
+                         Sigmainv = new_LoadingnuggetSigma_space$covinv, B = B_space, X = X, positiveX = positiveX, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, G_control = G_control, use_rank_element = 1, 
@@ -2742,7 +2791,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
                     new_G_time <- update_G_fn(Ginv = new_LoadingnuggetG_time$covinv, basis_effects_mat = centered_BF_mat, 
-                          Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
+                          Sigmainv = new_LoadingnuggetSigma_time$covinv, B = B_time, X = X, positiveX = positiveX, ziX = ziX, y_vec = as.vector(y), 
                           linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                           powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                           trial_size = trial_size, family = family, G_control = G_control, use_rank_element = sum(which_B_used[1:2]),
@@ -2759,7 +2808,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
                     new_G_spacetime <- update_G_fn(Ginv = new_LoadingnuggetG_spacetime$covinv, basis_effects_mat = centered_BF_mat, 
-                         Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
+                         Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, B = B_spacetime, X = X, positiveX = positiveX, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, G_control = G_control, use_rank_element = sum(which_B_used[1:3]),
@@ -2783,7 +2832,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
                     new_Sigma_space <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$covinv, basis_effects_mat = centered_BF_mat, 
-                         Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
+                         Ginv = new_LoadingnuggetG_space$covinv, B = B_space, X = X, positiveX = positiveX, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
@@ -2798,7 +2847,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
                     new_Sigma_time <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$covinv, basis_effects_mat = centered_BF_mat, 
-                         Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
+                         Ginv = new_LoadingnuggetG_time$covinv, B = B_time, X = X, positiveX = positiveX, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
@@ -2814,7 +2863,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
                     new_Sigma_spacetime <- update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$covinv, basis_effects_mat = centered_BF_mat, 
-                         Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
+                         Ginv = new_LoadingnuggetG_spacetime$covinv, B = B_spacetime, X = X, positiveX = positiveX, ziX = ziX, y_vec = as.vector(y), 
                          linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                          powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
                          trial_size = trial_size, family = family, Sigma_control = Sigma_control)
@@ -2829,6 +2878,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           ## Finish iteration 
           ##-------------------------
           new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
+                          c(new_fit_CBFM_ptest$positivebetas),
                           new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) # Stop checking dispersion and power parameters
           
           new_logLik <- new_fit_CBFM_ptest$logLik
@@ -2900,13 +2950,16 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      cw_inner_params <- cw_params
      
      while(inner_err > control$tol & final_counter <= control$final_maxit) {
-          getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX)
+          getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, positiveX = positiveX, ziX = ziX)
 
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
           for(j in 1:num_spp) {
                new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par
                }
           rm(all_update_coefs)
+          
+          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_positivebetasspp_cmpfn(j = j)
+          new_fit_CBFM_ptest$positivebetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
           
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
           new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
@@ -2921,6 +2974,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
                new_fit_CBFM_ptest$zibetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$zicoefficients))
           }
+          
           
           # Degrees of freedom calculations below may be shoddy for zero-inflated and zero-truncated distributions 
           new_fit_CBFM_ptest$edf <- sapply(all_update_coefs, function(x) x$fit$edf) 
@@ -2940,6 +2994,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           new_fit_CBFM_ptest$logLik_perspp <- sapply(all_update_coefs, function(x) x$logLik)         
           
           new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
+                                c(new_fit_CBFM_ptest$positivebetas),
                           new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
           inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
           if(control$convergence_type == "parameters_MSE")
@@ -2954,9 +3009,6 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           cw_inner_logL <- new_fit_CBFM_ptest$logLik
           cw_inner_params <- new_inner_params
           final_counter <- final_counter + 1
-          
-          #if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
-          #     break;
           }
 
      all_S <- sapply(all_update_coefs, function(x) x$S)
@@ -2977,7 +3029,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
           )))
      names(all_vcomp) <- colnames(y)
-     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, inner_counter, counter, final_counter)
+     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, inner_counter, counter, final_counter, update_basiscoefsspp_cmpfn, update_positivebetasspp_cmpfn, update_Xcoefsspp_cmpfn)
      gc()
      
      
@@ -3058,6 +3110,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$zibetas <- new_fit_CBFM_ptest$zibetas
+     out_CBFM$positivebetas <- new_fit_CBFM_ptest$positivebetas
      out_CBFM$basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat
      out_CBFM$dispparam <- new_fit_CBFM_ptest$dispparam
      out_CBFM$powerparam <- new_fit_CBFM_ptest$powerparam
@@ -3218,6 +3271,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      rownames(out_CBFM$linear_predictors) <- rownames(out_CBFM$fitted) <- rownames(X)
      colnames(out_CBFM$betas) <- colnames(X)
      colnames(out_CBFM$basis_effects_mat) <- colnames(B)     
+     if(num_positivebetas > 0) {
+          rownames(out_CBFM$positivebetas) <- colnames(y) 
+          colnames(out_CBFM$positivebetas) <- colnames(positiveX) 
+          }
      if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           rownames(out_CBFM$zibetas) <- colnames(y)
           colnames(out_CBFM$zibetas) <- colnames(ziX)
@@ -3260,17 +3317,17 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           # Bottom right of covariance matrix
           D1minusCAinvB_fn <- function(j) {                
                if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
-                    XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = control$ridge+1e-15, n = num_X) + all_S[[j]]
+                    XTWX_inv <- crossprod(cbind(X,positiveX)*sqrt(weights_mat[,j])) + Diagonal(x = control$ridge+1e-15, n = num_X + num_positivebetas) + bdiag(all_S[[j]], Diagonal(x = 0, n = num_positivebetas))
                     XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
-                    BTWX <- crossprod(B, X*weights_mat[,j])               
+                    BTWX <- crossprod(B, cbind(X,positiveX)*weights_mat[,j])               
                     return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
                     }
 
                if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-                    Xi <- bdiag(ziX, X)
+                    Xi <- bdiag(ziX, X, positiveX)
                     bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
                     bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
-                    XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = rep(c(control$ridge+1e-15,control$ziridge+1e-15), c(num_X,ncol(ziX)))) + bdiag(all_ziS[[j]], all_S[[j]])
+                    XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = rep(c(control$ridge+1e-15,control$ziridge+1e-15), c(num_X+num_positivebetas,num_ziX))) + bdiag(all_ziS[[j]], all_S[[j]], Diagonal(x = 0, n = num_positivebetas))
                     XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
                     BTWX <- crossprod(B, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% Xi               
                     return(crossprod(B*sqrt(weights_mat_betabeta[,j])) - BTWX %*% tcrossprod(XTWX_inv, BTWX))
@@ -3301,18 +3358,18 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           rm(all_D1minusCAinvB, D1minusCAinvB_fn)
           DminusCAinvB_inv <- .pinv(DminusCAinvB_inv) ## Bottleneck! 
 
-          # Top right of covariance matrix
+          # Top right of covariance matrix -- A lot of the calculations here could actually be done in the above function as well!
           AinvandB_fn <- function(j) {
                if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
-                    XTWX_inv <- crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x=control$ridge+1e-15, n = num_X) + all_S[[j]]
+                    XTWX_inv <- crossprod(cbind(X,positiveX)*sqrt(weights_mat[,j])) + Diagonal(x=control$ridge+1e-15, n = num_X+num_positivebetas) + bdiag(all_S[[j]], Diagonal(x = 0, n = num_positivebetas))
                     XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
-                    XTWB <- crossprod(X*weights_mat[,j], B)
+                    XTWB <- crossprod(cbind(X,positiveX)*weights_mat[,j], B)
                     }
                if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-                    Xi <- bdiag(ziX, X)
+                    Xi <- bdiag(ziX, X, positiveX)
                     bigW <- cbind(Diagonal(x = weights_mat$out_zeroinflzeroinfl[,j]),  Diagonal(x = weights_mat$out_zeroinflbetas[,j]))
                     bigW <- rbind(bigW, cbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]),  Diagonal(x = weights_mat_betabeta[,j])))
-                    XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = rep(c(control$ridge+1e-15,control$ziridge+1e-15), c(num_X,ncol(ziX)))) + bdiag(all_ziS[[j]], all_S[[j]])
+                    XTWX_inv <- crossprod(Xi, bigW) %*% Xi + Diagonal(x = rep(c(control$ridge+1e-15,control$ziridge+1e-15), c(num_X+num_positivebetas,num_ziX))) + bdiag(all_ziS[[j]], all_S[[j]], Diagonal(x = 0, n = num_positivebetas))
                     XTWX_inv <- .pinv( 0.5*(XTWX_inv + t(XTWX_inv)) )
                     XTWB <- crossprod(Xi, rbind(Diagonal(x = weights_mat$out_zeroinflbetas[,j]), Diagonal(x = weights_mat_betabeta[,j]))) %*% B
                     }
@@ -3329,18 +3386,34 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                bottomright = DminusCAinvB_inv
                )
           rm(all_AinvandB, AinvBDminusCAinvB_inv, AinvandB_fn, DminusCAinvB_inv)
+          
+          if(num_positivebetas > 0) {
+               sel_exactzeros <- which(t(cbind(out_CBFM$betas, out_CBFM$positivebetas)) == 0)
+               if(length(sel_exactzeros) > 0) {
+                    out_CBFM$covar_components$topleft[sel_exactzeros,] <- 0
+                    out_CBFM$covar_components$topleft[,sel_exactzeros] <- 0
+                    out_CBFM$covar_components$topright[sel_exactzeros,] <- 0
+                    }                
+               warning("Standard errors maybe (very) approximate when there are constrained fixed effects in the model!")
+               rm(sel_exactzeros)
+               }
                     
                     
-          if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
+          if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
+               make_tab <- cbind(out_CBFM$betas,out_CBFM$positivebetas)
+               make_tab <- as.data.frame.table(t(make_tab))[,1:2]
                rownames(out_CBFM$covar_components$topleft) <- colnames(out_CBFM$covar_components$topleft) <- rownames(out_CBFM$covar_components$topright) <-
-                    apply(as.data.frame.table(t(out_CBFM$betas))[,1:2],1,function(x) paste(x, collapse = ":"))
+                    apply(make_tab, 1, function(x) paste(x, collapse = ":"))
+                    }
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-               make_tab <- cbind(out_CBFM$zibetas, out_CBFM$betas)
-               colnames(make_tab)[1:ncol(ziX)] <- paste0("ZeroInfl", colnames(make_tab)[1:ncol(ziX)])
+               make_tab <- cbind(out_CBFM$zibetas, out_CBFM$betas, out_CBFM$positivebetas)
+               colnames(make_tab)[1:num_ziX] <- paste0("ZeroInfl", colnames(make_tab)[1:num_ziX])
+               make_tab <- as.data.frame.table(t(make_tab))[,1:2]
                rownames(out_CBFM$covar_components$topleft) <- colnames(out_CBFM$covar_components$topleft) <- rownames(out_CBFM$covar_components$topright) <-
-                    apply(as.data.frame.table(t(make_tab))[,1:2],1,function(x) paste(x, collapse = ":"))
+                    apply(make_tab, 1, function(x) paste(x, collapse = ":"))
                rm(make_tab) 
                }
+          rm(make_tab)
           
           colnames(out_CBFM$covar_components$topright) <- rownames(out_CBFM$covar_components$bottomright) <- colnames(out_CBFM$covar_components$bottomright) <-
                apply(as.data.frame.table(t(out_CBFM$basis_effects_mat))[,1:2],1,function(x) paste(x, collapse = ":"))

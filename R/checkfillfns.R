@@ -36,29 +36,29 @@
      }
      
 
-.check_BX <- function(B, X, tol = 0.9) {     
-     if(ncol(X) > 1) {
-          sel_interceptcols <- which(apply(X, 2, function(x) length(unique(x)) == 1) == TRUE)
-          if(length(sel_interceptcols) > 0)
-               X2 <- X[,-sel_interceptcols, drop = FALSE]
-          if(length(sel_interceptcols) == 0)
-               X2 <- X
-               
-          sel_interceptcols <- which(apply(B, 2, function(x) length(unique(x)) == 1) == TRUE)
-          if(length(sel_interceptcols) > 0)
-               B2 <- B[,-sel_interceptcols, drop = FALSE]
-          if(length(sel_interceptcols) == 0)
-               B2 <- B
-
-          getcrosscor <- stats::cor(cbind(as.matrix(B2),as.matrix(X2)))[1:ncol(B2), -(1:ncol(B2))]
-          if(any(abs(getcrosscor) > tol)) 
-               warning("There are columns of X and B that are highly correlated. This may complicate interpretaton of the regression coefficients from X (i.e., betas), due to potential concerns regarding spatial confounding.")          
+.check_BX <- function(B, X, positiveX, tol = 0.9) {     
+     sel_interceptcols <- which(apply(X, 2, function(x) length(unique(x)) == 1) == TRUE)
+     if(length(sel_interceptcols) > 0)
+          X2 <- X[,-sel_interceptcols, drop = FALSE]
+     if(length(sel_interceptcols) == 0)
+          X2 <- X
           
+     X2 <- cbind(X2, positiveX)
+     
+     sel_interceptcols <- which(apply(B, 2, function(x) length(unique(x)) == 1) == TRUE)
+     if(length(sel_interceptcols) > 0)
+          B2 <- B[,-sel_interceptcols, drop = FALSE]
+     if(length(sel_interceptcols) == 0)
+          B2 <- B
+
+     getcrosscor <- stats::cor(cbind(as.matrix(B2),as.matrix(X2)))[1:ncol(B2), -(1:ncol(B2))]
+     if(any(abs(getcrosscor) > tol)) 
+          warning("There are columns of X, B, and positivebetas that are highly correlated. This may complicate interpretaton of the regression coefficients from X (i.e., betas), due to potential concerns regarding spatial confounding.")          
+     
 #           getBcor <- cor(as.matrix(B2))
 #           getBcor <- getBcor[lower.tri(getBcor)] 
 #           if(any(abs(getBcor) > tol)) 
-#                warning("There are columns of formed B that are highly correlated. This could cause potential issues and instability in the fitted model.")          
-          }
+#                warning("There are columns of formed B that are highly correlated. This could cause potential issues and instability in the fitted model.")     
      }
      
 
