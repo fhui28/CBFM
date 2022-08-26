@@ -12,7 +12,7 @@
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
-#' @param positiveX This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. **Please do not use this and leave it at the default \code{NULL} value!**
+#' @param positiveX This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. **Please do not use this and leave it at the default value!**
 #' @param offset A matrix of offset terms.  
 #' @param ncores To speed up fitting, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
@@ -1892,9 +1892,6 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(is.null(rownames(y)))
           rownames(y) <- paste0("units", 1:nrow(y))
      
-     if(is.null(colnames(positiveX)))
-          colnames(positiveX) <- paste0("positiveX", 1:ncol(positiveX))
-     
      full_gamma <- gamma
      if(length(full_gamma) == 1)
           full_gamma <- rep(full_gamma, ncol(y))
@@ -1952,6 +1949,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      rownames(X) <- rownames(y)
 
      if(!is.null(positiveX)) {
+          if(is.null(colnames(positiveX)))
+               colnames(positiveX) <- paste0("positiveX", 1:ncol(positiveX))
           if(family$family != "binomial")
                stop("positiveX is currently only implemented for the binomial family. Sorry!")
           if(!is.matrix(positiveX))
@@ -2958,9 +2957,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                }
           rm(all_update_coefs)
           
-          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_positivebetasspp_cmpfn(j = j)
-          new_fit_CBFM_ptest$positivebetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
-          
+          if(num_positivebetas > 0) {
+               all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_positivebetasspp_cmpfn(j = j)
+               new_fit_CBFM_ptest$positivebetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
+               }
+                         
           all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
           new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
           new_fit_CBFM_ptest$linear_predictors <- sapply(all_update_coefs, function(x) x$linear.predictors)          
@@ -3029,7 +3030,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
           )))
      names(all_vcomp) <- colnames(y)
-     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, inner_counter, counter, final_counter, update_basiscoefsspp_cmpfn, update_positivebetasspp_cmpfn, update_Xcoefsspp_cmpfn)
+     rm(all_update_coefs, tidbits_data, inner_err, inner_params_diff, cw_inner_logL, cw_logLik, cw_params, cw_inner_params, new_params, new_inner_params, diff, inner_counter, counter, final_counter)
      gc()
      
      
@@ -3079,6 +3080,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      out_CBFM$select <- select
      out_CBFM$gamma <- full_gamma
      out_CBFM$B <- B
+     out_CBFM$positiveX <- positiveX
      out_CBFM$which_B_used <- which_B_used
      out_CBFM$which_custom_Sigma_used <- Sigma_control$which_custom_Sigma_used
      out_CBFM$which_custom_G_used <- G_control$which_custom_G_used

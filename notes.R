@@ -145,8 +145,9 @@ as.matrix %>%
 
 # Fit CBFMs
 fitcbfm <- CBFM(y = simy, 
-                formula = ~ temp + depth + chla + O2 + gear, 
+                formula = ~ temp + s(depth) + s(chla) + s(O2), 
                 data = dat,
+                #positiveX = matrix(dat$gear, ncol = 1),
                 B_space = sp_basisfunctions, 
                 family = binomial(), 
                 control = list(trace = 1),
@@ -155,14 +156,12 @@ fitcbfm <- CBFM(y = simy,
                 )
 
 
-fitcbfm$betas
+fitcbfm$positivebetas
 
-qplot(cbind(spp_slopes, spp_gear), fitcbfm$betas[,-1]) +
+qplot(cbind(spp_slopes, spp_gear), cbind(fitcbfm$betas[,-1], fitcbfm$positivebetas)) +
      geom_abline(intercept = 0, slope = 1)
 
-data.frame(spp_gear, unconstrained = fitcbfm$basis_effects_mat[,fitcbfm$num_B], constrained = out_CBFM$basis_effects_mat[,out_CBFM$num_B]) %>% 
-     t %>% 
-     dist
+
 
 
 diag(fitcbfm$covar_components$bottomright)[grep("B_time", names(diag(fitcbfm$covar_components$bottomright)))] 
