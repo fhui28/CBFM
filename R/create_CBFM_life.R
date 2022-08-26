@@ -8,6 +8,7 @@
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
 #' @param formula An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details. 
 #' @param ziformula An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.
+#' @param positiveX This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. **Please do not use this and leave it at the default value!**
 #' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument). 
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
@@ -15,6 +16,7 @@
 #' @param offset A matrix of offset terms.  
 #' @param betas A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.
 #' @param zibetas A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species in the resulting simulated dataset.
+#' @param positivebetas This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. **Please do not use this and leave it at the default value!**
 #' @param basis_effects_mat A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.   
 #' @param Sigma A list containing the covariance matrix of the species-specific regression coefficients, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{Sigma$Space} must be supplied.
 #' @param G A list containing the baseline between-species correlation matrix, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{G$Space} must be supplied.
@@ -275,8 +277,9 @@
 #' @importFrom tweedie rtweedie
 #' @md
 
-create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
-     betas, zibetas = NULL, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
+create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data, positiveX, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
+     betas, zibetas = NULL, positivebetas = NULL, basis_effects_mat = NULL, 
+     Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
      trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
@@ -346,7 +349,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
           
      ## Generate response
      true_eta_B <- tcrossprod(B, basis_effects_mat)
-     true_eta <- tcrossprod(X, betas) + true_eta_B
+     true_eta <- tcrossprod(cbind(X, positiveX), cbind(betas, positivebetas)) + true_eta_B
      if(!is.null(ziformula))
           true_zieta <- tcrossprod(ziX, zibetas)
      if(!is.null(offset))

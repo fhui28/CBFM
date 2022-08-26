@@ -272,10 +272,14 @@ corB <- function(object, new_B_space = NULL, new_B_space2 = NULL, new_B_time = N
         message("Simulation used to calculate for uncertainty intervals for correlations. This could take a while...grab a cuppa while you're waiting uwu")
         ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
 
-        mu_vec <- as.vector(t(cbind(object$zibetas, object$betas, object$basis_effects_mat)))
+        mu_vec <- as.vector(t(cbind(object$zibetas, object$betas, object$positivebetas, object$basis_effects_mat)))
         bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                           cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
-        bigcholcovar <- t(chol(bigcholcovar))
+        bigcholcovar <- suppressWarnings(chol(bigcholcovar, pivot = TRUE))
+        pivot <- attr(bigcholcovar, "pivot");
+        oo <- order(pivot)
+        bigcholcovar <- t(bigcholcovar[,oo])
+        rm(pivot, oo)
         
         innersim_etafn <- function(j) {
                 parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)

@@ -175,7 +175,7 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
           }
 
      # [W^{1/2}X, W^{1/2}B]
-     X <- model.matrix.CBFM(object)
+     X <- cbind(model.matrix.CBFM(object), object$positiveX)
      if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
           WsqrtXB <- function(j) {                
                WsqrtX <- X*sqrt(weights_mat[,j])

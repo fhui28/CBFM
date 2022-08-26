@@ -95,8 +95,11 @@ coef.CBFM <- function(object, ...) {
     if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
 
-     out <- object$betas
+     out <- list(betas = object$betas)
+     if(!is.null(object$positiveX))
+          out$positivebetas <- object$positivebetas
      if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial"))
-          out <- list(betas = object$betas, zibetas = object$zibetas)
+          out$zibetas <- object$zibetas
      return(out)
      }
+

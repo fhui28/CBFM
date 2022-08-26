@@ -45,6 +45,9 @@ print.CBFM <- function(x, ...) {
              }
         message("Were standard errors calculated? (TRUE/FALSE): ", x$stderrors) 
      
+        if(!is.null(x$positiveX))
+             message("There were also additional covariates included whose corresponding coefficients were constrained to be fixed effects.")
+        
         B_names <- c("B_space ", "B_time ", "B_spacetime ")
         message("\nBasis functions included: ", B_names[x$which_B_used==1])
         message("Total number of basis functions: ", x$num_B)

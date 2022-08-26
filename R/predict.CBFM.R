@@ -9,6 +9,7 @@
 #' @param newdata A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula}.
 #' @param manualX A manually supplied model matrix at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualX} should equal to \code{ncol(object$betas)}.
 #' @param manualziX For zero-inflated distributions, a manually supplied model matrix associated with modeling the probability of zero-inflation, at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualziX} should equal to \code{ncol(object$zibetas)}.
+#' @param new_positive This is part of the experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. **Please do not use this and leave it at the default value!**  
 #' @param new_B_space A matrix of new spatial basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_space} argument are returned. Please note this should only be supplied if \code{B_space} was supplied in the original CBFM fit.  
 #' @param new_B_time A matrix of new temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.  
 #' @param new_B_spacetime A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.  
@@ -78,7 +79,7 @@
 #' @importFrom stats qnorm plogis
 #' @md
 
-predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, 
+predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NULL, new_positiveX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, 
                          type = "link", se_fit = FALSE, coverage = 0.95, ncores = NULL, num_sims = 500, return_internals = FALSE, ...) {
      if(!inherits(object, "CBFM")) 
           stop("`object' is not of class \"CBFM\"")
@@ -125,7 +126,16 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                stop("Something went wrong! The number of columns in constructed model matrix should match the number of columns in object$zibetas.")
           }
      
-          
+     if(is.null(new_positiveX))
+          new_positiveX <- object$positiveX
+     if(!is.null(new_positiveX)) {
+          if(ncol(new_positiveX) != ncol(object$positivebetas))
+               stop("The number of columns of new_positiveX does not object$positiveX.")
+          if(nrow(new_positiveX) != nrow(new_X))
+               stop("new_positiveX does not contain the same number of rows as the model matrix created based on object and/or newdata.")
+          }
+     
+     
      ## Construct B
      new_B <- NULL
      if(!is.null(new_B_space)) {
@@ -157,6 +167,9 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
      
      num_spp <- nrow(object$betas)
      num_X <- ncol(new_X)
+     num_positivebetas <- 0
+     if(!is.null(new_positiveX))
+          num_positivebetas <- ncol(new_positiveX)
      num_basisfns <- ncol(new_B)
      
      ## Start producing outputs
@@ -169,7 +182,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
      if(se_fit == TRUE & object$stderrors == FALSE)
           stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.") 
 
-     ptpred <- tcrossprod(new_X, object$betas) + tcrossprod(new_B, object$basis_effects_mat)
+     ptpred <- tcrossprod(cbind(new_X, new_positiveX), cbind(object$betas, object$positivebetas)) + tcrossprod(new_B, object$basis_effects_mat)
      ptpred <- as.matrix(ptpred)
      colnames(ptpred) <- rownames(object$betas)          
      if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial")) {
@@ -202,17 +215,21 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
      if(se_fit) {
           # This is needed *only* for predict.CBFM_hurdle downstream
           if(return_internals) {
-               mu_vec <- as.vector(t(cbind(object$betas, object$basis_effects_mat)))
+               mu_vec <- as.vector(t(cbind(object$betas, object$positivebetas, object$basis_effects_mat)))
                bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                                cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
-               bigcholcovar <- t(chol(bigcholcovar))
-
+               bigcholcovar <- suppressWarnings(chol(bigcholcovar, pivot = TRUE))
+               pivot <- attr(bigcholcovar, "pivot");
+               oo <- order(pivot)
+               bigcholcovar <- t(bigcholcovar[,oo])
+               rm(pivot, oo)
+               
                inner_linpredfn <- function(j) {
                     parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
-                    betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
-                    basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
+                    betas_sim <- parameters_sim[,1:(num_X+num_positivebetas), drop=FALSE]
+                    basiseff_sim <- parameters_sim[,-(1:(num_X+num_positivebetas)), drop=FALSE]
               
-                    linpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                    linpred <- tcrossprod(cbind(new_X, new_positiveX), betas_sim) + tcrossprod(new_B, basiseff_sim)
                     return(as.matrix(linpred))
                     }
                     
@@ -231,7 +248,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
            
            if(!need_sim) {
                 stderr1_fun <- function(j) {
-                    out1 <- object$covar_components$topleft[(num_X*j - num_X + 1):(num_X*j), (num_X*j - num_X + 1):(num_X*j),drop=FALSE]
+                    out1 <- object$covar_components$topleft[((num_X+num_positivebetas)*j - (num_X+num_positivebetas) + 1):((num_X+num_positivebetas)*j), ((num_X+num_positivebetas)*j - (num_X+num_positivebetas) + 1):((num_X+num_positivebetas)*j),drop=FALSE]
                     #return(diag(new_X %*% tcrossprod(out1, new_X)))
                     return(rowSums((new_X %*% out1) * new_X))
                     }
@@ -247,7 +264,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                     }
 
                stderr <- foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr1_fun(j = j)
-               stderr <- stderr + 2 * foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr2_fun(j = j, num_X = num_X, num_basisfns = num_basisfns)
+               stderr <- stderr + 2 * foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr2_fun(j = j, num_X = (num_X+num_positivebetas), num_basisfns = num_basisfns)
                stderr <- stderr + foreach(j = 1:num_spp, .combine = "cbind") %dopar% stderr3_fun(j = j, num_basisfns = num_basisfns)          
                stderr <- as.matrix(stderr)
                colnames(stderr) <- rownames(object$betas)    
@@ -263,23 +280,28 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
 
           if(need_sim) {
                message("Simulation required for prediction uncertainty intervals. This could take a while...grab a cuppa while you're waiting uwu")
-               mu_vec <- as.vector(t(cbind(object$zibetas, object$betas, object$basis_effects_mat)))
+               mu_vec <- as.vector(t(cbind(object$zibetas, object$betas, object$positivebetas, object$basis_effects_mat)))
                bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                                cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
-               check_eigen <- eigen(bigcholcovar, only.values = TRUE)
-               if(any(check_eigen$values <= 0))
-                    bigcholcovar <- Matrix::nearPD(bigcholcovar)
-               rm(check_eigen)
-               bigcholcovar <- t(chol(bigcholcovar))
-                        
+               # check_eigen <- eigen(bigcholcovar, only.values = TRUE)
+               # if(any(check_eigen$values <= 0))
+               #      bigcholcovar <- Matrix::nearPD(bigcholcovar)
+               # rm(check_eigen)
+               # bigcholcovar <- t(chol(bigcholcovar))
+               bigcholcovar <- suppressWarnings(chol(bigcholcovar, pivot = TRUE))
+               pivot <- attr(bigcholcovar, "pivot");
+               oo <- order(pivot)
+               bigcholcovar <- t(bigcholcovar[,oo])
+               rm(pivot, oo)
+               
                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                     innerzip_predfn <- function(j) {
                          parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
                          zibetas_sim <- parameters_sim[,1:ncol(object$zibetas)]
-                         betas_sim <- parameters_sim[,ncol(object$zibetas)+(1:num_X), drop=FALSE]
-                         basiseff_sim <- parameters_sim[,(ncol(object$zibetas)+num_X+1):ncol(parameters_sim), drop=FALSE]
+                         betas_sim <- parameters_sim[,ncol(object$zibetas)+(1:(num_X+num_positivebetas)), drop=FALSE]
+                         basiseff_sim <- parameters_sim[,(ncol(object$zibetas)+(num_X+num_positivebetas)+1):ncol(parameters_sim), drop=FALSE]
                          
-                         ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                         ptpred <- tcrossprod(cbind(new_X, new_positiveX), betas_sim) + tcrossprod(new_B, basiseff_sim)
                          ziptpred <- tcrossprod(new_ziX, zibetas_sim) 
                          if(type == "link")
                               return(as.matrix(ptpred))
@@ -296,10 +318,10 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                if(object$family$family[1] %in% c("ztpoisson") & type == "response") {
                     inner_predfn <- function(j) {
                          parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
-                         betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
-                         basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
+                         betas_sim <- parameters_sim[,1:(num_X+num_positivebetas), drop=FALSE]
+                         basiseff_sim <- parameters_sim[,-(1:(num_X+num_positivebetas)), drop=FALSE]
                         
-                         ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                         ptpred <- tcrossprod(cbind(new_X, new_positiveX), betas_sim) + tcrossprod(new_B, basiseff_sim)
                          ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
                          return(as.matrix(ptpred))
                          }
@@ -309,10 +331,10 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                if(object$family$family[1] %in% c("ztnegative.binomial") & type == "response") {
                     inner_predfn <- function(j) {
                          parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
-                         betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
-                         basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
+                         betas_sim <- parameters_sim[,1:(num_X+num_positivebetas), drop=FALSE]
+                         basiseff_sim <- parameters_sim[,-(1:(num_X+num_positivebetas)), drop=FALSE]
                         
-                         ptpred <- as.matrix(tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim))
+                         ptpred <- as.matrix(tcrossprod(cbind(new_X, new_positiveX), betas_sim) + tcrossprod(new_B, basiseff_sim))
                          ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow(new_X), num_spp, byrow = TRUE)))
                          return(as.matrix(ptpred))
                          }
@@ -339,17 +361,17 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
 #' @rdname predict.CBFM
 #' @export
 predict.CBFM_hurdle <- function(object, 
-                         newdata_pa = NULL, manualX_pa = NULL, new_B_space_pa = NULL, new_B_time_pa = NULL, new_B_spacetime_pa = NULL, 
-                         newdata_count = NULL, manualX_count = NULL, new_B_space_count = NULL, new_B_time_count = NULL, new_B_spacetime_count = NULL, 
+                         newdata_pa = NULL, manualX_pa = NULL, new_positiveX_pa = NULL, new_B_space_pa = NULL, new_B_time_pa = NULL, new_B_spacetime_pa = NULL, 
+                         newdata_count = NULL, manualX_count = NULL, new_positiveX_count = NULL, new_B_space_count = NULL, new_B_time_count = NULL, new_B_spacetime_count = NULL, 
                          se_fit = FALSE, coverage = 0.95, ncores = NULL, num_sims = 500, ...) {
         if(!inherits(object, "CBFM_hurdle")) 
                 stop("`object' is not of class \"CBFM_hurdle\"")
         
         if(!se_fit) {
-                preds_pa <- predict.CBFM(object$pa_fit, newdata = newdata_pa, manualX = manualX_pa,  
+                preds_pa <- predict.CBFM(object$pa_fit, newdata = newdata_pa, manualX = manualX_pa, new_positiveX = new_positiveX_pa,
                                          new_B_space = new_B_space_pa, new_B_time = new_B_time_pa, new_B_spacetime = new_B_spacetime_pa,
                                          type = "response", se_fit = FALSE, coverage = coverage, ncores = ncores)
-                preds_counts <- predict.CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                preds_counts <- predict.CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count, new_positiveX = new_positiveX_count, 
                                          new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
                                          type = "response", se_fit = FALSE, coverage = coverage, ncores = ncores)
                 
@@ -358,11 +380,11 @@ predict.CBFM_hurdle <- function(object,
 
         if(se_fit) {
                 message("Simulation required for prediction uncertainty intervals. This could take a while...grab a cuppa while you're waiting uwu")
-                preds_pa <- predict.CBFM(object$pa_fit, newdata = newdata_pa, manualX = manualX_pa,  
+                preds_pa <- predict.CBFM(object$pa_fit, newdata = newdata_pa, manualX = manualX_pa, new_positiveX = new_positiveX_pa, 
                                          new_B_space = new_B_space_pa, new_B_time = new_B_time_pa, new_B_spacetime = new_B_spacetime_pa,
                                          type = "response", se_fit = TRUE, coverage = coverage, ncores = ncores, num_sims = num_sims, return_internals = TRUE)
                 preds_pa <- object$pa_fit$family$linkinv(preds_pa)
-                preds_counts <- predict.CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                preds_counts <- predict.CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count, new_positiveX = new_positiveX_count, 
                                          new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
                                          type = "response", se_fit = TRUE, coverage = coverage, ncores = ncores, num_sims = num_sims, return_internals = TRUE)
                 if(object$count_fit$family$family[1] == "ztpoisson")

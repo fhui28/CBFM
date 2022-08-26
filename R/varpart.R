@@ -121,6 +121,9 @@ varpart <- function(object, groupX = NULL) {
     if(!inherits(object, "CBFM")) 
         stop("`object' is not of class \"CBFM\"")
 
+     if(!is.null(object$positiveX))
+          warnings("varpart ignores the positiveX component of the CBFM in performing the variance parititioning, since positiveX is currently an experimental feature. If you desire this for your application, please contact the maintainer.")
+     
     num_spp <- nrow(object$betas)
      
      #tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )

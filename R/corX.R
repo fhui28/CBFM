@@ -219,15 +219,21 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, coverage = 0.95, ncore
         message("Simulation used to calculate for uncertainty intervals for correlations. This could take a while...enjoy a cup of matcha latte while you're waiting uwu")
         ci_alpha <- qnorm((1-coverage)/2, lower.tail = FALSE)
 
-        mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$basis_effects_mat)))
+        mu_vec <- as.vector(t(cbind(object$zeroinfl_prob_intercept, object$betas, object$positivebetas, object$basis_effects_mat)))
+        num_positivebetas <- 0
+        if(!is.null(object$positiveX))
+             num_positivebetas <- ncol(object$positivebetas)
         bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                           cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
-        bigcholcovar <- t(chol(bigcholcovar))
-                
-                
+        bigcholcovar <- suppressWarnings(chol(bigcholcovar, pivot = TRUE))
+        pivot <- attr(bigcholcovar, "pivot");
+        oo <- order(pivot)
+        bigcholcovar <- t(bigcholcovar[,oo])
+        rm(pivot, oo)
+        
         innersim_etafn <- function(j) {
                 parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
-                betas_sim <- parameters_sim[,(ncol(parameters_sim)-num_basisfunctions-num_X+1):(ncol(parameters_sim)-num_basisfunctions), drop=FALSE]
+                betas_sim <- parameters_sim[,(ncol(parameters_sim)-num_basisfunctions-num_positivebetas-num_X+1):(ncol(parameters_sim)-num_basisfunctions-num_positivebetas), drop=FALSE]
                 rm(parameters_sim) # The above could be simplified since I only need to simulate betas, but whatever...
 
                 eta1 <- as.matrix(tcrossprod(new_X, betas_sim))

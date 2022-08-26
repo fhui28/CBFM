@@ -119,6 +119,8 @@ logLik.CBFM <- function(object, use_edf = FALSE, ...) {
           getedf <- sum(getedf[(nrow(getedf) - sum(object$which_B_used) + 1):nrow(getedf),])
           num_params <- min(sum(object$edf), nrow(object$betas)*ncol(object$betas)) + min(getedf, nrow(object$basis_effects_mat)*ncol(object$basis_effects_mat))
           }
+     if(!is.null(object$positiveX))
+          num_params <- num_params + nrow(object$positivebetas)*ncol(object$positivebetas) # object$edf does not account for positiveX 
      if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial"))
           num_params <- num_params + min(sum(object$ziedf), nrow(object$zibetas)*ncol(object$zibetas))
      if(object$family$family %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","ztnegative.binomial","zinegative.binomial"))                       

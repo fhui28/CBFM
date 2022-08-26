@@ -77,8 +77,13 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
     
      num_spp <- nrow(object$betas)
      num_basisfns <- nrow(object$basis_effects_mat)
+     num_positivebetas <- 0
+     if(!is.null(object$positiveX))
+          num_positivebetas <- ncol(object$positivebetas)
 
      summary_output <- list(call = object$call, betas = round(object$betas, digits), basis_effects_mat = round(object$basis_effects_mat, digits))
+     if(!is.null(object$positiveX))
+          summary_output$positivebetas <- round(object$positivebetas, digits)
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
           summary_output$zibetas <- round(object$zibetas, digits)
 
@@ -268,6 +273,11 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                     ind <- 1:nullfit$nsdf
                     p.coeff <- object$betas[j, ind]
                     p.se <- spp_std_errs[ind]
+                    if(num_positivebetas > 0) {
+                         p.coeff <- c(p.coeff, object$positivebetas[j,])
+                         p.se <- c(p.se, spp_std_errs[(length(spp_std_errs)-num_positivebetas+1):length(spp_std_errs)])
+                         names(p.coeff) <- names(p.se)
+                         }
                     p.t <- p.coeff / p.se
                     p_table <- cbind(p.coeff, p.se, p.t, 2*pnorm(abs(p.t),lower.tail = FALSE), p.coeff - ci_alpha * p.se, p.coeff + ci_alpha * p.se)
                     dimnames(p_table) <- list(names(p.coeff), c("Estimate", "Std. Error", "z value", "P-value", "Lower CI", "Upper CI"))
@@ -282,6 +292,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                pterms <- if(is.list(nullfit$pterms)) nullfit$pterms else list(nullfit$pterms)
                if(!is.list(nullfit$assign)) nullfit$assign <- list(nullfit$assign)
                npt <- length(unlist(lapply(pterms, attr, "term.labels")))
+               pTerms.df <- pTerms.chi.sq <- pTerms.pv <- NULL
                if(npt > 0)
                     pTerms.df <- pTerms.chi.sq <- pTerms.pv <- array(0, npt)
                term.labels <- rep("",0)
@@ -325,14 +336,27 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
                          }  ## if (nt>0)
                     }
 
-               if(npt) {
-                    attr(pTerms.pv,"names") <- term.labels
+               if(num_positivebetas > 0) {
+                    for(k1 in 1:num_positivebetas) {
+                         b <- object$positivebetas[j,]
+                         V <- spp_std_errs[(length(spp_std_errs)-num_positivebetas+1):length(spp_std_errs)]^2
+                         V <- 1/V
+                         pTerms.df <- c(pTerms.df, 1)
+                         pTerms.chi.sq <- c(pTerms.chi.sq, V * b * b)
+                         pTerms.pv <- c(pTerms.pv, pchisq(pTerms.chi.sq[length(pTerms.chi.sq)], df = 1, lower.tail = FALSE))
+                         term.labels <- c(term.labels, colnames(object$positivebetas)[k1])
+                         }
+                    }
+               
+               
+               if((npt+num_positivebetas)>0) {
+                    attr(pTerms.pv, "names") <- term.labels
                     pTerms_table <- cbind(pTerms.df, pTerms.chi.sq, pTerms.pv)
                     dimnames(pTerms_table) <- list(term.labels, c("DF", "Chi-squared", "P-value"))
                     pTerms_table <- as.data.frame(pTerms_table)
                     pTerms_table <- round(pTerms_table, digits)
                     }
-               if(!npt) {
+               if((npt+num_positivebetas) == 0) {
                     pTerms_table <- NULL
                     }
 
