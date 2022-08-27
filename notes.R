@@ -145,9 +145,9 @@ as.matrix %>%
 
 # Fit CBFMs
 fitcbfm <- CBFM(y = simy, 
-                formula = ~ temp + s(depth) + s(chla) + s(O2), 
+                formula = ~ s(temp) + s(depth) + s(chla) + s(O2), 
                 data = dat,
-                #positiveX = matrix(dat$gear, ncol = 1),
+                positiveX = matrix(dat$gear, ncol = 1),
                 B_space = sp_basisfunctions, 
                 family = binomial(), 
                 control = list(trace = 1),
