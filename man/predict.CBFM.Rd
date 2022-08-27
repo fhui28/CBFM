@@ -53,6 +53,8 @@
 
 \item{manualziX}{For zero-inflated distributions, a manually supplied model matrix associated with modeling the probability of zero-inflation, at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualziX} should equal to \code{ncol(object$zibetas)}.}
 
+\item{new_positiveX}{This is part of the experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
+
 \item{new_B_space}{A matrix of new spatial basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_space} argument are returned. Please note this should only be supplied if \code{B_space} was supplied in the original CBFM fit.}
 
 \item{new_B_time}{A matrix of new temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.}
@@ -83,6 +85,8 @@ Finally, note for hurdle CBFMS, this argument is not available, as the only opti
 
 \item{manualX_pa}{For hurdle CBFM models, similar to \code{manual_X} above but applied to the presence-absence component model.}
 
+\item{new_positiveX_pa}{For hurdle CBFM models, this is part of the experimental feature that allows an additional set of fixed effects to be included into the presence-absence component model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
+
 \item{new_B_space_pa}{For hurdle CBFM models, similar to \code{new_B_space} above but applied to the presence-absence component model.}
 
 \item{new_B_time_pa}{For hurdle CBFM models, similar to \code{new_B_time} above but applied to the presence-absence component model.}
@@ -93,13 +97,13 @@ Finally, note for hurdle CBFMS, this argument is not available, as the only opti
 
 \item{manualX_count}{For hurdle CBFM models, similar to \code{manual_X} above but applied to the zero-truncated count component model.}
 
+\item{new_positiveX_count}{For hurdle CBFM models, this is part of the experimental feature that allows an additional set of fixed effects to be included into the count component model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
+
 \item{new_B_space_count}{For hurdle CBFM models, similar to \code{new_B_space} above but applied to the zero-truncated count component model.}
 
 \item{new_B_time_count}{For hurdle CBFM models, similar to \code{new_B_time} above but applied to the zero-truncated count component model.}
 
 \item{new_B_spacetime_count}{For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the zero-truncated count component model.}
-
-\item{new_positive}{This is part of the experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
 }
 \value{
 If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
