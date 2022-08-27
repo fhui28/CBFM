@@ -1951,8 +1951,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(!is.null(positiveX)) {
           if(is.null(colnames(positiveX)))
                colnames(positiveX) <- paste0("positiveX", 1:ncol(positiveX))
-          if(family$family != "binomial")
-               stop("positiveX is currently only implemented for the binomial family. Sorry!")
+          if(!family$family %in% c("binomial","gaussian","gamma","poisson","beta","negative.binomial"))
+               stop("positiveX is currently only implemented for a small number of families. Sorry!")
           if(!is.matrix(positiveX))
                stop("positiveX should be a matrix with the same number of rows as y.")
           rownames(positiveX) <- rownames(y)
@@ -2495,10 +2495,25 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(num_positivebetas > 0) {
                     update_positivebetasspp_fn <- function(j) {
                          new_offset <- offset[,j] + as.vector(X %*% new_fit_CBFM_ptest$betas[j,]) + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
-                         
-                         #cw_par <- log(new_fit_CBFM_ptest$positivebetas[j,])
-                         fit0 <- zetadiv::glm.cons(response ~ . - 1, family = family, offset = new_offset, 
-                                                   data = data.frame(response = y[,j], positiveX), cons = 1)
+                         if(family$family %in% c("gaussian","poisson","Gamma")) {
+                              fit0 <- zetadiv::glm.cons(response ~ . - 1, family = family, offset = new_offset, 
+                                                        data = data.frame(response = y[,j], positiveX), cons = 1)
+                              }
+                         if(family$family %in% c("binomial")) {
+                              use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
+                              
+                              fit0 <- zetadiv::glm.cons(cbind(response, size - response) ~ . - size - 1, family = family, offset = new_offset, 
+                                                        data = data.frame(response = y[,j], positiveX, size = use_size), cons = 1)
+                              }
+                         if(family$family %in% c("negative.binomial")) {
+                              fit0 <- zetadiv::glm.cons(cbind(response, size - response) ~ . - 1, family = nb(), offset = new_offset, 
+                                                        data = data.frame(response = y[,j], positiveX), cons = 1)
+                              }
+                         if(family$family %in% c("Beta")) {
+                              fit0 <- zetadiv::glm.cons(cbind(response, size - response) ~ . - 1, family = betar(link = "logit"), offset = new_offset, 
+                                                        data = data.frame(response = y[,j], positiveX), cons = 1)
+                              }
+
                          return(fit0)
                          }
                     update_positivebetasspp_cmpfn <- compiler::cmpfun(update_positivebetasspp_fn)
