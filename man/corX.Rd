@@ -33,7 +33,7 @@ A list with the following components is returned:
 \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the correlations}
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} object calculates the between-species correlation matrix due to the measured covariates, along with corresponding uncertainty intervals. Both are constructed via a simulation-based approach. Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different sets of covariates to those used to actually fit the model. Additionally, the user can supplied two sets of covariates (data frames), in which case the function calculates cross-correlations (between and within species) between these two sets of covariates.
 }

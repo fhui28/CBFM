@@ -9,12 +9,14 @@ create_CBFM_life(
   formula,
   ziformula = NULL,
   data,
+  positiveX,
   B_space = NULL,
   B_time = NULL,
   B_spacetime = NULL,
   offset = NULL,
   betas,
   zibetas = NULL,
+  positivebetas = NULL,
   basis_effects_mat = NULL,
   Sigma = list(space = NULL, time = NULL, spacetime = NULL),
   G = list(space = NULL, time = NULL, spacetime = NULL),
@@ -35,6 +37,8 @@ create_CBFM_life(
 
 \item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument).}
 
+\item{positiveX}{This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
+
 \item{B_space}{An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
 
 \item{B_time}{An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
@@ -46,6 +50,8 @@ create_CBFM_life(
 \item{betas}{A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.}
 
 \item{zibetas}{A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species in the resulting simulated dataset.}
+
+\item{positivebetas}{This is an experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
 
 \item{basis_effects_mat}{A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.}
 
@@ -75,7 +81,7 @@ If \code{only_y = TRUE}, then the simulated spatio-temporal multivariate abundan
 }
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Simulates spatio-temporal multivariate abundance data based on a CBFM and given the various parameter values as appropriate.
 }
@@ -114,6 +120,10 @@ Currently the following response distributions are permitted:
 Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration.
 }
 }
+\section{Warning}{
+Note \strong{no} checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
+}
+
 \examples{
 \donttest{
 library(autoFRK)
@@ -299,8 +309,4 @@ simy_hurdlenb <- simy_pa$y *  simy_ztnb$y
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
-}
-\section{Warning}{
-
-Note \strong{no} checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
 }

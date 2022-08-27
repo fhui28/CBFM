@@ -22,7 +22,7 @@
 A numeric value of the calculated information criterion.
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This can also be generalized to other information criterion by modifying the model complexity penalty \code{k}.
 }

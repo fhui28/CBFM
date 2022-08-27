@@ -10,6 +10,7 @@
   newdata = NULL,
   manualX = NULL,
   manualziX = NULL,
+  new_positiveX = NULL,
   new_B_space = NULL,
   new_B_time = NULL,
   new_B_spacetime = NULL,
@@ -26,11 +27,13 @@
   object,
   newdata_pa = NULL,
   manualX_pa = NULL,
+  new_positiveX_pa = NULL,
   new_B_space_pa = NULL,
   new_B_time_pa = NULL,
   new_B_spacetime_pa = NULL,
   newdata_count = NULL,
   manualX_count = NULL,
+  new_positiveX_count = NULL,
   new_B_space_count = NULL,
   new_B_time_count = NULL,
   new_B_spacetime_count = NULL,
@@ -95,6 +98,8 @@ Finally, note for hurdle CBFMS, this argument is not available, as the only opti
 \item{new_B_time_count}{For hurdle CBFM models, similar to \code{new_B_time} above but applied to the zero-truncated count component model.}
 
 \item{new_B_spacetime_count}{For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the zero-truncated count component model.}
+
+\item{new_positive}{This is part of the experimental feature that allows an additional set of fixed effects to be included in the model which are constrained to be strictly positive. \strong{Please do not use this and leave it at the default value!}}
 }
 \value{
 If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
@@ -107,7 +112,7 @@ Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returne
 Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} this is also known as the linear predictor matrix.
 }

@@ -16,7 +16,7 @@ An object of class "family" (which has a concise print method). This is a list w
 \item{variance }{The variance as a function of the mean. This itself is a function which two arguments, the mean \code{mu} and the dispersion parameter \code{phi}. The mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 A specified family object for the negative binomial distribution using the log link function and a quadratic mean-variance relationship.
 }

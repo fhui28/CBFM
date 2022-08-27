@@ -22,7 +22,7 @@
 A matrix of residuals.
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Calculate various types of residuals from a fitted \code{CBFM} or \code{CBFM_hurdle} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
 }
