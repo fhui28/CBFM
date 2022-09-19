@@ -107,7 +107,7 @@ Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returne
 Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in \code{\link[mgcv:predict.gam]{mgcv::predict.gam()}} this is also known as the linear predictor matrix.
 }

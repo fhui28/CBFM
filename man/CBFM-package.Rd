@@ -6,7 +6,10 @@
 \alias{_PACKAGE}
 \title{CBFM: Community-level Basis Function Modeling (CBFM)}
 \description{
-Spatio-temporal joint species distribution modeling via community-level basis functions. CBFMs are built on the idea of fixed-rank kriging (FRK), where spatial and/or temporally indexed basis functions are included to account for spatio-temporal correlations within and between species. The approach provides an alternative to the popular and powerful latent variable approach for joint species distribution modeling in community ecology, with the main advantage being that CBFMs can be computationally more efficient and scaleble to fit. This is because, by using a basis function approach, CBFMs can be set up as a type of generalized additive model (GAM), from which we can leverage from existing methods developed for GAMs.
+Spatio-temporal joint species distribution modeling via community-level basis functions. 
+    CBFMs are built on the idea of fixed-rank kriging (FRK), where spatial and/or temporally indexed basis functions are included to account for spatio-temporal correlations within and between species. 
+    The approach provides an alternative to the popular and powerful latent variable approach for joint species distribution modeling in community ecology, with the main advantage being that CBFMs can be computationally more efficient and scaleble to fit. 
+    This is because, by using a basis function approach, CBFMs can be set up as a type of generalized additive model (GAM), from which we can leverage from existing methods developed for GAMs.
 }
 \seealso{
 Useful links:
