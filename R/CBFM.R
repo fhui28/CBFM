@@ -118,7 +118,14 @@
 #' \item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 
 #' \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+
+#' \item{min_sp: }{This is an experimental feature that, when a particular \code{G_control$structure} is set to "identity", allows a minimum amount of smoothing to be applied to the corresponding basis function coefficients. Similar to \code{G_control$rank} and \code{G_control$structure}, this either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. 
+#' 
+#' Note if a particular element in \code{G_control$structure} is set to "unstructured", then a corresponding element in \code{G_control$min_sp} must still be supplied, but it is ignored.
+#'  
+#' *Please leave it as it as at the moment i.e., set to 0!*}
 #' }
+
 #' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
 #' \itemize{
 #' \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.} 
@@ -1867,7 +1874,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                           custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
      G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, 
                       tol = 1e-4, method = "REML", trace = 0, 
-                      custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
+                      custom_space = NULL, custom_time = NULL, custom_spactime = NULL, min_sp = 0),
      k_check_control = list(subsample = 5000, n.rep = 400)
      ) { 
      
@@ -3055,6 +3062,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
      out_CBFM$k_check <- all_k_check
      out_CBFM$vcomp <- all_vcomp
+     out_CBFM$min_sp <- G_control$min_sp
      
      out_CBFM$betas <- new_fit_CBFM_ptest$betas
      out_CBFM$zibetas <- new_fit_CBFM_ptest$zibetas
