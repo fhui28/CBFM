@@ -4,6 +4,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
      use_structure <- G_control$structure[use_rank_element]
+     use_min_sp <- G_control$min_sp[use_rank_element]
      
      #if(num_spp == 1) 
      #        return(solve(Ginv))
@@ -107,7 +108,7 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     return(out)
                     }
                
-               update_invnew_G <- stats::optimise(f = fn, interval = c(1e-8,1e8), maximum = TRUE)
+               update_invnew_G <- stats::optimise(f = fn, interval = c(use_min_sp,1e8), maximum = TRUE)
                new_G <- (1/update_invnew_G$maximum)*Matrix::Diagonal(n = num_spp)
                }     
           }

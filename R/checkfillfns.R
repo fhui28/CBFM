@@ -269,6 +269,13 @@
      if(sum(which_B_used) != length(control$structure))
           stop("G_control$structure should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the structure of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$structure should be a vector with length 2.
                Please note structure still needs to be supplied even when custom Gs are used (although the corresponding element is ignored in such case).")
+     if(is.null(control$min_sp))
+          control$min_sp <- rep(0, sum(which_B_used))
+     if(length(control$min_sp) == 1)
+          control$min_sp <- rep(control$min_sp, sum(which_B_used))
+     if(sum(which_B_used) != length(control$min_sp))
+          stop("G_control$min_sp should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the minimum smoothing parameter to apply to an (identity structured) G for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$min_sp should be a vector with length 2, irrespective of how many of G_control$structure was set to an identity structure.
+               Put simply, please note min_sp still needs to be supplied even when an unstructured G is used, and even when custom Gs are used (although the corresponding element is ignored in such cases).")
      if(is.null(control$nugget_profile))          
           control$nugget_profile = seq(0.05, 0.95, by = 0.05)
      if(is.null(control$maxit))
