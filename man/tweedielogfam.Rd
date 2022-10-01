@@ -7,13 +7,7 @@
 tweedielogfam()
 }
 \value{
-An object of class "family" (which has a concise print method). This is a list with the following elements:
-\item{family }{The family name i.e., "tweedie".}
-\item{link }{The link function name i.e., "log".}
-\item{linkfun }{The link function i.e., the log link.}
-\item{linkinv }{The inverse link i.e., the exponential function.}
-\item{mu.eta }{The derivative of the inverse-link function with respect to the linear predictor. For the log link, this is equivalent to the variance function itself i.e., \eqn{d\mu/d\eta = \mu}.}
-\item{variance }{The variance as a function of the mean. This itself is a function which two arguments, the mean \code{mu}, the dispersion parameter \code{phi}, and the power parameter \code{power}. The mean-variance relationship is given by \eqn{V = \phi\mu^\rho} where \eqn{\mu} denotes the mean,  \eqn{\phi} denotes the dispersion parameter, and \eqn{\rho} is the power parameter.}
+An object of class "family".
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
