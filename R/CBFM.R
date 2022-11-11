@@ -542,6 +542,7 @@
 #' fct_inorder
 #' ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = species)) +
 #' geom_line() +
+#' geom_rug(aes(x = value), sides = "b", show.legend = FALSE, color = "black") +
 #' facet_wrap(. ~ term, nrow = 2) +
 #' labs(x = "Covariate", y = "Effect") +
 #' theme_bw() +
@@ -638,9 +639,10 @@
 #' # Example of plotting smooth model terms
 #' fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species %>%
 #' fct_inorder
-#' ggplot(fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
-#' aes(x = depth, y = est, color = species)) +
-#' geom_line(show.legend = FALSE) +
+#' ggplot() +
+#' geom_line(data = fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
+#' aes(x = depth, y = est, color = species), show.legend = FALSE) +
+#' geom_rug(aes(x = depth), data = dat_train, sides = "b", color = "black") +
 #' labs(x = "depth", y = "Effect") +
 #' theme_bw()
 #' 
