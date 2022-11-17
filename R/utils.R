@@ -104,7 +104,7 @@
      }
 
                
-## E-step functions for zero-inflated and zero-truncated distributions -- calculate the posterior probability of being in the zero-inflation component/posterior probability of observing a zero
+## E-step functions for zero-inflated distributions -- calculate the posterior probability of being in the zero-inflation component/posterior probability of observing a zero
 .estep_fn <- function(family, cwfit, y, X, B, ziX = NULL) {
    num_units <- nrow(y)
    num_spp <- ncol(y)
