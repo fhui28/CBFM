@@ -209,6 +209,8 @@
 .fill_control <- function(control, num_spp, which_B_used, nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime) {
      if(is.null(control$maxit))
           control$maxit <- 100
+     if(is.null(control$inner_maxit))
+          control$inner_maxit <- 100
      if(is.null(control$optim_lower))
           control$optim_lower <- -50
      if(is.null(control$optim_upper))
@@ -216,7 +218,7 @@
      if(is.null(control$tol))
           control$tol <- 1e-4
      if(is.null(control$final_maxit))
-          control$final_maxit <- Inf
+          control$final_maxit <- 100
      if(is.null(control$initial_betas_dampen))
           control$initial_betas_dampen <- 1
      if(!is.null(control$initial_betas_dampen)) {
