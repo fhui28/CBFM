@@ -43,6 +43,8 @@
 #' \itemize{
 #' \item{maxit: }{The maximum number of iterations for the outer algorithm.} 
 
+#' \item{inner_maxit: }{The maximum number of iterations for the inner (EM) algorithm.} 
+
 #' \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by [mgcv::gam.control()] itself.}
 
 #' \item{convergence_type: }{The type of means by which to assess convergence. The current options are "parameters_MSE" (default), which assesses convergence based on the mean squared error of the difference between estimated parameters from successive iterations, "parameters_norm" which assesses convergence based on the sum of the squared error (i.e., the squared norm) of the difference between estimated parameters from successive iterations, "parameters_relative" which assesses convergence based on the relative change in mean squared error of the difference between estimated parameters from successive iterations, and "logLik_relative", which assess convergence based on the relative change in the PQL value between successive iterations. 
@@ -51,7 +53,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence.}
 
-#' \item{final_maxit: }{The maximum number of iterations to do for the final estimation step after the PQL algorithm has converged. By default this is set to \code{Inf} as the final estimation step generally converges relatively quickly. But this can be set to finite number for more customization.} 
+#' \item{final_maxit: }{The maximum number of iterations to do for the final estimation step after the PQL algorithm has converged. } 
 
 #' \item{initial_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the starting values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}. This can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. 
 #' To elaborate, when starting values are not supplied as part of \code{start_params}, the function will attempt to obtain starting values based on fitting a stacked species distribution model. While this generally works OK, sometimes it can lead to bad starting values for the \code{betas}, due to the stacked species distribution model being severely overfitted. An *ad-hoc* fix to this is to dampen/shrink these initial values to be closer to zero, thus allowing the PQL estimation algorithm to actually "work". For instance, setting \code{initial_betas_dampen = 0.8} means the magnitudes of the staring values for the \code{betas} are reduced to 0.8 of their full values. This includes the species-specific intercepts. 
@@ -1869,7 +1871,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
-     control = list(maxit = 100, optim_lower = -50, optim_upper = 50, convergence_type = "parameters_MSE", tol = 1e-4, final_maxit = Inf,   
+     control = list(maxit = 100, inner_maxit = 100, optim_lower = -50, optim_upper = 50, convergence_type = "parameters_MSE", tol = 1e-4, final_maxit = 100,   
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                     gam_method = "REML", seed = NULL, ridge = 0, ziridge = 0, trace = 0),
      Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, method = "REML", trace = 0, 
@@ -2063,9 +2065,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
 
                inner_err <- Inf
-               inner_counter <- 0
+               inner_inner_counter <- 0
                while(inner_err > 1e-4) {
-                    if(inner_counter > 20)
+                    if(inner_inner_counter > 20)
                          break;
                     
                     w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dpois(0, lambda = exp(MM %*% fit0$coefficients + fit0$offset))), 0) # Posterior probabilities of being in zero-inflation component
@@ -2075,7 +2077,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
-                    inner_counter <- inner_counter + 1
+                    inner_inner_counter <- inner_inner_counter + 1
                     #print(new_inner_logL)
                     }
                
@@ -2098,9 +2100,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
-               inner_counter <- 0
+               inner_inner_counter <- 0
                while(inner_err > 1e-4) {
-                    if(inner_counter > 20)
+                    if(inner_inner_counter > 20)
                          break;
 
                     w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dnbinom(0, mu = exp(MM %*% fit0$coefficients + fit0$offset), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
@@ -2110,7 +2112,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
-                    inner_counter <- inner_counter + 1
+                    inner_inner_counter <- inner_inner_counter + 1
                     #print(new_inner_logL)
                     }
                
@@ -2156,9 +2158,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
-               inner_counter <- 0
-               while(inner_err > 1e-3) { 
-                    if(inner_counter > 20)
+               inner_inner_counter <- 0
+               while(inner_err > 1e-4) { 
+                    if(inner_inner_counter > 20)
                          break;
                     
                     initw <- dnbinom(0, mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE)) + 1e-4)
@@ -2175,7 +2177,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
-                    inner_counter <- inner_counter + 1
+                    inner_inner_counter <- inner_inner_counter + 1
                     #print(new_inner_logL)
                     }
                
@@ -2377,11 +2379,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           inner_counter <- 0
           if(control$trace > 0)
                message("Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).")         
-          while(inner_err > 1e-3) {
-               # if(inner_counter > 1) # So inner updates only occur for bit
-               #      break;
-               
-               
+          while(inner_err > 1e-3 & inner_counter <= control$inner_maxit) {
+
                ##-------------------------
                ## For zero-inflated distributions, E-step + updating zero-inflation probabilities for distributions that require it. 
                ## Otherwise, effectively do nothing
@@ -2589,14 +2588,14 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])                               
                          }
-                    if(family$family %in% c("ztnegative.binomial")) { # Do EM here to update betas
+                    if(family$family %in% c("ztnegative.binomial")) { # Do EM here to update betas (since E-step is also specifically performed within here)
                          find_nonzeros <- which(y[,j] > 0)
                          inner_err <- 100
-                         inner_counter <- 0
+                         inner_inner_counter <- 0
                          cw_inner_logL <- -Inf
                          
                          while(inner_err > 1e-3) {
-                              if(inner_counter > 10)
+                              if(inner_inner_counter > 20)
                                    break;
 
                               initw <- dnbinom(0, mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset)), size = 1/new_fit_CBFM_ptest$dispparam[j])
@@ -2628,7 +2627,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               cw_inner_logL <- new_inner_logL
                               new_fit_CBFM_ptest$betas[j,] <- fit0$coefficients
                               new_fit_CBFM_ptest$dispparam[j] <- 1/fit0$family$getTheta(TRUE)
-                              inner_counter <- inner_counter + 1
+                              inner_inner_counter <- inner_inner_counter + 1
                               }
                          
                          fit0$logLik <- new_inner_logL
