@@ -210,7 +210,7 @@
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$inner_maxit))
-          control$inner_maxit <- 100
+          control$inner_maxit <- 1
      if(is.null(control$optim_lower))
           control$optim_lower <- -50
      if(is.null(control$optim_upper))
