@@ -18,7 +18,7 @@
 A matrix of fitted values.
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Extracts fitted mean values from a \code{CBFM} or \code{CBFM_hurdle} fit.
 }

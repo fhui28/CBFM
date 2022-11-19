@@ -44,7 +44,7 @@ Each summary table itself may consists of (and as appropriate) the estimated coe
 }
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} object and produces some useful summaries from it.
 }
@@ -53,6 +53,14 @@ Currently, the function returns estimated species-specific regression coefficien
 
 As discussed in \code{\link[=CBFM]{CBFM()}}, all tests are based on the Bayesian posterior covariance matrix of the coefficients. Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
 }
+\section{Warning}{
+Note that if the model matrix created includes smoothing terms as in a generalized additive model or GAM, the Wald P-values and corresponding Wald confidence intervals are approximate and neglect corresponding smoothing parameter uncertainty; please see \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}} for more details.
+
+The current summary function is pretty basic (apologies!), and in the future we hope to add some useful information to the summary output.
+
+Testing of the species-specific coefficients associated with spatial and/or temporal coefficients is \emph{not} performed.
+}
+
 \examples{
 \donttest{
 # Please see examples in the help file for the CBFM function 
@@ -67,12 +75,4 @@ Wood, S. N. (2017). Generalized additive models: An introduction with R. CRC pre
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
-}
-\section{Warning}{
-
-Note that if the model matrix created includes smoothing terms as in a generalized additive model or GAM, the Wald P-values and corresponding Wald confidence intervals are approximate and neglect corresponding smoothing parameter uncertainty; please see \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}} for more details.
-
-The current summary function is pretty basic (apologies!), and in the future we hope to add some useful information to the summary output.
-
-Testing of the species-specific coefficients associated with spatial and/or temporal coefficients is \emph{not} performed.
 }
