@@ -21,7 +21,7 @@ A list with the following components (if applicable):
 }
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 For each species, partition the variance of the linear predictor from a fitted \code{CBFM} object into components associated with (groups of) the covariates, and the basis function included.
 }

@@ -2,7 +2,7 @@ Package: CBFM
 Type: Package
 Title: Community-level Basis Function Modeling (CBFM)
 Version: 0.1
-Date: 2022-12-01
+Date: 2023-06-01
 Authors@R: c(person(given = "Francis K.C.",
                     family = "Hui", 
                     role = c("aut", "cre"), 
