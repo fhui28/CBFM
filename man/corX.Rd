@@ -8,6 +8,7 @@ corX(
   object,
   newdata = NULL,
   newdata2 = NULL,
+  se_cor = FALSE,
   coverage = 0.95,
   ncores = NULL,
   num_sims = 500
@@ -20,6 +21,8 @@ corX(
 
 \item{newdata2}{A second data frame containing the values of the covariates at which cross-correlations are to be calculated. If this is supplied, then \code{newdata} must also be supplied, as the function assumes then the user desires calculation of cross-correlations.}
 
+\item{se_cor}{Should uncertainty intervals also be produced for the correlations? Defaults to \code{FALSE}.}
+
 \item{coverage}{The coverage probability of the uncertainty intervals for the correlations. Defaults to 0.95, which corresponds to 95\% uncertainty intervals.}
 
 \item{ncores}{To speed up calculation of the uncertainty estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.}
@@ -27,24 +30,24 @@ corX(
 \item{num_sims}{The number of Monte-Carlo examples to simulate.}
 }
 \value{
-A list with the following components is returned:
+If \code{se_cor = FALSE}, then a (cross-)correlation matrix is returned. If \code{se_cor = TRUE}, then a list with the following components is returned:
 \item{correlation: }{A matrix of (cross-)correlation values.}
 \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the correlations}
 \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the correlations}
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\verb{r lifecycle::badge("experimental")}
 
-Takes a fitted \code{CBFM} object calculates the between-species correlation matrix due to the measured covariates, along with corresponding uncertainty intervals. Both are constructed via a simulation-based approach. Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different sets of covariates to those used to actually fit the model. Additionally, the user can supplied two sets of covariates (data frames), in which case the function calculates cross-correlations (between and within species) between these two sets of covariates.
+Takes a fitted \code{CBFM} object calculates the between-species correlation matrix due to the measured covariates, along with corresponding uncertainty intervals if desired (via a simulation-based approach). Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different sets of covariates to those used to actually fit the model. Additionally, the user can supplied two sets of covariates (data frames), in which case the function calculates cross-correlations (between and within species) between these two sets of covariates.
 }
 \details{
-This function is adapted from and behaves somewhat similarly to \code{\link[boral:get.enviro.cor]{boral::get.enviro.cor()}}, in calculating a between-species correlation matrix due to the measured covariates i.e., shared environmental response, along with corresponding uncertainty intervals. Recall the general form of the mean regression model for the CBFM is given by
+This function is adapted from and behaves somewhat similarly to \code{\link[boral:get.enviro.cor]{boral::get.enviro.cor()}}, in calculating a between-species correlation matrix due to the measured covariates i.e., shared environmental response, along with corresponding uncertainty intervals if desired. Recall the general form of the mean regression model for the CBFM is given by
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
 where \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}.
 
-The covariance and hence correlation between two species \eqn{j} and \eqn{j'} that can be attributed to the measured covariates is then based on examining the components \eqn{x_i^\top\beta_j} and \eqn{x_i^\top\beta_{j'}} across the observational units; see equation 4 in Pollock et al., (2014) for the precise formula, as well as Warton et al., (2015) and Hui (2016) among others. Both the point estimate and the uncertainty intervals for the correlation are constructed by simulation. Specifically, species-specific regression coefficients \eqn{\beta_j} are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see \code{\link[=CBFM]{CBFM()}} and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}), after which a point estimate of the correlations is obtained by taking the sample average, while uncertainty intervals are based on taking sample quantiles.
+The covariance and hence correlation between two species \eqn{j} and \eqn{j'} that can be attributed to the measured covariates is then based on examining the components \eqn{x_i^\top\beta_j} and \eqn{x_i^\top\beta_{j'}} across the observational units; see equation 4 in Pollock et al., (2014) for the precise formula, as well as Warton et al., (2015) and Hui (2016) among others. A point estimate for this residual correlation can be constructed, along with a corresponding uncertainty interval by simulation if desired. For the latter, species-specific regression coefficients \eqn{\beta_j} are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see \code{\link[=CBFM]{CBFM()}} and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}) after which uncertainty intervals can be constructed by taking sample quantiles.
 
 Note that because this function calculates correlations as based on component of the linear predictor \eqn{x_i^\top\beta_j}, then it can not be applied to  \code{CBFM_hurdle} object (which by construction contains two linear predictors, so the user has to decide which component of the hurdle model they are interested in). Analogously, for zero-inflated CBFMs this function currently only calculates the between-species correlation matrix due to the measured covariates in \code{object$formula} i.e., the mean of the count component. It is \emph{not} able to calculate correlations due to measured covariates in \code{object$ziformula} i.e., in modeling the probability of zero-inflation.
 
@@ -130,12 +133,12 @@ toc - tic
 
 # Calculate between-species correlations based on measured covariates in training data
 getcor <- corX(fitcbfm)
-corrplot(getcor$corr, method = "square", type = "lower", order = "hclust")
+corrplot(getcor, method = "square", type = "lower", order = "hclust")
 
 
 # Calculate between-species correlations based on measured covariates in external (new) data
 getcor <- corX(fitcbfm, newdata = dat_external)
-corrplot(getcor$corr, method = "square", type = "lower", order = "hclust")
+corrplot(getcor, method = "square", type = "lower", order = "hclust")
 
 
 # Calculate species cross-correlations between measured covariates in training and 
@@ -147,7 +150,7 @@ corrplot(getcor$corr, method = "square", type = "lower", order = "hclust")
 # in the sense of having ones on the diagonals; all elements, including diagonals, 
 # will lie between -1 and 1.  
 getcrosscor <- corX(fitcbfm, newdata = dat_train, newdata2 = dat_external)
-corrplot(getcrosscor$corr, method = "square", type = "lower", is.corr = FALSE)
+corrplot(getcrosscor, method = "square", type = "lower", is.corr = FALSE)
 }
 
 }
