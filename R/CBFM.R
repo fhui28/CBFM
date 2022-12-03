@@ -2134,7 +2134,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     MM <- MM[1:(nrow(MM)-10),,drop=FALSE]
                     MM <- MM[, -ncol(MM), drop=FALSE]
                     fit0$coefficients <- fit0$coefficients[1:ncol(MM)] 
-                    fit0$logLik <- .dztpois(na.omit(y[,j]), lambda = exp(MM %*% fit0$coefficients + fit0$offset[[1]][1:(length(fit0$offset)-10)]), log = TRUE) # .dztpois y = 0 values to -Inf; because offset is in formula, then offset is contained in linear.predictors
+                    fit0$logLik <- .dztpois(y[,j], lambda = exp(MM %*% fit0$coefficients + cw_offset), log = TRUE) # .dztpois y = 0 values to -Inf, and handles NA values; because offset is in formula, then offset is contained in linear.predictors
                     fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])
                     rm(MM)
                     }
