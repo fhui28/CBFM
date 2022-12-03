@@ -188,16 +188,23 @@ predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_s
      ptpred <- as.matrix(ptpred)
      colnames(ptpred) <- rownames(object$betas)          
      
-     ztpR <- gamlss.tr::trun.r(par = 0, family = PO()$family[1], type = "left") 
-     ztnbR <- gamlss.tr::trun.r(par = 0, family = NBI()$family[1], type = "left") 
+     ztpR <- gamlss.tr::trun.r(par = 0, family = gamlss.dist::PO()$family[1], type = "left") 
+     ztnbR <- gamlss.tr::trun.r(par = 0, family = gamlss.dist::NBI()$family[1], type = "left") 
 
           
      if(!parameter_uncertainty) {
           if(type == "response") {
-               ptpred <- object$family$linkinv(ptpred)
+               if(object$family$family[1] %in% c("ztpoisson")) {
+                    ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
+                    ptpred[ptpred < 1 | ptpred == Inf] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
+                    }
+               if(object$family$family[1] %in% c("ztnegative.binomial")) {
+                    ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow = nrow(ptpred), ncol = num_spp, byrow = TRUE)))                             
+                    ptpred[ptpred < 1 | ptpred == Inf] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
+                    }
                }
           if(type == "y") {
-               ptpred <- object$family$linkinv(ptpred)
+               ptpred <- exp(ptpred)
                if(object$family$family[1] == "ztpoisson")
                     ptpred <- replicate(num_sims, matrix(ztpR(length(ptpred), mu = ptpred), ncol = num_spp))
                if(object$family$family[1] == "ztnegative.binomial")
@@ -209,7 +216,7 @@ predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_s
                }
           
           return(ptpred)
-     }
+          }
      
      
      if(parameter_uncertainty) {
@@ -233,11 +240,21 @@ predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_s
           allpreds <- abind(allpreds, along = 3)
           
           if(type == "response") {
-               allpreds <- object$family$linkinv(allpreds)
+               if(object$family$family[1] %in% c("ztpoisson")) {
+                    allpreds <- exp(allpreds) / (1-exp(-exp(allpreds)))
+                    allpreds[allpreds < 1 | allpreds == Inf] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
+                    }
+               if(object$family$family[1] %in% c("ztnegative.binomial")) {
+                    for(k0 in 1:num_sims) {
+                         allpreds[,,k0] <- exp(allpreds[,,k0]) / (1-dnbinom(0, mu = exp(allpreds[,,k0]), 
+                                                                            size = matrix(1/object$dispparam, nrow = nrow(allpreds[,,k0]), ncol = num_spp, byrow = TRUE)))                         
+                         }
+                    allpreds[allpreds < 1 | allpreds == Inf] <- 1 # Predictions less than 1 will be almost certainly due to the linear predictor being so close to zero that you get underflow issues
+                    }
                }
           if(type == "y") {
-               allpreds <- object$family$linkinv(allpreds)
                ptpreds <- allpreds
+               allpreds <- exp(allpreds)
                for(k0 in 1:num_sims) {
                     if(object$family$family[1] == "ztpoisson")
                          ptpreds[,,k0] <- matrix(ztpR(length(allpreds[,,k0]), mu = allpreds[,,k0]), ncol = num_spp)
