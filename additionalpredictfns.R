@@ -85,8 +85,12 @@ predict_PA_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space 
           mu_vec <- as.vector(t(cbind(object$betas, object$basis_effects_mat)))
           bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                           cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
+          check_eigen <- eigen(bigcholcovar, only.values = TRUE)
+          if(any(check_eigen$values <= 0))
+               bigcholcovar <- Matrix::nearPD(bigcholcovar)
+          rm(check_eigen)
           bigcholcovar <- t(chol(bigcholcovar))
-                        
+
           innerzip_predfn <- function(j) {
                parameters_sim <- matrix(mu_vec + as.vector(bigcholcovar %*% rnorm(length(mu_vec))), nrow = num_spp, byrow = TRUE)
                betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
@@ -223,6 +227,10 @@ predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_s
           mu_vec <- as.vector(t(cbind(object$betas, object$basis_effects_mat)))
           bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                           cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
+          check_eigen <- eigen(bigcholcovar, only.values = TRUE)
+          if(any(check_eigen$values <= 0))
+               bigcholcovar <- Matrix::nearPD(bigcholcovar)
+          rm(check_eigen)
           bigcholcovar <- t(chol(bigcholcovar))
           
           innerzip_predfn <- function(j) {
@@ -257,9 +265,9 @@ predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_s
                allpreds <- exp(allpreds)
                for(k0 in 1:num_sims) {
                     if(object$family$family[1] == "ztpoisson")
-                         ptpreds[,,k0] <- matrix(ztpR(length(allpreds[,,k0]), mu = allpreds[,,k0]), ncol = num_spp)
+                         ptpreds[,,k0] <- matrix(ztpR(length(allpreds[,,k0]), mu = allpreds[,,k0]+1e-12), ncol = num_spp)
                     if(object$family$family[1] == "ztnegative.binomial")
-                         ptpreds[,,k0] <- matrix(ztnbR(length(allpreds[,,k0]), mu = allpreds[,,k0], 
+                         ptpreds[,,k0] <- matrix(ztnbR(length(allpreds[,,k0]), mu = allpreds[,,k0]+1e-12, 
                                                        sigma = matrix(object$dispparam, nrow = nrow(allpreds[,,k0]), ncol = num_spp, byrow = TRUE)), 
                                                  ncol = num_spp)
                     }
