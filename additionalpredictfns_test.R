@@ -176,18 +176,21 @@ oospred_cbfm_timespacetime_hurdle_mean <- predict(fitcbfm_hurdle, newdata_pa = d
                                    type = "response")
 
 
+ptpred_ztnb_test1 <- predict(fitcbfm_hurdle$count_fit, newdata = dat_test,
+                                    new_B_space = test_basisfunctions,
+                                    type = "link")
+ptpred_ztnb_test2 <- predict_ztcount_CBFM(fitcbfm_hurdle$count_fit, newdata = dat_test,
+                                    new_B_space = test_basisfunctions,
+                                    type = "y", parameter_uncertainty = FALSE)
+
+
+
 ptpred_pa <- predict_PA_CBFM(fitcbfm_hurdle$pa_fit, newdata = dat_test,
                      new_B_space = test_basisfunctions, 
                      type = "response", parameter_uncertainty = TRUE)
 ptpred_ztnb <- predict_ztcount_CBFM(fitcbfm_hurdle$count_fit, newdata = dat_test,
                        new_B_space = test_basisfunctions, 
                        type = "link", parameter_uncertainty = TRUE)
-# ptpred_ztnb_test1 <- predict(fitcbfm_hurdle$count_fit, newdata = dat_test,
-#                                     new_B_space = test_basisfunctions, 
-#                                     type = "link")
-# ptpred_ztnb_test2 <- predict_ztcount_CBFM(fitcbfm_hurdle$count_fit, newdata = dat_test,
-#                                     new_B_space = test_basisfunctions, 
-#                                     type = "y", parameter_uncertainty = FALSE)
 
 
 
