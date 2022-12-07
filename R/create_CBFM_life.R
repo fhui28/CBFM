@@ -390,11 +390,11 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
            
           if(family$family == "ztpoisson") {
                 ztpR <- trun.r(par = 0, family = PO()$family[1], type = "left") 
-                sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
+                sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])+1e-12) 
                 }
            if(family$family == "ztnegative.binomial") {
                 ztnbR <- trun.r(par = 0, family = NBI()$family[1], type = "left") 
-                sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j]), sigma = dispparam[j]) 
+                sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j])+1e-12, sigma = dispparam[j]) 
                 }
           }
 
@@ -463,9 +463,9 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                          }
 
                     if(family$family == "ztpoisson")
-                            sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])) 
+                            sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])+1e-12) 
                     if(family$family == "ztnegative.binomial")
-                            sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j]), sigma = dispparam[j]) 
+                            sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j])+1e-12, sigma = dispparam[j]) 
                     }
                inner_counter <- inner_counter + 1
                }
