@@ -33,7 +33,7 @@ print.CBFM <- function(x, ...) {
         print(x$call)
         message()
 
-        if(!(x$family$family[1] %in% c("ztpoisson")))
+        if(!(x$family$family[1] %in% c("ztpoisson", "ztnegative.binomial")))
                 message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), "\nNo. of responses: ", ncol(x$fitted)) 
         if(x$family$family[1] %in% c("ztpoisson","ztnegative.binomial"))
                 message("Family: ", x$family$family[1], "\nNo. of units: ", nrow(x$fitted), " (note zero counts in the response matrix are ignored in the model) \nNo. of responses: ", ncol(x$fitted)) 
