@@ -267,8 +267,10 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                bigcholcovar <- as.matrix(rbind(cbind(object$covar_components$topleft, object$covar_components$topright),
                                                cbind(t(object$covar_components$topright), object$covar_components$bottomright)))
                check_eigen <- eigen(bigcholcovar, only.values = TRUE)
-               if(any(check_eigen$values <= 0))
+               if(any(check_eigen$values <= 0)) {
                     bigcholcovar <- Matrix::nearPD(bigcholcovar)
+                    bigcholcovar <- bigcholcovar$mat
+                    }
                rm(check_eigen)
                bigcholcovar <- t(chol(bigcholcovar))
                         
