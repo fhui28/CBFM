@@ -1,6 +1,12 @@
 ##------------------------
 ## Functions to simulate covariates and spatial multivariate abundance data
 ##--------------------------
+library(mvtnorm)
+library(scales)
+library(RandomFields)
+library(sp)
+
+
 sim_covariates <- function(n = 1250, missing_type = "stationary", longitude_range = c(145, 150), latitude_range = c(-40, -35), num_blocks = 25, seed = NULL) {
      
      set.seed(seed)
@@ -70,18 +76,7 @@ create_life <- function(env, formula_X, family, spp_slopes, spp_intercepts = NUL
      # Species-sepcific intercept values (overall prevelance of specie), based on values observed for species in Kerguelen PLateau RCP models)
      #--------------------
      if(is.null(spp_intercepts)) {
-          #set.seed(2021)
-          #betamean <- 0.2
-          #betabeta <- 15
-          #betaalpha <- betamean/(1-betamean) * betabeta
-          #prevalences <- rbeta(num_spp, betaalpha, betabeta) #prevalences with mean of betaalpha/(betaalpha+betabeta)
-          #rm(betamean, betabeta, betaalpha)
-          #spp_intercepts <- family$linkfun(prevalences) 
-          #if(family$family == "poisson")
           spp_intercepts <- rnorm(num_spp, 0, 1)      
-          #if(family$family == "binomial" & family$link == "logit")
-          #      spp_intercepts <- spp_intercepts / 1.6 # To make data generation more comparable to probit
-          #set.seed(NULL)
           }
 
      
