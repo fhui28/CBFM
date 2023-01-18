@@ -18,7 +18,7 @@
 A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula} and which of \code{B_space/B_time/B_spacetime} were included in the model.
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} object and calculates the estimated or effective degrees of freedom associated with each smoothing terms included in the model, as well as for each of the spatial and/or temporal basis functions included in the model.
 }
