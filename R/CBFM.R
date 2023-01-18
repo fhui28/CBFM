@@ -3133,11 +3133,13 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                out_CBFM$G_space <- new_LoadingnuggetG_space$cov
                rownames(out_CBFM$G_space) <- colnames(out_CBFM$G_space) <- colnames(y)
                if(G_control$rank[1] != "full" & G_control$structure[1] == "unstructured") {
-                    out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
-                    out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
+                    if(num_spp > 1) {
+                         out_CBFM$Loading_G_space <- as.matrix(new_LoadingnuggetG_space$Loading)
+                         out_CBFM$nugget_G_space <- new_LoadingnuggetG_space$nugget
+                         rownames(out_CBFM$Loading_G_space) <- colnames(y)
+                         }
                     if(num_spp > 2)
                          colnames(out_CBFM$Loading_G_space) <- paste0("Loading", 1:G_control$rank[1])
-                    rownames(out_CBFM$Loading_G_space) <- colnames(y)
                     }
                rm(new_LoadingnuggetG_space)
                }
@@ -3171,9 +3173,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                out_CBFM$G_time <- new_LoadingnuggetG_time$cov
                rownames(out_CBFM$G_time) <- colnames(out_CBFM$G_time) <- colnames(y)
                if(G_control$rank[sum(which_B_used[1:2])] != "full" & G_control$structure[sum(which_B_used[1:2])] == "unstructured") {
-                    out_CBFM$Loading_G_time <- as.matrix(new_LoadingnuggetG_time$Loading)
-                    out_CBFM$nugget_G_time <- new_LoadingnuggetG_time$nugget
-                    rownames(out_CBFM$Loading_G_time) <- colnames(y)
+                    if(num_spp > 1) {
+                         out_CBFM$Loading_G_time <- as.matrix(new_LoadingnuggetG_time$Loading)
+                         out_CBFM$nugget_G_time <- new_LoadingnuggetG_time$nugget
+                         rownames(out_CBFM$Loading_G_time) <- colnames(y)
+                         }
                     if(num_spp > 2)
                          colnames(out_CBFM$Loading_G_time) <- paste0("Loading", 1:G_control$rank[sum(which_B_used[1:2])])
                     }
@@ -3209,8 +3213,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                out_CBFM$G_spacetime <- new_LoadingnuggetG_spacetime$cov
                rownames(out_CBFM$G_spacetime) <- colnames(out_CBFM$G_spacetime) <- colnames(y)
                if(G_control$rank[sum(which_B_used[1:3])] != "full" & G_control$structure[sum(which_B_used[1:3])] != "unstructured") {
-                    out_CBFM$Loading_G_spacetime <- as.matrix(new_LoadingnuggetG_spacetime$Loading)
-                    out_CBFM$nugget_G_spacetime <- new_LoadingnuggetG_spacetime$nugget
+                    if(num_spp > 1) {
+                         out_CBFM$Loading_G_spacetime <- as.matrix(new_LoadingnuggetG_spacetime$Loading)
+                         out_CBFM$nugget_G_spacetime <- new_LoadingnuggetG_spacetime$nugget
+                         rownames(out_CBFM$Loading_G_spacetime) <- colnames(y)
+                         }
                     if(num_spp > 2)
                          colnames(out_CBFM$Loading_G_spacetime) <- paste0("Loading", 1:G_control$rank[sum(which_B_used[1:3])])
                     }

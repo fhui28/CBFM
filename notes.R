@@ -285,17 +285,24 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 ## Custom testing
 ##----------------------------------
 function() {
-     y = simy
-     useformula <- ~ temp + depth + chla + O2
-     formula <- useformula
+     y = fit1$y[,sel_spp,drop=FALSE]
+     formula = ~ SVVESSEL + GLO_SURFTEMP_month + GLO_BOTTEMP_month + logSTRESS_Q95_YR
+     data = fit1$data
+     B_space = as.matrix(B_space_FRK)
+     family = ztnb2()
+     ncores = 5
+     control = list(trace = 1)
+     #y = simy
+     #useformula <- ~ temp + depth + chla + O2
+     #formula <- useformula
      ziformula <- NULL
-     data = dat
-     family =  binomial() 
-     B_space = sp_basisfunctions
-     B_time = matrix(dat$gear, ncol = 1)
+     #data = dat
+     #family =  binomial() 
+     #B_space = sp_basisfunctions
+     B_time = NULL
      B_spacetime = NULL
      offset = NULL
-     ncores = NULL
+     #ncores = NULL
      gamma = 1
      zigamma = 1
      trial_size = 1
@@ -308,41 +315,16 @@ function() {
      ziselect = FALSE
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-     G_control = list(rank = c(5,"full"), custom_time = diag(nrow = num_spp))
-     Sigma_control = list(rank = c(5,"full"))
+     #control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
+     G_control = list(rank = 5)
+     Sigma_control = list(rank = 5)
      k_check_control = list(subsample = 5000, n.rep = 400)
      
      }
 
 
-function() {
-     y = Ypa[sel_training_units,]
-     formula <-  ~ s(monthly_mean_Po2_bott) + s(monthly_mean_salt_bott) + s(monthly_mean_salt_surf) + s(monthly_mean_temp_surf) #+ s(monthly_mean_temp_bott) + s(annual_max_temp_surf) + s(annual_min_temp_surf) + s(annual_max_temp_bott) + s(annual_min_temp_bott) + s(GRAINSIZE)
-     ziformula <- NULL
-     data = X[sel_training_units,]
-     family =  binomial() 
-     B_space =  mm_train_useincbfm
-     B_time = train_VESSELmat
-     B_spacetime = train_sptime_basisfunctions
-     offset = NULL
-     ncores = 8
-     gamma = 1
-     zigamma = 1
-     trial_size = 1
-     dofit = TRUE
-     stderrors = TRUE
-     select = FALSE
-     ziselect = FALSE
-     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
-     TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0, nonzeromean_B_time = TRUE)
-     G_control = list(rank = c("full",1,10), structure = c("identity", "unstructured", "unstructured"), custom_time = custom_G_time)
-     Sigma_control = list(rank = c("full","full",5), custom_space = .pinv(penmat_useincbfm), control = list(trace = 1))
-     k_check_control = list(subsample = 5000, n.rep = 400)
-     }
+MM <- model.matrix(out_CBFM)
 
- 
 
 
 Ginv = new_LoadingnuggetG_space$covinv
