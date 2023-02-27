@@ -8,12 +8,13 @@
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
 .calc_parametric_effects <- function(j, object) {
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
-     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+     nulldat <- data.frame(response = object$y[,j], object$data)
+     nullfit <- mgcv::gam(tmp_formula, data = nulldat, fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
-          zinullfit <- mgcv::gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+          zinullfit <- mgcv::gam(tmp_ziformula, data = nulldat, fit = TRUE, control = list(maxit = 1))
           num_ziX <- ncol(model.matrix(zinullfit))
           }
      
@@ -26,7 +27,7 @@
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
                }
           nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
-          out <- suppressMessages(parametric_effects(nullfit))
+          out <- suppressMessages(parametric_effects(object = nullfit, data = nulldat))
           out$species <- colnames(object$y)[j]
           }
      
@@ -40,7 +41,7 @@
                sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                sel_rowcols <- sel_rowcols[(1:num_ziX)]
                nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
-               ziout <- suppressMessages(parametric_effects(zinullfit))
+               ziout <- suppressMessages(parametric_effects(object = zinullfit, data = nulldat))
                ziout$species <- colnames(object$y)[j]
                }
           }
@@ -52,12 +53,13 @@
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
 .calc_smooth_estimates <- function(j, object) {
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
-     nullfit <- mgcv::gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+     nulldat <- data.frame(response = object$y[,j], object$data)
+     nullfit <- mgcv::gam(tmp_formula, data = nulldat, fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
-          zinullfit <- mgcv::gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+          zinullfit <- mgcv::gam(tmp_ziformula, data = nulldat, fit = TRUE, control = list(maxit = 1))
           num_ziX <- ncol(model.matrix(zinullfit))
           }
      
@@ -70,7 +72,7 @@
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
                }
           nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
-          out <- suppressMessages(smooth_estimates(nullfit))
+          out <- suppressMessages(smooth_estimates(object = nullfit, data = nulldat))
           out$species <- colnames(object$y)[j]
           }
      
@@ -84,7 +86,7 @@
                sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                sel_rowcols <- sel_rowcols[(1:num_ziX)]
                zinullfit$Vp <- zinullfit$Ve <- zinullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
-               ziout <- suppressMessages(smooth_estimates(zinullfit))
+               ziout <- suppressMessages(smooth_estimates(object = zinullfit, data = nulldat))
                ziout$species <- colnames(object$y)[j]
                }
           }
