@@ -2291,9 +2291,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      start_params$logLik <- -Inf
      
      
-     ##-------------------------
+     ##----------------
      ## Run PQL algorithm
-     ##-------------------------  
+     ##----------------
      tic <- proc.time()
      counter <- 0
      diff <- 10
@@ -2898,9 +2898,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      gc()
 
      
-     ##-------------------------
+     ##----------------
      ## Do final fit -- just of coefficients and dispersion/power parameters only. 
-     ##-------------------------
+     ##----------------
      if(diff < control$tol)
           converged <- TRUE
      tidbits_data <- make_tidibits_data()
@@ -3242,12 +3242,12 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
 
      
-     ##-------------------------
+     ##-----------------
      ## Calculate structures needed for producing standard errors for coefficients
      ## The Bayesian posterior covariance matrix used, as opposed to the frequentist sandwich form. This is consistent with the default available in mgcv     
      ## Similar to the default with summary.gam in mgcv, the uncertainty in the nuisance parameters or the covariance matrix is not accounted for! 
      ## Make use of blockwise inversion 
-     ##-------------------------
+     ##-----------------
      out_CBFM$stderrors <- stderrors
      if(stderrors) {          
           if(control$trace)
@@ -3366,9 +3366,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
  
  
      
-     ##-------------------------
+     ##-----------------
      ## Final touches!
-     ##-------------------------
+     ##-----------------
      all_parametric_effects <- foreach(j = 1:num_spp) %dopar% .calc_parametric_effects(j = j, object = out_CBFM)
      out_CBFM$all_parametric_effects <- do.call(rbind, lapply(all_parametric_effects, function(x) x$out))
      out_CBFM$allzi_parametric_effects <- do.call(rbind, lapply(all_parametric_effects, function(x) x$ziout))
