@@ -1953,7 +1953,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
      ## Form covariate model matrix
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
-     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
      nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
@@ -1984,7 +1984,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           }
      if(!is.null(ziformula)) {
           ziformula <- .check_X_formula(formula = ziformula, data = as.data.frame(data))          
-          tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse = " ") ) )
           nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
           ziX <- model.matrix(nullfit)
           rm(tmp_formula, nullfit)
@@ -2025,7 +2025,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      ##----------------
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
      initfit_fn <- function(j, formula) {
-          tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
 
                     
           if(family$family %in% c("gaussian","poisson","Gamma")) {
@@ -2033,7 +2033,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("binomial")) {
-               tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse="") ) )
+               tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse = " ") ) )
                use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
                
                fit0 <-  try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
@@ -2052,7 +2052,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family == "zipoisson") {
-               tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula),collapse="") ) )
+               tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
@@ -2087,7 +2087,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0$zicoefficients <- fitzi$coefficients
                }
           if(family$family[1] == "zinegative.binomial") {
-               tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula),collapse="") ) )
+               tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
@@ -2122,7 +2122,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0$zicoefficients <- fitzi$coefficients
                }
           if(family$family %in% c("ztpoisson")) {
-               tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse=""), "+ offset(off)" ) )
+               tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " "), "+ offset(off)" ) )
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
@@ -2478,7 +2478,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                ## Update coefficients related to covariate model matrix X, and other nuisance parameters, one response at a time
                ##-------------------------
                update_Xcoefsspp_fn <- function(j) {
-                    tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
+                    tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " ") ) )
                     new_offset <- offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
                     Hmat <- diag(control$ridge+1e-15, nrow = num_X)
                     
@@ -2493,7 +2493,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("binomial")) {
-                         tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse="") ) )
+                         tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula), collapse = " ") ) )
                          use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
      
                          if(control$ridge > 0)
@@ -2536,7 +2536,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("zipoisson")) { # M-step
-                         tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula),collapse="") ) )
+                         tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
                          ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
                          
                          if(control$ridge > 0)
@@ -2558,7 +2558,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("zinegative.binomial")) { # M-step
-                         tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula),collapse="") ) )
+                         tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
                          ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
                          
                          if(control$ridge > 0)
@@ -2580,7 +2580,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(family$family %in% c("ztpoisson")) {
                          Hmat <- diag(control$ridge+1e-15, nrow = num_X+1)
                          tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data), 1:10),], off = c(new_offset, numeric(10))) # Append some zeros avoids a non-convergence problem in mgcv
-                         tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse=""), "+ offset(off)" ) )
+                         tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " "), "+ offset(off)" ) )
                          if(control$ridge > 0)
                               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, H = Hmat, family = ziplss(), select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
