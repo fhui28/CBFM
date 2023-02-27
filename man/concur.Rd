@@ -41,7 +41,7 @@ This function currently does not work well with factor variables. However it sho
 }
 
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

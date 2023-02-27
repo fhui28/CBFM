@@ -26,7 +26,7 @@ Extracts the so-called Bayesian posterior covariance matrix of the parameters es
 This basically extracts \code{object$covar_components}, assuming \code{stderrors = TRUE} in the original CBFM fit. Please note that to save memory, rather than returning the full Bayesian posterior covariance matrix, only relevant sub-blocks that are needed for standard errors and inference/prediction are returned.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

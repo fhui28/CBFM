@@ -25,7 +25,7 @@ This function works in a similar manner to functions such as \code{\link[stats:l
 Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}} for more details.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

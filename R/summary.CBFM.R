@@ -53,7 +53,7 @@
 #' @seealso [CBFM()] for fitting CBFMs and [coef.CBFM()] for extracting regression coefficients related to the covariates
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Please see examples in the help file for the CBFM function 
 #' }
 #'

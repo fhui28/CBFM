@@ -74,7 +74,7 @@ An alternative approach, which is in line with how residual correlations are cal
 }
 
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

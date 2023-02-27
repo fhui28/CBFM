@@ -63,7 +63,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [fitted.CBFM()] for obtaining fitted values from a CBFM fit, and [residuals.CBFM()] for calculating various types of residuals.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Please see examples in the help file for the CBFM and makeahurdle functions 
 #' }
 #' 

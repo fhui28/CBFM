@@ -57,7 +57,7 @@ Please note the current implementation does \emph{not} produce plots automatical
 For zero-truncated count CBFMs, observational unit-specific scores are produced for all observational units, although perhaps these should be treated cautiously if the response matrix itself contains zero counts.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

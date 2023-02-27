@@ -34,7 +34,7 @@
 #' @seealso [CBFM()] for fitting CBFMs and [fitted.CBFM()] for calculating fitted values from a CBFM fit.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

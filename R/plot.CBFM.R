@@ -51,7 +51,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [fitted.values.CBFM()] for calculating fitted values from a CBFM fit, and [residuals.CBFM()] for calculating various types of residuals.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

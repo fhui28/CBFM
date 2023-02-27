@@ -38,7 +38,7 @@ The community-level covariance matrices are not involved in the calculation of t
 For hurdle CBFMs, the log-likelihood and (estimated) degrees of freedom are calculated by straightforwardly summing the respective quantities in the two underlying component CBFMs.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

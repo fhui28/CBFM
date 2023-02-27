@@ -32,7 +32,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [edf.CBFM()] for extracting estimated degrees of freedom associated with a CBFM fit, [residuals.CBFM()] for calculating different types of residuals from a CBFM fit, and [plot.CBFM()] for basic residual diagnostics.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

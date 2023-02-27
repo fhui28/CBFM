@@ -19,7 +19,7 @@
 #' @seealso [CBFM()] for fitting CBFMs and [makeahurdle()] for forming a hurdle CBFM based on two component CBFMs (a presence-absence component and a zero-truncated count component).
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Please see the examples in the help file for the CBFM and makeahurdle function.s
 #' }
 #' 

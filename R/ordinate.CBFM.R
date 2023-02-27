@@ -49,7 +49,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions, [predict.CBFM()] for constructing predictions from a CBFM fit.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

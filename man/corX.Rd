@@ -56,7 +56,7 @@ With the above definition of the between-species correlation, note that the pred
 NOTE: A cross-correlation matrix is not going to be a standard correlation matrix in the sense of having the ones alone the diagonal. This is because even for the same species \eqn{j = j'}, the correlation is not guaranteed to be equal to one as the covariates being considered can be different.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

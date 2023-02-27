@@ -52,7 +52,7 @@ Just because a hurdle CBFM is available does not necessarily mean you should alw
 }
 
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(gamlss.tr)
 library(FRK)

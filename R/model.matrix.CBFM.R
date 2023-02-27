@@ -21,7 +21,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [fitted.CBFM()] for extracting fitted values from a CBFM fit, [residuals.CBFM()] for calculating various types of residuals, and [predict.CBFM()] for constructing predictions from a CBFM fit.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

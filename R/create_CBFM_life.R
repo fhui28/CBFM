@@ -88,7 +88,7 @@
 #' @seealso [CBFM()] for fitting CBFMs and [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

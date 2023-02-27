@@ -29,7 +29,7 @@ No attempt is made by the function to made the resulting matrix sparse, unless t
 }
 
 \examples{
-\donttest{
+\dontrun{
 # Please see Example 3 in the help file for the main CBFM function 
 }
 

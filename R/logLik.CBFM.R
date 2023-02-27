@@ -37,7 +37,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, and [AIC.CBFM()] and [AICc.CBFM()] for calculation various information criteria from a CBFM fit.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

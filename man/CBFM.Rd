@@ -366,7 +366,7 @@ start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate
 }
 
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

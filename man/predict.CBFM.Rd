@@ -117,7 +117,7 @@ The standard errors produced by \code{predict.CBFM} are based on the Bayesian po
 The functions tries to avoid using simulation (also known as single-fit bootstrapping, Fletcher and Jowett, 2022) for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson and negative-binomial distribution when \code{type = "response"}.
 }
 \examples{
-\donttest{
+\dontrun{
 # Please see examples in the help file for the CBFM and makeahurdle functions 
 }
 

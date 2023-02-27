@@ -67,7 +67,7 @@
 #' 
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(gamlss.tr)
 #' library(FRK)

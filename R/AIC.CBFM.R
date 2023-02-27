@@ -32,7 +32,7 @@
 #' @seealso [AICc.CBFM()] for calculating the corrected AIC specifically, [logLik.CBFM()] for extracting the log-likelihood value from a CBFM fit, and [nobs.CBFM()] for extracting the number of observational units from a CBFM fit.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

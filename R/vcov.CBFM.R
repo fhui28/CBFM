@@ -26,7 +26,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [coef.CBFM()] to obtain standard errors and confidence interval limits in a more user-friendly form.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

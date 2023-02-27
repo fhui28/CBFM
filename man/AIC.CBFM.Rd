@@ -34,7 +34,7 @@ The generic form of the information criterion this function uses is \eqn{-2 \tim
 As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the \code{\link[=CBFM]{CBFM()}} help file as well as \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} for more information.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

@@ -30,7 +30,7 @@ Similarly, for zero-truncated count distributions, while the mean of the base co
 For hurdle CBFMs, the function returns the estimated values of \eqn{\pi_{ij}*\mu_{ij}} where \eqn{\pi_{ij}} is the probability of observing a presence based on the presence-absence component of the model, and \eqn{\mu_{ij}} is the mean of the zero-truncated component of the model.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

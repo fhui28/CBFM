@@ -84,7 +84,7 @@ If the above does not occur then it may suggest one or more modeling assumptions
 This function only provides basic diagnostic plots. For spatio-temporal data, there are also more specialized methods and plots for assessing the assumptions made in relation to the spatial and/or temporal correlation, and the user is encouraged to examine these. Basic plots may include plotting the residuals as a function of the spatio-temporal coordinates, and constructing autocorrelation plots and covariograms of the residuals; see for example Li (2003), Hyndman and Athanasopoulos (2018), Plant (2018), and Wilke et al. (2019) for some *general* references which contain sections on residual analysis for spatial and time-series data. There are also more (currently) bespoke methods e.g., Bose et al., (2018), although they may be hard to implement and may also not be too useful for the CBFM approach to analyzing spatio-temporal data in general.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

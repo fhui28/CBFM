@@ -20,7 +20,7 @@
 #' @seealso [CBFM()] for fitting CBFMs.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

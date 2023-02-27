@@ -46,7 +46,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [corX()] for calculating between-species (cross-)correlations due to measured covariates, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

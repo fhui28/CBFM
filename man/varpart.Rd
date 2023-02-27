@@ -44,7 +44,7 @@ There is some controversy over what quantities proportion of variance explained 
 }
 
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

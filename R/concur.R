@@ -40,7 +40,7 @@
 #' #' @seealso [CBFM()] for fitting CBFMs, [plot.CBFM()] for basic residual diagnostics from a CBFM fit, [residuals.CBFM()] for calculating various types of residuals.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

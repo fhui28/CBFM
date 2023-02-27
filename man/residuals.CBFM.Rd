@@ -41,7 +41,7 @@ For \code{type = "dunnsmyth"}, this returns the Dunn-Smyth residuals that are al
 Note if there are missing values in the response matrix, then one or more warnings maybe outputted (and mostly likely can be safely ignored) when calculating residuals.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

@@ -28,7 +28,7 @@ For the estimated or effective of freedom (EDF) associated with any smoothing te
 For the EDF associated with the spatial and/or temporal basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be \emph{much} smaller than the corresponding number of basis functions included in the model.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

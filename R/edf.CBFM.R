@@ -22,7 +22,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [influence.CBFM()] for computing some influence measures including the estimates degrees of freedom for the species-specific regression coefficients corresponding to spatial and/or temporal basis functions included.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

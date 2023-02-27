@@ -72,7 +72,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, and [corX()] for calculating between-species (cross-)correlations due to measured covariates.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

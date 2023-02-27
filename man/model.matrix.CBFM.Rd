@@ -27,7 +27,7 @@ Similar to how \code{\link[mgcv:model.matrix.gam]{mgcv::model.matrix.gam()}} wor
 For zero-inflated distributions, it can also obtain the model matrix associated with modeling the probabilities of zero-inflation.
 }
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

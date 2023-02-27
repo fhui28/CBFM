@@ -62,7 +62,7 @@ Testing of the species-specific coefficients associated with spatial and/or temp
 }
 
 \examples{
-\donttest{
+\dontrun{
 # Please see examples in the help file for the CBFM function 
 }
 

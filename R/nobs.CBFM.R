@@ -20,7 +20,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, [AIC.CBFM()] and [AICc.CBFM()] for calculating various information criteria from a CBFM fit, and [logLik.CBFM()] for extracting the log-likelihood value from a CBFM fit.
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)

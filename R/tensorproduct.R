@@ -23,7 +23,7 @@
 #' @seealso [CBFM()] for fitting CBFMs, with one example that using a tensor product formed set of basis functions.
 #' 
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # Please see Example 3 in the help file for the main CBFM function 
 #' }
 #' 

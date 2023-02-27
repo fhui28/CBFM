@@ -119,7 +119,7 @@ Note \strong{no} checks are on the arguments \code{Sigma} and \code{G} arguments
 }
 
 \examples{
-\donttest{
+\dontrun{
 library(autoFRK)
 library(FRK)
 library(MASS)

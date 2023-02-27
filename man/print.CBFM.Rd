@@ -25,7 +25,7 @@ Print out details such as the function call, assumed family/response distributio
 For a hurdle CBFM, details are provided for both of the component CBFMs separately.
 }
 \examples{
-\donttest{
+\dontrun{
 # Please see the examples in the help file for the CBFM and makeahurdle function.s
 }
 

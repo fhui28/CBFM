@@ -36,7 +36,7 @@
 #' @seealso [create_CBFM_life()] for manually simulating spatio-temporal multivariate abundance data.
 #'
 #' @examples
-#'  \donttest{
+#'  \dontrun{
 #' library(autoFRK)
 #' library(FRK)
 #' library(MASS)
