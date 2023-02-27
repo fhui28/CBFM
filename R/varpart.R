@@ -123,7 +123,7 @@ varpart <- function(object, groupX = NULL) {
 
     num_spp <- nrow(object$betas)
      
-     #tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+     #tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      #nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix.CBFM(object)
      #rm(tmp_formula, nullfit)

@@ -179,7 +179,7 @@ corX <- function(object, newdata = NULL, newdata2 = NULL, se_cor = FALSE, covera
         ##--------------------------------
         ## Construct new_X and new_X2, if appropriate.
         ##--------------------------------
-        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+        tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
         nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
         if(is.null(newdata)) 
             new_X <- new_X2 <- predict.gam(nullfit, type = "lpmatrix")

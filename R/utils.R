@@ -7,13 +7,13 @@
 
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
 .calc_parametric_effects <- function(j, object) {
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      nulldat <- data.frame(response = object$y[,j], object$data)
      nullfit <- mgcv::gam(tmp_formula, data = nulldat, fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-          tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+          tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse = " ") ) )
           zinullfit <- mgcv::gam(tmp_ziformula, data = nulldat, fit = TRUE, control = list(maxit = 1))
           num_ziX <- ncol(model.matrix(zinullfit))
           }
@@ -52,13 +52,13 @@
 
 ## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
 .calc_smooth_estimates <- function(j, object) {
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      nulldat <- data.frame(response = object$y[,j], object$data)
      nullfit <- mgcv::gam(tmp_formula, data = nulldat, fit = TRUE, control = list(maxit = 1))
      num_X <- ncol(model.matrix(nullfit))
      
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-          tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+          tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse = " ") ) )
           zinullfit <- mgcv::gam(tmp_ziformula, data = nulldat, fit = TRUE, control = list(maxit = 1))
           num_ziX <- ncol(model.matrix(zinullfit))
           }

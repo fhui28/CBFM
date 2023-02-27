@@ -280,7 +280,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
      trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
      
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
-     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
      nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
@@ -293,7 +293,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                stop("If ziformula is supplied, then zibetas must also be supplied.")
           
           ziformula <- .check_X_formula(formula = ziformula, data = as.data.frame(data))          
-          tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse = " ") ) )
           nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
           ziX <- model.matrix(nullfit)
           rm(tmp_formula, nullfit)

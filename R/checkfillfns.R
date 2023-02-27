@@ -173,7 +173,7 @@
      termsinformula <- as.character(formula)
      if(length(termsinformula) == 3)
           termsinformula <- termsinformula[-2]
-     formula <- as.formula(termsinformula)
+     formula <- formula(paste(termsinformula, collapse = " "))
           
      return(formula)
      }     

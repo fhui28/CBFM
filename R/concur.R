@@ -135,14 +135,14 @@ concur <- function(object, zi = FALSE, ...) {
         stop("`object' is not of class \"CBFM\"")
      
      num_spp <- ncol(object$y)
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula), collapse = " ") ) )
      nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
      
      if(zi) {
           if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) 
                stop("Measures of concurvity associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
           if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-               tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+               tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula), collapse = " ") ) )
                nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
                }
           }

@@ -91,7 +91,7 @@ model.matrix.CBFM <- function(object, zi = FALSE, ...) {
      if(!inherits(object, "CBFM")) 
           stop("`object' is not of class \"CBFM\"")
         
-     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+     tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
      MM <- predict.gam(nullfit, type = "lpmatrix", ...)
         
@@ -99,7 +99,7 @@ model.matrix.CBFM <- function(object, zi = FALSE, ...) {
           if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial")))
                stop("A model matrix associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
           
-          tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse = " ") ) )
           nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
           MM <- predict.gam(nullfit, type = "lpmatrix", ...)
           }

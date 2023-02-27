@@ -112,9 +112,9 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
           colnames(get_std_errs) <- formnames
           rm(formnames)
        
-          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
           if(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))
-               tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+               tmp_ziformula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse = " ") ) )
          
           spp_results_fn <- function(j) {
                spp_std_errs <- get_std_errs[j,]

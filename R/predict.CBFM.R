@@ -94,7 +94,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
           warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula and/or newdata.")
           }
      if(is.null(manualX)) {
-          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse="") ) )
+          tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
           nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
           if(is.null(newdata))
                new_X <- predict.gam(nullfit, type = "lpmatrix")
@@ -113,7 +113,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                warning("manualziX has been supplied. This overrides the creation of a model matrix based on object$ziformula and/or newdata.")
                }
           if(is.null(manualziX)) {
-               tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse="") ) )
+               tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse = " ") ) )
                nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
                if(is.null(newdata))
                     new_ziX <- predict.gam(nullfit, type = "lpmatrix")
