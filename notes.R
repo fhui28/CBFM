@@ -285,24 +285,17 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 ## Custom testing
 ##----------------------------------
 function() {
-     y = fit1$y[,sel_spp,drop=FALSE]
-     formula = ~ SVVESSEL + GLO_SURFTEMP_month + GLO_BOTTEMP_month + logSTRESS_Q95_YR
-     data = fit1$data
-     B_space = as.matrix(B_space_FRK)
-     family = ztnb2()
-     ncores = 5
-     control = list(trace = 1)
-     #y = simy
-     #useformula <- ~ temp + depth + chla + O2
-     #formula <- useformula
+     y = simy_train
+     useformula <- ~ temp + depth + chla + O2
+     formula <- useformula
      ziformula <- NULL
-     #data = dat
-     #family =  binomial() 
-     #B_space = sp_basisfunctions
+     data = dat_train
+     family =  binomial() 
+     B_space = train_basisfunctions
      B_time = NULL
      B_spacetime = NULL
      offset = NULL
-     #ncores = NULL
+     ncores = NULL
      gamma = 1
      zigamma = 1
      trial_size = 1
@@ -315,16 +308,11 @@ function() {
      ziselect = FALSE
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     #control = list(maxit = 100, convergence_type = "parameters_MSE", tol = 1e-4, seed = NULL, trace = 1, ridge = 0)
-     G_control = list(rank = 5)
-     Sigma_control = list(rank = 5)
+     control = list(trace = 1)
+     G_control = list(rank = 2)
+     Sigma_control = list(rank = 2)
      k_check_control = list(subsample = 5000, n.rep = 400)
-     
      }
-
-
-MM <- model.matrix(out_CBFM)
-
 
 
 Ginv = new_LoadingnuggetG_space$covinv
