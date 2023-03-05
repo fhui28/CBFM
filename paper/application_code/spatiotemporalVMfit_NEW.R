@@ -352,10 +352,40 @@ saveRDS(oospred_spacetimeLV, file = "oospred_spacetimeLV.rds")
 
 ##----------------------
 ## Variance partitioning
+## Using a conditional approach to be consistent with what CBFM does.
 ##----------------------
-VarPart <- computeVariancePartitioning(fit_spatiotemp_multiscale_clust)
+allBeta <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Beta"]]) %>% abind(along = 3)
+allXBeta <- sapply(1:length(fit_spatiotemp_multiscale$postList), function(k) (fit_spatiotemp_multiscale$XScaled %*% allBeta[,,k]) %>% apply(., 2, var))
+rm(allBeta)
 
-plotVariancePartitioning(fit_spatiotemp_multiscale_clust, VP = VarPart, main = "Variance Partitioning")
+
+fit_spatiotemp_multiscale$studyDesign$Haul %>% unique %>% length
+fit_spatiotemp_multiscale$studyDesign$Cluster %>% unique %>% length
+fit_spatiotemp_multiscale$studyDesign$Grid %>% unique %>% length
+fit_spatiotemp_multiscale$studyDesign$Year %>% unique %>% length
+
+
+allEta <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Eta"]][[1]]) %>% abind(along = 3)
+allLambda <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Lambda"]][[1]]) %>% abind(along = 3)
+allEtaLambda1 <- sapply(1:length(fit_spatiotemp_multiscale$postList), function(k) (allEta[fit_spatiotemp_multiscale$studyDesign$Grid,,k] %*% allLambda[,,k]) %>% apply(., 2, var))
+
+allEta <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Eta"]][[2]]) %>% abind(along = 3)
+allLambda <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Lambda"]][[2]]) %>% abind(along = 3)
+allEtaLambda2 <- sapply(1:length(fit_spatiotemp_multiscale$postList), function(k) (allEta[fit_spatiotemp_multiscale$studyDesign$Haul,,k] %*% allLambda[,,k]) %>% apply(., 2, var))
+
+allEta <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Eta"]][[3]]) %>% abind(along = 3)
+allLambda <- lapply(poolMcmcChains(fit_spatiotemp_multiscale$postList), function(a) a[["Lambda"]][[3]]) %>% abind(along = 3)
+allEtaLambda3 <- sapply(1:length(fit_spatiotemp_multiscale$postList), function(k) (allEta[fit_spatiotemp_multiscale$studyDesign$Year,,k] %*% allLambda[,,k]) %>% apply(., 2, var))
+rm(allEta, allLambda)
+
+var_Xbeta <- allXBeta/(allXBeta + allEtaLambda1 + allEtaLambda2 + allEtaLambda3)
+var_LV <- (allEtaLambda1 + allEtaLambda2 + allEtaLambda3)/(allXBeta + allEtaLambda1 + allEtaLambda2 + allEtaLambda3)
+var_Xbeta %>% rowMeans
+var_LV %>% rowMeans
+
+var_Xbeta %>% rowMeans %>% summary
+var_LV %>% rowMeans %>% summary
+
 
 
 ##-----------------------
