@@ -611,7 +611,7 @@ p_brierscore_sppprevalence <- ggplot(compare_brierscore %>%
    geom_point(size = 2) +
    geom_hline(yintercept = 0, linetype = 2) +
    scale_color_viridis_d(labels = c("Stacked GAM", "LVM", "CBFM (parametric)")) +
-   labs(y = "Differences in Brier score", x = "Species prevalence", title = "Brief score", color = "Method") +
+   labs(y = "Differences in Brier score", x = "Species prevalence", title = "Brier score", color = "Method") +
    theme_bw() +
    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
    guides(shape = FALSE)
