@@ -20,7 +20,7 @@
 Returns an object of class "logLik".  This is a number with at least one attribute, "df" (degrees of freedom), giving the number of (estimated) parameters in the CBFM model; please see see \code{\link[stats:logLik]{stats::logLik()}}.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 Extracts the log-likelihood from a fitted \code{CBFM} or code{CBFM_hurdle} object.
 }

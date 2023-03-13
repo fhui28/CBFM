@@ -21,7 +21,7 @@ nobs(object, ...)
 A positive integer.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+\verb{r lifecycle::badge("stable")}
 
 Extract the number of observational units from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This is principally intended to be used in computing information criterion such as in the function \code{\link[=AIC.CBFM]{AIC.CBFM()}}.
 }

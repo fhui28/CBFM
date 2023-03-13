@@ -17,7 +17,7 @@ concur(object, zi = FALSE, ...)
 A data frame providing the species-specific values of the two concurvity measures for each term in the CBFM.
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+\verb{r lifecycle::badge("experimental")}
 
 Calculates measures of concurvity from a fitted \code{CBFM} object. The measures are adapted from those found in \code{\link[mgcv:concurvity]{mgcv::concurvity()}}, and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.
 }
@@ -36,10 +36,6 @@ Note concurvity to measured on a per-species basis, although this does not matte
 
 Finally, note this function only provides an indicator of potential collinearity/concurvity; it does not provide a remedy to the problem if it arises.
 }
-\section{Warning}{
-This function currently does not work well with factor variables. However it should be kept in mind that concurvity and collinearity with factor variables is generally more challenging to diagnose and deal with.
-}
-
 \examples{
 \dontrun{
 library(autoFRK)
@@ -139,4 +135,8 @@ Lany, N. K., Zarnetske, P. L., Finley, A. O., and McCullough, D. G. (2020). Comp
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
+}
+\section{Warning}{
+
+This function currently does not work well with factor variables. However it should be kept in mind that concurvity and collinearity with factor variables is generally more challenging to diagnose and deal with.
 }
