@@ -157,7 +157,7 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
           zieta <- as.vector(tcrossprod(model.matrix.CBFM(object, zi = TRUE), object$zibetas))
           }
   
-     weights_mat <- .neghessfamily(family = object$family, eta = object$linear_predictors, y = object$y, 
+     weights_mat <- .neghessfamily(family = object$family, eta = object$linear_predictors, y = object$y,
                                    phi = matrix(object$dispparam, num_units, num_spp, byrow = TRUE), 
                                    powerparam = matrix(object$powerparam, num_units, num_spp, byrow = TRUE),
                                    zieta = zieta, trial_size = object$trial_size, domore = TRUE)
