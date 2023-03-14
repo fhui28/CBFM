@@ -315,13 +315,19 @@ function() {
      }
 
 
-Ginv = new_LoadingnuggetG_space$covinv
-basis_effects_mat = centered_BF_mat
-Sigmainv = new_LoadingnuggetSigma_space$covinv
-B = B_space
-y_vec = as.vector(y)
-linpred_vec = c(new_fit_CBFM_ptest$linear_predictors)
-dispparam = new_fit_CBFM_ptest$dispparam
-powerparam = new_fit_CBFM_ptest$powerparam
-zibetas = new_fit_CBFM_ptest$zibetas
-return_correlation = is.null(Sigma_control$custom_space)
+function() {
+     Sigmainv = new_LoadingnuggetSigma_space$covinv
+     basis_effects_mat = centered_BF_mat 
+     Ginv = new_LoadingnuggetG_space$covinv
+     B = B_space
+     X = X
+     ziX = ziX
+     y_vec = as.vector(y) 
+     linpred_vec = c(new_fit_CBFM_ptest$linear_predictors)
+     dispparam = new_fit_CBFM_ptest$dispparam 
+     powerparam = new_fit_CBFM_ptest$powerparam
+     zibetas = new_fit_CBFM_ptest$zibetas 
+     trial_size = trial_size
+     family = family
+     Sigma_control = Sigma_control
+     }

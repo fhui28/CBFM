@@ -256,23 +256,23 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                   zieta <- as.vector(tcrossprod(ziX, zibetas))
                   }
              ## Note weights are on a per-species basis i.e., site runs faster than species
-                weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                              powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
+             weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                           powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
 
-                ## Set up to REML and ML
-                weights_mat[is.na(y_vec)] <- 0
-                weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
-                if(Sigma_control$method == "REML") {
-                     inner_fn <- function(j) {
-                          XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                          BTWX <- crossprod(B, X*weights_mat[,j])               
-                          return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
-                         }
+             ## Set up to REML and ML
+             weights_mat[is.na(y_vec)] <- 0
+             weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+             if(Sigma_control$method == "REML") {
+                  inner_fn <- function(j) {
+                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
+                    BTWX <- crossprod(B, X*weights_mat[,j])               
+                    return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                     }
-                if(Sigma_control$method == "ML") {
-                     inner_fn <- function(j) {
-                          return(crossprod(B*sqrt(weights_mat[,j])))
-                          }
+               }
+               if(Sigma_control$method == "ML") {
+                    inner_fn <- function(j) {
+                         return(crossprod(B*sqrt(weights_mat[,j])))
+                         }
                     }
                 
                
@@ -280,7 +280,9 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                 BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
                 gc()               
 
-                Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), kronecker(Ginv[,k], Matrix::Diagonal(n = num_basisfns)))) )
+                # For some reason I have to do do a dense matrix first before converting to sparse!
+                Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), as(kronecker(Ginv[,k], diag(nrow = num_basisfns)), "sparseMatrix"))) )
+                #Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), kronecker(Ginv[,k], Diagonal(n = num_basisfns)))) )
                 needonly_cols <- unlist(sapply(1:num_basisfns, function(j) (j-1)*num_basisfns + j:num_basisfns))
                 Q2 <- Q2[, needonly_cols, drop = FALSE]
                 rm(weights_mat)
