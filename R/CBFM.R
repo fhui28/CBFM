@@ -353,14 +353,6 @@
 #' 
 #' Please use the [summary.CBFM()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
 
-#' \item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
- 
-#' \item{allzi_parametric_effects: }{If \code{ziformula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
- 
-#' \item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-
-#' \item{allzi_smooth_estimates: }{If \code{ziformula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
- 
 #' \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of [base::proc.time()].}
 #' 
 #' 
@@ -372,8 +364,6 @@
 #' 3. Not all (in fact, not many) of the smoothing available that are available in [mgcv::gam.models()] have been fully tested out, so please be aware that some make not work well, if at all! 
 #' 
 #' 4. As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in [mgcv::summary.gam()]. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}. 
-#' 
-#' 5. The returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be *very* large data frames!
 #' 
 # #' Indeed, the "strength" of the CBFM approach (especially with the current approach to estimation) is its competitive predictive performance relative to computation efficiency and scalability; **estimates of \eqn{\Sigma} and \eqn{G} may not be too reliable.**
 #'
@@ -451,7 +441,7 @@
 #'
 #' Cressie, N., Sainsbury-Dale, M., and Zammit-Mangion, A. (2021). Basis-Function Models in Spatial Statistics. Annual Review of Statistics and Its Application, 9.
 #'
-#' @seealso [corX()] for calculating between-species (cross-)correlations due to measured covariates, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions, [fitted.CBFM()] for extracting the fitted values from a CBFM fit, [influence.CBFM()] for calculating some basic influence measures from a CBFM fit, [ordinate.CBFM()] for an *ad-hoc* approach to constructing spatio-temporal ordinations from a CBFM fit, [plot.CBFM()] for basic residual diagnostics from a CBFM fit, [predict.CBFM()] for constructing predictions from a CBFM fit, [residuals.CBFM()] for calculating residuals from a CBFM fit, [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit, [summary.CBFM()] for summaries including standard errors and confidence intervals, and [varpart()] for variance partitioning of a CBFM fit.
+#' @seealso [corX()] for calculating between-species (cross-)correlations due to measured covariates, [corB()] for calculating residual between-species (cross-)correlations due to the basis functions, [fitted.CBFM()] for extracting the fitted values from a CBFM fit, [gratia_effects()] for calculating smooth estimates and parametric effects suitable for plotting/visualization; [influence.CBFM()] for calculating some basic influence measures from a CBFM fit, [ordinate.CBFM()] for an *ad-hoc* approach to constructing spatio-temporal ordinations from a CBFM fit, [plot.CBFM()] for basic residual diagnostics from a CBFM fit, [predict.CBFM()] for constructing predictions from a CBFM fit, [residuals.CBFM()] for calculating residuals from a CBFM fit, [simulate.CBFM()] for simulating spatio-temporal multivariate abundance data from a CBFM fit, [summary.CBFM()] for summaries including standard errors and confidence intervals, and [varpart()] for variance partitioning of a CBFM fit.
 #' 
 #'
 #' @examples
@@ -541,17 +531,6 @@
 #' summary(fitcbfm) %>% 
 #' str
 #' 
-#' # Example of plotting parametric model terms
-#' fitcbfm$all_parametric_effects$species <- fitcbfm$all_parametric_effects$species %>%
-#' fct_inorder
-#' ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = species)) +
-#' geom_line() +
-#' geom_rug(aes(x = value), sides = "b", show.legend = FALSE, color = "black") +
-#' facet_wrap(. ~ term, nrow = 2) +
-#' labs(x = "Covariate", y = "Effect") +
-#' theme_bw() +
-#' theme(legend.position = "bottom")
-#' 
 #' 
 #' # Calculate predictions onto test dataset
 #' predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -639,16 +618,6 @@
 #' 
 #' summary(fitcbfm_gam) %>% 
 #' str
-#' 
-#' # Example of plotting smooth model terms
-#' fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species %>%
-#' fct_inorder
-#' ggplot() +
-#' geom_line(data = fitcbfm_gam$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
-#' aes(x = depth, y = est, color = species), show.legend = FALSE) +
-#' geom_rug(aes(x = depth), data = dat_train, sides = "b", color = "black") +
-#' labs(x = "depth", y = "Effect") +
-#' theme_bw()
 #' 
 #' 
 #' # Calculate predictions onto test dataset
@@ -1855,7 +1824,6 @@
 #' @import Matrix 
 #' @importFrom compiler cmpfun
 #' @importFrom doParallel registerDoParallel
-#' @importFrom gratia smooth_estimates parametric_effects
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
 #' @importFrom mgcv betar gam gam.vcomp k.check ldTweedie logLik.gam model.matrix.gam pen.edf predict.gam nb rTweedie Tweedie tw ziplss
@@ -3369,17 +3337,6 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      ##-----------------
      ## Final touches!
      ##-----------------
-     all_parametric_effects <- foreach(j = 1:num_spp) %dopar% .calc_parametric_effects(j = j, object = out_CBFM)
-     out_CBFM$all_parametric_effects <- do.call(rbind, lapply(all_parametric_effects, function(x) x$out))
-     out_CBFM$allzi_parametric_effects <- do.call(rbind, lapply(all_parametric_effects, function(x) x$ziout))
-     rm(all_parametric_effects)
-     
-     all_smooth_estimates <- foreach(j = 1:num_spp) %dopar% .calc_smooth_estimates(j = j, object = out_CBFM)
-     out_CBFM$all_smooth_estimates <- do.call(rbind, lapply(all_smooth_estimates, function(x) x$out))
-     out_CBFM$allzi_smooth_estimates <- do.call(rbind, lapply(all_smooth_estimates, function(x) x$ziout))
-     rm(all_smooth_estimates)
-     
-     
      if(!(family$family[1] %in% c("Beta","gaussian","Gamma","negative.binomial","tweedie","zinegative.binomial","ztnegative.binomial")))
           out_CBFM$dispparam <- NULL
      if(!(family$family %in% c("tweedie")))                        

@@ -213,10 +213,6 @@ Similarly, for zero-truncated count distributions, while the mean of the base co
 }
 
 Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
-\item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-\item{allzi_parametric_effects: }{If \code{ziformula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
-\item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-\item{allzi_smooth_estimates: }{If \code{ziformula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
 \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of \code{\link[base:proc.time]{base::proc.time()}}.}
 }
 \description{
@@ -422,17 +418,6 @@ toc - tic
 summary(fitcbfm) \%>\% 
 str
 
-# Example of plotting parametric model terms
-fitcbfm$all_parametric_effects$species <- fitcbfm$all_parametric_effects$species \%>\%
-fct_inorder
-ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = species)) +
-geom_line() +
-geom_rug(aes(x = value), sides = "b", show.legend = FALSE, color = "black") +
-facet_wrap(. ~ term, nrow = 2) +
-labs(x = "Covariate", y = "Effect") +
-theme_bw() +
-theme(legend.position = "bottom")
-
 
 # Calculate predictions onto test dataset
 predictions_stacked <- predict(fitstacked, newdata = dat_test, type = "response")
@@ -520,16 +505,6 @@ toc-tic
 
 summary(fitcbfm_gam) \%>\% 
 str
-
-# Example of plotting smooth model terms
-fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species \%>\%
-fct_inorder
-ggplot() +
-geom_line(data = fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(depth)"), 
-aes(x = depth, y = est, color = species), show.legend = FALSE) +
-geom_rug(aes(x = depth), data = dat_train, sides = "b", color = "black") +
-labs(x = "depth", y = "Effect") +
-theme_bw()
 
 
 # Calculate predictions onto test dataset
@@ -1780,7 +1755,7 @@ Zammit-Mangion, A., and Cressie, N. (2017). FRK: An R package for spatial and sp
 Cressie, N., Sainsbury-Dale, M., and Zammit-Mangion, A. (2021). Basis-Function Models in Spatial Statistics. Annual Review of Statistics and Its Application, 9.
 }
 \seealso{
-\code{\link[=corX]{corX()}} for calculating between-species (cross-)correlations due to measured covariates, \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for extracting the fitted values from a CBFM fit, \code{\link[=influence.CBFM]{influence.CBFM()}} for calculating some basic influence measures from a CBFM fit, \code{\link[=ordinate.CBFM]{ordinate.CBFM()}} for an \emph{ad-hoc} approach to constructing spatio-temporal ordinations from a CBFM fit, \code{\link[=plot.CBFM]{plot.CBFM()}} for basic residual diagnostics from a CBFM fit, \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating residuals from a CBFM fit, \code{\link[=simulate.CBFM]{simulate.CBFM()}} for simulating spatio-temporal multivariate abundance data from a CBFM fit, \code{\link[=summary.CBFM]{summary.CBFM()}} for summaries including standard errors and confidence intervals, and \code{\link[=varpart]{varpart()}} for variance partitioning of a CBFM fit.
+\code{\link[=corX]{corX()}} for calculating between-species (cross-)correlations due to measured covariates, \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for extracting the fitted values from a CBFM fit, \code{\link[=gratia_effects]{gratia_effects()}} for calculating smooth estimates and parametric effects suitable for plotting/visualization; \code{\link[=influence.CBFM]{influence.CBFM()}} for calculating some basic influence measures from a CBFM fit, \code{\link[=ordinate.CBFM]{ordinate.CBFM()}} for an \emph{ad-hoc} approach to constructing spatio-temporal ordinations from a CBFM fit, \code{\link[=plot.CBFM]{plot.CBFM()}} for basic residual diagnostics from a CBFM fit, \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating residuals from a CBFM fit, \code{\link[=simulate.CBFM]{simulate.CBFM()}} for simulating spatio-temporal multivariate abundance data from a CBFM fit, \code{\link[=summary.CBFM]{summary.CBFM()}} for summaries including standard errors and confidence intervals, and \code{\link[=varpart]{varpart()}} for variance partitioning of a CBFM fit.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
@@ -1791,7 +1766,6 @@ Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
 \item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
 \item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well, if at all!
 \item As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}.
-\item The returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be \emph{very} large data frames!
 }
 }
 \section{CBFM is not working for my data?!}{
