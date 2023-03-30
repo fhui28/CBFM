@@ -100,79 +100,6 @@ ggmatplot(true_G_space[lower.tri(true_G_space)], fitcbfm_sp$G_space[lower.tri(fi
 
 
 ##------------------------------
-## **Example 1 modified: Fitting a CBFM to spatial multivariate data**
-## simulated from a spatial latent variable model
-## Please note the data generation process (thus) differs from CBFM.
-##------------------------------
-set.seed(2022)
-num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
-num_spp <- 50 # Number of species
-num_X <- 4 # Number of regression slopes
-
-spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-spp_intercepts <- rnorm(num_spp, -3, sd = 0.5)
-spp_gear <- rnorm(num_spp, sd = 0.5) %>% exp
-
-# Simulate spatial coordinates and environmental covariate components
-# We will use this information in later examples as well
-xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(0.7,0.3)*num_sites))
-colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
-dat <- data.frame(xy, X)
-mm <- model.matrix(~ temp + depth + chla + O2 + gear, data = dat)
-
-# Simulate latent variable component
-# We will use this information in later examples as well
-true_lvs <- RFsimulate(model = RMexp(var=1, scale=2),
-x = xy$x, y = xy$y, n = 2)@data %>%
-as.matrix
-spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
-
-
-# Simulate spatial multivariate abundance data (presence-absence)
-eta <- tcrossprod(mm, cbind(spp_intercepts,spp_slopes,spp_gear)) + tcrossprod(true_lvs, spp_loadings)
-simy <- matrix(rbinom(num_sites * num_spp, size = 1, prob = plogis(eta)), nrow = num_sites)
-
-
-# Set up spatial basis functions for CBFM -- Most users will start here!
-# We will also use this basis functions in some later examples
-num_basisfunctions <- 25 # Number of spatial basis functions to use
-sp_basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>%
-as.matrix %>%
-{.[,-(1)]} # Remove the first intercept column
-
-
-# Fit CBFMs
-fitcbfm <- CBFM(y = simy, 
-                formula = ~ temp + depth + chla + O2, 
-                data = dat,
-                B_space = sp_basisfunctions, 
-                B_time = matrix(dat$gear, ncol = 1),
-                family = binomial(), 
-                control = list(trace = 1),
-                Sigma_control = list(rank = c(5,"full")), 
-                G_control = list(rank = c(2,"full"), custom_time = diag(nrow = num_spp))
-                )
-
-fitcbfm$basis_effects_mat[,fitcbfm$num_B]
-out_CBFM$basis_effects_mat[,out_CBFM$num_B]
-
-qplot(fitcbfm$basis_effects_mat[,fitcbfm$num_B], out_CBFM$basis_effects_mat[,out_CBFM$num_B]) +
-     geom_abline(intercept = 0, slope = 1)
-
-data.frame(spp_gear, unconstrained = fitcbfm$basis_effects_mat[,fitcbfm$num_B], constrained = out_CBFM$basis_effects_mat[,out_CBFM$num_B]) %>% 
-     t %>% 
-     dist
-
-fitcbfm$logLik
-out_CBFM$logLik
-
-diag(fitcbfm$covar_components$bottomright)[grep("B_time", names(diag(fitcbfm$covar_components$bottomright)))] 
-diag(out_CBFM$covar_components$bottomright)[grep("B_time", names(diag(out_CBFM$covar_components$bottomright)))] 
-
-
-
-##------------------------------
 ## **Example 2 modified: Fitting a CBFM to spatial multivariate presence-absence data**
 ## simulated from a spatial latent variable model
 ## Please note the data generation process (thus) differs from CBFM.
@@ -316,9 +243,41 @@ function() {
 
 
 function() {
-     Sigmainv = new_LoadingnuggetSigma_space$covinv
-     basis_effects_mat = centered_BF_mat 
+     sel_spp <- c(2,36,70:74)
+     y = fit1$y[,sel_spp,drop=FALSE]
+     formula = ~ SVVESSEL + GLO_SURFTEMP_month + GLO_BOTTEMP_month + logSTRESS_Q95_YR
+     # formula ~ s(SVVESSEL, bs="ts", m=1) + s(GLO_SURFTEMP_month, bs="ts", m=1) + s(GLO_BOTTEMP_month, bs="ts", m=1) + s(logSTRESS_Q95_YR, bs="ts", m=1)
+     ziformula <- NULL
+     data = fit1$data
+     B_space = B_space_FRK 
+     family = ztnb2()
+     ncores = 8
+     control = list(trace = 1)
+     B_time = NULL
+     B_spacetime = NULL
+     offset = NULL
+     gamma = 1
+     zigamma = 1
+     trial_size = 1
+     nonzeromean_B_space = FALSE
+     nonzeromean_B_time = FALSE
+     nonzeromean_B_spacetime = FALSE
+     dofit = TRUE
+     stderrors = TRUE
+     select = FALSE
+     ziselect = FALSE
+     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+     TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
+     G_control = list(rank = 2)
+     Sigma_control = list(rank = 2)
+     k_check_control = list(subsample = 5000, n.rep = 400)
+     }
+
+
+function() {
      Ginv = new_LoadingnuggetG_space$covinv
+     basis_effects_mat = centered_BF_mat
+     Sigmainv = new_LoadingnuggetSigma_space$covinv
      B = B_space
      X = X
      ziX = ziX
@@ -328,6 +287,6 @@ function() {
      powerparam = new_fit_CBFM_ptest$powerparam
      zibetas = new_fit_CBFM_ptest$zibetas 
      trial_size = trial_size
-     family = family
-     Sigma_control = Sigma_control
+     use_rank_element = 1
+     return_correlation = is.null(Sigma_control$custom_space)     
      }
