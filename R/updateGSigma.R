@@ -1,5 +1,6 @@
 update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
                         trial_size, family, G_control, use_rank_element, return_correlation = TRUE) {
+     
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
@@ -54,8 +55,8 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                }
           
           if(use_structure == "unstructured") {
-               BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-               BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
+               BtKB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+               BtKB <- Matrix::bdiag(BtKB)
                gc()
       
                vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Matrix::Diagonal(n = num_spp), Sigmainv[,k]))) 
@@ -73,13 +74,15 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     cw_Ginv_Sigmainv <- Matrix::Matrix(kronecker(chol2inv(chol(cw_G)), Sigmainv), sparse = TRUE)
            
                     if(G_control$inv_method == "chol2inv")
-                         Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                         tic <- proc.time()
+                         Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BtKB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
            #                if(G_control$inv_method == "schulz") {
-           #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
+           #                     mat <- forceSymmetric(BtKB + cw_Ginv_Sigmainv)
            #                     Q1 <- as.vector(.schulz_inversion_cmpfn(mat = mat))
            #                     rm(mat)
            #                     }
-           
+                         toc <- proc.time()
+                         
                     new_G <- matrix(0, nrow = num_spp, ncol = num_spp)
                     if(num_spp > 1)
                          new_G[lower.tri(new_G, diag = TRUE)] <- crossprod(Q2, Q1)
@@ -98,13 +101,13 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                }
           
           if(use_structure == "identity") {
-               BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-               BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
+               BtKB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+               BtKB <- Matrix::bdiag(BtKB)
                gc()
                
                fn <- function(x) {
                     out <- 0.5*num_basisfns*num_spp*log(x) - 0.5*x*sum(diag(A_Sigmain_AT))
-                    out <- out - 0.5*determinant(BWB_minus_BWX_XWXinv_XWB + x*kronecker(Matrix::Diagonal(n = num_spp), Sigmainv))$mod
+                    out <- out - 0.5*determinant(BtKB + x*kronecker(Matrix::Diagonal(n = num_spp), Sigmainv))$mod
                     return(out)
                     }
                
@@ -276,8 +279,8 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                     }
                 
                
-                BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-                BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
+                BtKB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+                BtKB <- Matrix::bdiag(BtKB)
                 gc()               
 
                 # For some reason I have to do do a dense matrix first before converting to sparse!
@@ -295,10 +298,10 @@ update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL,
                         cw_Ginv_Sigmainv <- Matrix(kronecker(Ginv, chol2inv(chol(cw_Sigma))), sparse = TRUE)    
 
                         if(Sigma_control$inv_method == "chol2inv")
-                                Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                                Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BtKB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
                          
 #                if(Sigma_control$inv_method == "schulz") {
-#                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
+#                     mat <- forceSymmetric(BtKB + cw_Ginv_Sigmainv)
 #                     Q1 <- as.vector(.schulz_inversion_cmpfn(mat = mat))
 #                     rm(mat)
 #                     }
