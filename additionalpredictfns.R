@@ -1,5 +1,5 @@
 predict_PA_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, 
-                         type = "link", coverage = 0.95, ncores = NULL, parameter_uncertainty = FALSE, num_sims = 10, ...) {
+                         type = "link", ncores = NULL, parameter_uncertainty = FALSE, num_sims = 100, ...) {
      
      se_fit <- FALSE # Switching off standard errors for this function
      
@@ -126,7 +126,7 @@ predict_PA_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space 
         }
 
 predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_space = NULL, new_B_time = NULL, new_B_spacetime = NULL, B_dampen = NULL,
-                            type = "link", coverage = 0.95, ncores = NULL, parameter_uncertainty = FALSE, num_sims = 10, ...) {
+                            type = "link", ncores = NULL, parameter_uncertainty = FALSE, num_sims = 100, ...) {
      
      se_fit <- FALSE # Switching off standard errors for this function
      
@@ -302,12 +302,168 @@ predict_ztcount_CBFM <- function(object, newdata = NULL, manualX = NULL, new_B_s
           }
      }
 
-## To get a hurdle prediction, do something like
-#' pa_predictions <- predict_PA_CBFM(object = fit$pa_fit, xxx)
-#' ztcount_predictions <- predict_ztcount_CBFM(object = fit$count_fit, xxx)
-#' hurdle_predictions <- pa_predictions * ztcount_predictions
 
 
+predict_hurdle_CBFM <- function(object, prediction_form = "mean", linex_a = 0.001, quantile_threshold = 0.9,
+                                  newdata_pa = NULL, manualX_pa = NULL, new_B_space_pa = NULL, new_B_time_pa = NULL, new_B_spacetime_pa = NULL, 
+                                  newdata_count = NULL, manualX_count = NULL, new_B_space_count = NULL, new_B_time_count = NULL, new_B_spacetime_count = NULL, 
+                                  se_fit = FALSE, ncores = NULL, parameter_uncertainty = FALSE, num_sims = 100, ...) {
+     
+     ##-------------------
+     #' # Checks and balances
+     ##-------------------
+     if(!inherits(object, "CBFM_hurdle"))  
+          stop("`object' is not of class \"CBFM_hurdle\"")
+     if(object$count_fit$family[1] != "ztnegative.binomial")  
+          stop("The current function is designed only of zero-truncated negative binomial hurdle CBFMs.")
+     
+     prediction_form <- match.arg(prediction_form, choices = c("mean", "median", "linex", "threshold"))
+     if(linex_a == 0) 
+          stop("For linex prediction, the tuning parameter a must not equal to zero.")
+     if(quantile_threshold <= 0 | quantile_threshold >= 1) 
+          stop("For threshold prediction, the quantile threshold must be between zero and one.")
+     se_fit <- FALSE # Switching off standard errors for this function
+     
+     
+     ##-------------------
+     #' # PA component prediction
+     ##-------------------
+     preds_pa <- predict_PA_CBFM(object$pa_fit, newdata = newdata_pa, manualX = manualX_pa,  
+                                 new_B_space = new_B_space_pa, new_B_time = new_B_time_pa, new_B_spacetime = new_B_spacetime_pa,
+                                 type = "response", coverage = coverage, parameter_uncertainty = parameter_uncertainty, num_sims = num_sims, ncores = ncores)
+
+     all_dispparam <- matrix(object$count_fit$dispparam, nrow = nrow(preds_pa), ncol = ncol(preds_pa), byrow = TRUE)
+     
+     ##-------------------
+     #' # If parameter uncertainty is not required
+     ##-------------------
+     if(length(dim(preds_pa)) == 2) {
+          if(prediction_form %in% c("mean", "threshold")) {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "response", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- preds_pa * preds_counts
+               }
+     
+          if(prediction_form == "median") {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "link", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- gamlss.dist::qZANBI(0.5, 
+                                                       mu = exp(preds_counts)+1e-12,  
+                                                       sigma = all_dispparam,
+                                                       nu = 1 - preds_pa)
+               final_prediction <- matrix(final_prediction, nrow = nrow(preds_pa), ncol = ncol(preds_pa))
+               }
+          
+          if(prediction_form == "linex") {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "link", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- .linexpred_hurdlenb(a = linex_a, 
+                                                       p = preds_pa, 
+                                                       mu = exp(preds_counts)+1e-12,
+                                                       phi = all_dispparam)
+               }
+          
+          if(prediction_form == "threshold") {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "link", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- pmin(final_prediction,
+                                        gamlss.dist::qZANBI(quantile_threshold, 
+                                                            mu = exp(preds_counts)+1e-12,  
+                                                            sigma = all_dispparam,
+                                                            nu = 1-preds_pa)) 
+               final_prediction <- matrix(final_prediction, nrow = nrow(preds_pa), ncol = ncol(preds_pa))
+               }
+          
+          
+          return(final_prediction)
+          }
+          
+     ##-------------------
+     #' # If parameter uncertainty is needed required
+     ##-------------------
+     if(length(dim(preds_pa)) == 3) {
+          if(prediction_form %in% c("mean", "threshold")) {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "response", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- array(NA, dim = dim(preds_pa))
+               for(k0 in 1:dim(preds_pa)[3])
+                    final_prediction[,,k0] <- preds_pa[,,k0] * preds_counts[,,k0]
+          }
+          
+          if(prediction_form == "median") {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "link", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+       
+               final_prediction <- array(NA, dim = dim(preds_pa))
+               for(k0 in 1:dim(preds_pa)[3]) {
+                    final_prediction[,,k0] <- matrix(gamlss.dist::qZANBI(0.5, 
+                                                       mu = exp(preds_counts[,,k0])+1e-12,  
+                                                       sigma = all_dispparam,
+                                                       nu = 1 - preds_pa[,,k0]), nrow = nrow(preds_pa), ncol = ncol(preds_pa))
+                    }
+          }
+          
+          if(prediction_form == "linex") {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "link", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- array(NA, dim = dim(preds_pa))
+               for(k0 in 1:dim(preds_pa)[3]) {
+                    final_prediction[,,k0] <- .linexpred_hurdlenb(a = linex_a, 
+                                                            p = preds_pa[,,k0], 
+                                                            mu = exp(preds_counts[,,k0])+1e-12,
+                                                            phi = all_dispparam)
+                    }
+               }
+          
+          if(prediction_form == "threshold") {
+               preds_counts <- predict_ztcount_CBFM(object$count_fit, newdata = newdata_count, manualX = manualX_count,  
+                                            new_B_space = new_B_space_count, new_B_time = new_B_time_count, new_B_spacetime = new_B_spacetime_count,
+                                            type = "link", se_fit = FALSE, coverage = coverage, parameter_uncertainty = parameter_uncertainty, 
+                                            num_sims = num_sims, ncores = ncores)
+               
+               final_prediction <- array(NA, dim = dim(preds_pa))
+               for(k0 in 1:dim(preds_pa)[3]) {
+                    final_prediction[,,k0] <- matrix(pmin(final_prediction[,,k0],
+                                                   gamlss.dist::qZANBI(quantile_threshold, 
+                                                                       mu = exp(preds_counts[,,k0])+1e-12,  
+                                                                       sigma = all_dispparam,
+                                                                       nu = 1-preds_pa[,,k0])),
+                                                   nrow = nrow(preds_pa), ncol = ncol(preds_pa))
+                    }
+               }
+          
+          
+          return(final_prediction)
+          }
+     
+     }
+
+
+
+.linexpred_hurdlenb <- function(a = 0.01, p, phi, mu) { 
+     out <- (1-p) + p * (1/(1+phi*mu))^(1/phi) * (1 - (1/(1+phi*mu))^(1/phi))^(-1) * ((1 - mu*exp(-a)/(mu+1/phi))^(-1/phi) - 1) # E(exp(-aY)) where Y ~ HurdleNB(p, mu, phi), and p is probability of presence; from https://etd.ohiolink.edu/apexprod/rws_etd/send_file/send?accession=osu1543573678017356&disposition=inline
+     return(-1/a * log(out))
+     }
 
 
 #' @title Construct species-specific dampening weights for the basis functions.
@@ -406,8 +562,4 @@ construct_dampening_weights <- function(object, new_spatial_locations = NULL, me
 
     return(BFweights)
     }
-
-
-
-
 
