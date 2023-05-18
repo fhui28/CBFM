@@ -132,6 +132,7 @@
 #' labs(x = "depth", y = "Effect") +
 #' theme_bw()
 #' 
+#' 
 #' }
 #' 
 #' @importFrom doParallel registerDoParallel

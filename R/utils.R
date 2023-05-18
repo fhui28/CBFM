@@ -27,7 +27,7 @@
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
                }
           nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
-          out <- suppressMessages(parametric_effects(object = nullfit, data = nulldat))
+          out <- suppressMessages(parametric_effects(object = nullfit))
           out$species <- colnames(object$y)[j]
           }
      
@@ -41,7 +41,7 @@
                sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                sel_rowcols <- sel_rowcols[(1:num_ziX)]
                nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
-               ziout <- suppressMessages(parametric_effects(object = zinullfit, data = nulldat))
+               ziout <- suppressMessages(parametric_effects(object = zinullfit))
                ziout$species <- colnames(object$y)[j]
                }
           }
@@ -72,7 +72,7 @@
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
                }
           nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
-          out <- suppressMessages(smooth_estimates(object = nullfit, data = nulldat))
+          out <- suppressMessages(smooth_estimates(object = nullfit))
           out$species <- colnames(object$y)[j]
           }
      
@@ -86,7 +86,7 @@
                sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                sel_rowcols <- sel_rowcols[(1:num_ziX)]
                zinullfit$Vp <- zinullfit$Ve <- zinullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
-               ziout <- suppressMessages(smooth_estimates(object = zinullfit, data = nulldat))
+               ziout <- suppressMessages(smooth_estimates(object = zinullfit))
                ziout$species <- colnames(object$y)[j]
                }
           }
