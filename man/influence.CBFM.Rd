@@ -22,7 +22,7 @@ A list containing two elements:
 }
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Takes a fitted \code{CBFM} object and calculates hat values i.e., diagonal elements of the influence/hat matrix and an approximate Cook's distance.
 }

@@ -21,7 +21,7 @@ A list with the following components (as appropriate):
 \item{allzi_smooth_estimates: }{If \code{ziformula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Calculates parametric effects and smooth estimates for all species from a \code{CBFM} fit, based on applying the corresponding functions \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} and \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}}.
 }
@@ -133,6 +133,7 @@ geom_rug(aes(x = depth), data = dat, sides = "b", color = "black") +
 labs(x = "depth", y = "Effect") +
 theme_bw()
 
+geteffects
 }
 
 }

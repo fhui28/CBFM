@@ -15,7 +15,7 @@ tensorproduct(B1, B2)
 A matrix resulting from the tensor product, with the number of columns equal to \code{ncol(B1)*ncol(B2)}.
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 A simple function used to calculate the tensor product of two matrices.
 }
@@ -24,6 +24,10 @@ For the purposes of this package, this function may be used for constructing a m
 
 The tensor product is formed by multiplying the first column of \code{B2} with \code{B1}, then the second column of \code{B2} with \code{B1}, and so on, working through all the columns of \code{B2}.
 }
+\section{Warnings}{
+No attempt is made by the function to made the resulting matrix sparse, unless the suppled \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
+}
+
 \examples{
 \dontrun{
 # Please see Example 3 in the help file for the main CBFM function 
@@ -35,8 +39,4 @@ The tensor product is formed by multiplying the first column of \code{B2} with \
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
-}
-\section{Warnings}{
-
-No attempt is made by the function to made the resulting matrix sparse, unless the suppled \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
 }

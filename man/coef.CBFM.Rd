@@ -15,7 +15,7 @@
 A matrix of estimated species-specific regression coefficients corresponding to the model matrix created, where the number of rows is equal to the number of species. For zero-inflated distributions, it returns a list containing both the matrix of estimated species-specific regression coefficients corresponding to the model matrix created, and a vector of estimated species-specific probabilities of zero-inflation on the logit scale.
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 Extracts the estimated regression coefficients associated with the covariates from a fitted \code{CBFM} object.
 }
