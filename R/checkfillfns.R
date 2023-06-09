@@ -315,7 +315,6 @@
         }
 
     control$method <- match.arg(control$method, choices = c("REML", "simple", "ML"))
-    #control$structure <- match.arg(control$structure, choices = c("unstructured", "identity"))
     #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
      
     return(control)
@@ -331,13 +330,6 @@
           stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2. 
                Please note ranks still needs to be supplied even when custom Sigmas are used (although the corresponding rank is ignored in such case).")
           }
-     # if(is.null(control$structure))
-     #      control$structure <- rep("unstructured", sum(which_B_used))
-     # if(length(control$structure) == 1)
-     #      control$structure <- rep(control$structure, sum(which_B_used))
-     # if(sum(which_B_used) != length(control$structure))
-     #      stop("Sigma_control$structure should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the structure of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$structure should be a vector with length 2.
-     #           Please note structure still needs to be supplied even when custom Sigmas are used (although the corresponding element is ignored in such case).")
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$tol))
