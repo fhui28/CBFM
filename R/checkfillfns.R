@@ -61,6 +61,16 @@
           }
      }
      
+.check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used) {
+     if(is.null(Sigma_control$custom_space) & G_control$structure != "unstructured")
+          stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+     
+     if(is.null(Sigma_control$custom_time) & G_control$structure[sum(which_B_used[1:2])] != "unstructured")
+          stop("If Sigma_control$custom_time is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+
+     if(is.null(Sigma_control$custom_spacetime) & G_control$structure[sum(which_B_used[1:3])] != "unstructured")
+          stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+     }
 
 .check_family <- function(family, y, trial_size) {
     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", 
@@ -81,7 +91,23 @@
         }
      }
 
+
+.check_G_correlation <- function(custom_Sigma, G_structure) {
+     if(is.null(custom_Sigma)) #' If no custom Sigma is supplied, then G must be estimated as a correlation matrix
+          out <- 1
+     if(!is.null(custom_Sigma)) { #' If custom Sigma is supplied, then G can be estimated as correlation or covariance depending on structure
+          if(G_structure == "unstructured")
+               out <- 0
+          if(G_structure == "identity")
+               out <- 1
+          if(G_structure == "homogeneous")
+               out <- 1
+          }
      
+     return(out)
+     } 
+     
+
 .check_nonzeromeans <- function(nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime) {
      if(nonzeromean_B_space)
           message("A non-zero mean vector is being used for the distribution of the spatial basis function coefficients. Please check this is what you want!")
@@ -89,7 +115,8 @@
           message("A non-zero mean vector is being used for the distribution of the temporal basis function coefficients. Please check this is what you want!")
      if(nonzeromean_B_spacetime)
           message("A non-zero mean vector is being used for the distribution of the spatio-temporal basis function coefficients. Please check this is what you want!")
-}
+     }
+
 
 .check_offset <- function(offset = NULL, y) {
      if(!is.null(offset)) { 
