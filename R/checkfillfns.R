@@ -82,6 +82,15 @@
      }
 
      
+.check_nonzeromeans <- function(nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime) {
+     if(nonzeromean_B_space)
+          message("A non-zero mean vector is being used for the distribution of the spatial basis function coefficients. Please check this is what you want!")
+     if(nonzeromean_B_time)
+          message("A non-zero mean vector is being used for the distribution of the temporal basis function coefficients. Please check this is what you want!")
+     if(nonzeromean_B_spacetime)
+          message("A non-zero mean vector is being used for the distribution of the spatio-temporal basis function coefficients. Please check this is what you want!")
+}
+
 .check_offset <- function(offset = NULL, y) {
      if(!is.null(offset)) { 
           if(!is.matrix(offset)) 
@@ -314,7 +323,12 @@
         control$which_custom_G_used[3] <- 1
         }
 
-    control$method <- match.arg(control$method, choices = c("REML", "simple", "ML"))
+     if(any(control$structure %in% c("identity", "homogeneous"))) {
+          warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options must not be done unless you know what are doing, especially as checks are made ensure parameter identifiability of the model in these settings!")
+          }
+     
+     
+     control$method <- match.arg(control$method, choices = c("REML", "simple", "ML"))
     #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
      
     return(control)
