@@ -212,14 +212,13 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 ## Custom testing
 ##----------------------------------
 function() {
-     #y = simy_train
-     #useformula <- ~ temp + depth + chla + O2
+     y = simy_train
      formula <- useformula
      ziformula <- NULL
-     data = dat
+     data = dat_train
      family =  stats::binomial() 
-     B_space = basisfunctions
-     B_time = NULL
+     B_space = train_space_basisfunctions
+     B_time = train_time_basisfunctions
      B_spacetime = NULL
      offset = NULL
      ncores = NULL
@@ -236,8 +235,8 @@ function() {
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      control = list(trace = 1)
-     G_control = list(rank = 2, custom_space = true_G_space)
-     Sigma_control = list(rank = 2, custom_space = true_Sigma_space)
+     G_control = list(rank = c(5,5), structure = c("unstructured", "identity"))
+     Sigma_control = list(rank = c(5,"full"), custom_time = custom_Sigma_time)
      k_check_control = list(subsample = 5000, n.rep = 400)
      }
 
