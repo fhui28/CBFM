@@ -60,6 +60,8 @@
 #                warning("There are columns of formed B that are highly correlated. This could cause potential issues and instability in the fitted model.")          
           }
      }
+
+
      
 .check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used) {
      if(is.null(Sigma_control$custom_space) & G_control$structure != "unstructured")
@@ -71,6 +73,8 @@
      if(is.null(Sigma_control$custom_spacetime) & G_control$structure[sum(which_B_used[1:3])] != "unstructured")
           stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
      }
+
+
 
 .check_family <- function(family, y, trial_size) {
     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", 
