@@ -361,7 +361,7 @@
         }
 
      if(any(control$structure %in% c("identity", "homogeneous"))) {
-          warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options must not be done unless you know what are doing, especially as checks are made ensure parameter identifiability of the model in these settings!")
+          warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options should not be done unless you know what are doing, especially as checks are made ensure parameter identifiability of the model in these settings!")
           }
      
      
@@ -398,7 +398,7 @@
             stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
         if(nrow(control$custom_space) != num_spacebasisfns | ncol(control$custom_space) != num_spacebasisfns)
             stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
-         message("Because Sigma_control$custom_space is supplied, then G_space will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
+          #message("Because Sigma_control$custom_space is supplied, then G_space will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
          control$which_custom_Sigma_used[1] <- 1
          }
      if(!is.null(control$custom_time)) {
@@ -406,15 +406,23 @@
             stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
         if(nrow(control$custom_time) != num_timebasisfns | ncol(control$custom_time) != num_timebasisfns)
             stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
-        message("Because Sigma_control$custom_time is supplied, then G_time will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
+        #message("Because Sigma_control$custom_time is supplied, then G_time will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
         control$which_custom_Sigma_used[2] <- 1
         }
      if(!is.null(control$custom_spacetime)) {
          if(which_B_used[3] == 0) 
             stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
-        if(nrow(control$custom_spacetime) != num_spacetimebasisfns | ncol(control$custom_spacetime) != num_spacetimebasisfns)
-            stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).") 
-        message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
+          if(is.matrix(control$custom_spacetime)) {
+               if(nrow(control$custom_spacetime) != num_spacetimebasisfns | ncol(control$custom_spacetime) != num_spacetimebasisfns)
+                    stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
+               }
+          if(is.list(control$custom_spacetime)) {
+               for(j in 1:length(control$custom_spacetime)) {
+                    if(nrow(control$custom_spacetime[[j]]) != num_spacetimebasisfns | ncol(control$custom_spacetime[[j]]) != num_spacetimebasisfns)
+                    stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
+                    } 
+               }
+          #message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
         control$which_custom_Sigma_used[3] <- 1
         }
 
