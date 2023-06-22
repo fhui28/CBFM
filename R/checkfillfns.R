@@ -372,7 +372,7 @@
     }
      
 
-.fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
+.fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns, G_control) {
     if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
@@ -421,6 +421,10 @@
                     if(nrow(control$custom_spacetime[[j]]) != num_spacetimebasisfns | ncol(control$custom_spacetime[[j]]) != num_spacetimebasisfns)
                     stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
                     } 
+               }
+          if(is.list(control$custom_spacetime)) {
+               if(G_control$structure[sum(which_B_used[1:3])] != "homogeneous")
+                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_spacetime, then the corresponding element in G_control$structure must be set to \"homogeneous\"...this is a current constraint of CBFM. Sorry!")
                }
           #message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
         control$which_custom_Sigma_used[3] <- 1
