@@ -347,7 +347,7 @@
 	
 
 #' @noRd
-.update_LoadingSigma_fn <- function(Sigma, Sigmainv, Sigma_control, use_rank_element, estimate_lambda_not_Sigma) {
+.update_LoadingSigma_fn <- function(Sigma, Sigmainv, Sigma_control, use_rank_element, estimate_lambda_not_Sigma, doing_spacetime) {
      if(!estimate_lambda_not_Sigma) {
           num_basisfns <- nrow(Sigma)
           num_rank <- Sigma_control$rank[use_rank_element]
@@ -390,7 +390,17 @@
      
      #' After lambda has been estimated in the updating Sigma part of the algorithm, Sigma itself is adjusted based on this i.e., kronecker(lambda x R, Sigma) = kronecker(R, lambda x Sigma)
      if(estimate_lambda_not_Sigma) {
-          out <- list(Loading = NULL, nugget = NULL, cov = .pinv(Sigmainv) * Sigma, covinv = Sigmainv / Sigma)
+          if(!doing_spacetime)
+               out <- list(Loading = NULL, nugget = NULL, cov = .pinv(Sigmainv) * Sigma, covinv = Sigmainv / Sigma)
+          if(doing_spacetime) {
+               if(is.matrix(Sigma_control$custom_spacetime))
+                    out <- list(Loading = NULL, nugget = NULL, cov = .pinv(Sigmainv) * Sigma, covinv = Sigmainv / Sigma)
+               if(is.list(Sigma_control$custom_spacetime))
+                    out <- list(Loading = NULL, nugget = NULL, 
+                                cov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control$custom_spacetime[[x]]) * Sigma[x])),
+                                covinv = Reduce("+", lapply(1:length(Sigma), function(x) Sigma_control$custom_spacetime[[x]] / Sigma[x]))
+                                )
+                    }
           }
      
      return(out)
