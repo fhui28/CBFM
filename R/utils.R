@@ -160,7 +160,49 @@
    return(bigS)
    }
    
-   
+  
+## Function for calculating some starting lambda values, which are then used into .update_Sigma_fn() when multiple lambda's need to be estimated.
+## Based on and acknowledgments go to the initial.sp function in the mgcv package.
+.get_initial_lambdas <- function(BtKB, custom_spacetime) {
+     starting_lambdainv <- array(0, length(custom_spacetime))
+     ldxx <- diag(BtKB)
+     ldss <- ldxx * 0
+     pen <- rep(FALSE, length(ldxx))
+     
+     S <- lapply(1:length(custom_spacetime), function(j2) .pinv(custom_spacetime[[j2]]))
+     
+     for(j in 1:length(custom_spacetime)) {
+          rsS <- rowMeans(abs(S[[j]]))
+          csS <- colMeans(abs(S[[j]]))
+          dS <- diag(abs(S[[j]]))
+          thresh <- .Machine$double.eps^0.8 * max(abs(S[[j]]))
+          ind <- rsS > thresh & csS > thresh & dS > thresh
+          ss <- diag(S[[j]])[ind]
+          xx <- ldxx
+          xx <- xx[ind]
+          pen <- pen | ind
+          sizeXX <- mean(xx)
+          sizeS <- mean(ss)
+          starting_lambdainv[j] <- sizeXX / sizeS
+          ldss <- ldss + starting_lambdainv[j] * diag(S[[j]])
+          }
+          
+     ind <- ldss > 0 & pen & ldxx > 0
+     ldxx <- ldxx[ind]
+     ldss <- ldss[ind]
+     while(mean(ldxx/(ldxx + ldss)) > 0.4) {
+          starting_lambdainv <- starting_lambdainv * 10
+          ldss <- ldss * 10
+          }
+     while (mean(ldxx/(ldxx + ldss)) < 0.4) {
+          starting_lambdainv <- starting_lambdainv/10
+          ldss <- ldss/10
+          }
+     
+     return(1/starting_lambdainv)
+     }
+
+
 ## This function is used specifically when an additive form of the CBFM is used, for use in the construction of the Bayesian posterior covariance matrix for standard errors.
 ## For example, given G_space, Sigma_space, G_time, Sigma_time, it forms for covariance matrix for vector of the random slopes (a_{space,1},a_{time,1}, a_{space,2},a_{time,2},...a_{space,m},a_{time,m}). 
 .kkproduct <- function(G1, G2, G3 = NULL, Sigma1, Sigma2, Sigma3 = NULL, inverse = TRUE) {
@@ -229,7 +271,7 @@
 
 
 ## Tries chol2inv then, which will fail for singular matrices. If it does fail then go to use .pinv. 
-## This was originally used over just .pinv as it is more scalable and for positive definite matrices is marginally more accurate [difference is very very small though]. However since July 2022 it is no longer used and .pinv is now used instead, because .choltheninv has the problem that for positive-semidefinite matrices, if you apply it twice then it may not return the original matrix [it does .pinv in the first inverse then does chol2inv in the second inverse]
+## This was originally used over just .pinv as it is more scalable and for positive definite matrices is marginally more accurate [difference is very very small though]. However since July 2022, it is no longer used and .pinv is now used instead, because .choltheninv has the problem that for positive-semidefinite matrices, if you apply it twice then it may not return the original matrix [it does .pinv in the first inverse then does chol2inv in the second inverse]
 # .cholthenpinv <- function(V) {
 #    out <- try(chol2inv(chol(V)), silent = TRUE)
 #    if(inherits(out, "try-error"))
