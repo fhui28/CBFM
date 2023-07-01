@@ -68,16 +68,39 @@
           if(G_control$structure[1] != "unstructured")
                stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
           }
-     
      if(is.null(Sigma_control$custom_time) & which_B_used[2]) {
           if(G_control$structure[sum(which_B_used[1:2])] != "unstructured")
                stop("If Sigma_control$custom_time is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
           }
-
      if(is.null(Sigma_control$custom_spacetime) & which_B_used[3]) {
           if(G_control$structure[sum(which_B_used[1:3])] != "unstructured")
                stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
           }
+     
+     
+     if(any(G_control$structure %in% c("identity", "homogeneous"))) {
+          warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options should not be done unless you know what are doing, especially as very little checks are made to ensure parameter identifiability of the model in these settings!")
+          }
+     
+     
+     if(which_B_used[1]) {
+          if(G_control$structure[1] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_space)) {
+               stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
+               } }
+          }
+     
+     if(which_B_used[2]) {
+          if(G_control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_time)) {
+                    stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
+               } }
+          }
+          
+     if(which_B_used[3]) {
+          if(G_control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_spacetime)) {
+               stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
+               } }
+          }
+     
      }
 
 
@@ -359,29 +382,6 @@
             stop("G_control$custom_spacetime should be a square matrix with the same dimensions as ncol(y).") 
         control$which_custom_G_used[3] <- 1
         }
-
-     
-     if(any(control$structure %in% c("identity", "homogeneous"))) {
-          warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options should not be done unless you know what are doing, especially as very little checks are made to ensure parameter identifiability of the model in these settings!")
-          }
-          
-     if(which_B_used[1]) {
-          if(control$structure[1] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_space)) {
-               stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
-               } }
-          }
-     
-     if(which_B_used[2]) {
-          if(control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_time)) {
-                    stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
-               } }
-          }
-          
-     if(which_B_used[3]) {
-          if(control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_spacetime)) {
-               stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
-               } }
-          }
           
      control$method <- match.arg(control$method, choices = c("REML", "simple", "ML"))
     #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
@@ -433,13 +433,15 @@
                     stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
                }
           if(is.list(control$custom_spacetime)) {
+               if(length(control$custom_spacetime) == 1)
+                    stop("If the list Sigma_control$custom_spacetime is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_spacetime to just be a single matrix instead of a list.")
                for(j in 1:length(control$custom_spacetime)) {
                     if(nrow(control$custom_spacetime[[j]]) != num_spacetimebasisfns | ncol(control$custom_spacetime[[j]]) != num_spacetimebasisfns)
                     stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
                     } 
                }
           if(is.list(control$custom_spacetime)) {
-               if(G_control$structure[sum(which_B_used[1:3])] != "homogeneous")
+               if(G_control$structure[sum(which_B_used[1:3])] != "homogeneous") #' I am almost certain you can set this identity as well and it would work. But anyway...
                     stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_spacetime, then the corresponding element in G_control$structure must be set to \"homogeneous\"...this is a current constraint of CBFM. Sorry!")
                }
         control$which_custom_Sigma_used[3] <- 1
