@@ -64,15 +64,15 @@
 
      
 .check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used) {
-     if(is.null(Sigma_control$custom_space) & which_B_used[1]) {
+     if(is.null(Sigma_control[["custom_space"]]) & which_B_used[1]) {
           if(G_control$structure[1] != "unstructured")
                stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
           }
-     if(is.null(Sigma_control$custom_time) & which_B_used[2]) {
+     if(is.null(Sigma_control[["custom_time"]]) & which_B_used[2]) {
           if(G_control$structure[sum(which_B_used[1:2])] != "unstructured")
                stop("If Sigma_control$custom_time is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
           }
-     if(is.null(Sigma_control$custom_spacetime) & which_B_used[3]) {
+     if(is.null(Sigma_control[["custom_spacetime"]]) & which_B_used[3]) {
           if(G_control$structure[sum(which_B_used[1:3])] != "unstructured")
                stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
           }
@@ -84,19 +84,19 @@
      
      
      if(which_B_used[1]) {
-          if(G_control$structure[1] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_space)) {
+          if(G_control$structure[1] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_space"]])) {
                stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
                } }
           }
      
      if(which_B_used[2]) {
-          if(G_control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_time)) {
+          if(G_control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_time"]])) {
                     stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
                } }
           }
           
      if(which_B_used[3]) {
-          if(G_control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control$custom_spacetime)) {
+          if(G_control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_spacetime"]])) {
                stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
                } }
           }
