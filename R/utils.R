@@ -169,7 +169,7 @@
      ldss <- ldxx * 0
      pen <- rep(FALSE, length(ldxx))
      
-     S <- lapply(1:length(custom_spacetime), function(j2) .pinv(custom_spacetime[[j2]]))
+     S <- lapply(custom_spacetime, .pinv)
      
      for(j in 1:length(custom_spacetime)) {
           rsS <- rowMeans(abs(S[[j]]))
