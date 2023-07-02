@@ -361,24 +361,24 @@
           control$trace <- 0
           
      control$which_custom_G_used <- c(0,0,0)
-     if(!is.null(control$custom_space)) {
+     if(!is.null(control[["custom_space"]])) {
         if(which_B_used[1] == 0)
             stop("Please do not supply G_control$custom_space if B_space is also not supplied.")
-        if(nrow(control$custom_space) != num_spp | ncol(control$custom_space) != num_spp)
+        if(nrow(control[["custom_space"]]) != num_spp | ncol(control[["custom_space"]]) != num_spp)
             stop("G_control$custom_space should be a square matrix with the same dimensions as ncol(y).") 
          control$which_custom_G_used[1] <- 1
          }
-     if(!is.null(control$custom_time)) {
+     if(!is.null(control[["custom_time"]])) {
          if(which_B_used[2] == 0)
             stop("Please do not supply G_control$custom_time if B_time is also not supplied.")
-        if(nrow(control$custom_time) != num_spp | ncol(control$custom_time) != num_spp)
+        if(nrow(control[["custom_time"]]) != num_spp | ncol(control[["custom_time"]]) != num_spp)
             stop("G_control$custom_time should be a square matrix with the same dimensions as ncol(y).") 
         control$which_custom_G_used[2] <- 1
         }
-     if(!is.null(control$custom_spacetime)) {
+     if(!is.null(control[["custom_spacetime"]])) {
          if(which_B_used[3] == 0) 
             stop("Please do not supply G_control$custom_spacetime if B_spacetime is also not supplied.")
-        if(nrow(control$custom_spacetime) != num_spp | ncol(control$custom_spacetime) != num_spp)
+        if(nrow(control[["custom_spacetime"]]) != num_spp | ncol(control[["custom_spacetime"]]) != num_spp)
             stop("G_control$custom_spacetime should be a square matrix with the same dimensions as ncol(y).") 
         control$which_custom_G_used[3] <- 1
         }
@@ -411,36 +411,36 @@
           control$trace <- 0
     
      control$which_custom_Sigma_used <- c(0,0,0)
-     if(!is.null(control$custom_space)) {
+     if(!is.null(control[["custom_space"]])) {
         if(which_B_used[1] == 0)
             stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
-        if(nrow(control$custom_space) != num_spacebasisfns | ncol(control$custom_space) != num_spacebasisfns)
+        if(nrow(control[["custom_space"]]) != num_spacebasisfns | ncol(control[["custom_space"]]) != num_spacebasisfns)
             stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
          control$which_custom_Sigma_used[1] <- 1
          }
-     if(!is.null(control$custom_time)) {
+     if(!is.null(control[["custom_time"]])) {
          if(which_B_used[2] == 0)
             stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
-        if(nrow(control$custom_time) != num_timebasisfns | ncol(control$custom_time) != num_timebasisfns)
+        if(nrow(control[["custom_time"]]) != num_timebasisfns | ncol(control[["custom_time"]]) != num_timebasisfns)
             stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
         control$which_custom_Sigma_used[2] <- 1
         }
-     if(!is.null(control$custom_spacetime)) {
+     if(!is.null(control[["custom_spacetime"]])) {
          if(which_B_used[3] == 0) 
             stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
-          if(is.matrix(control$custom_spacetime)) {
-               if(nrow(control$custom_spacetime) != num_spacetimebasisfns | ncol(control$custom_spacetime) != num_spacetimebasisfns)
+          if(is.matrix(control[["custom_spacetime"]])) {
+               if(nrow(control[["custom_spacetime"]]) != num_spacetimebasisfns | ncol(control[["custom_spacetime"]]) != num_spacetimebasisfns)
                     stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
                }
-          if(is.list(control$custom_spacetime)) {
-               if(length(control$custom_spacetime) == 1)
+          if(is.list(control[["custom_spacetime"]])) {
+               if(length(control[["custom_spacetime"]]) == 1)
                     stop("If the list Sigma_control$custom_spacetime is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_spacetime to just be a single matrix instead of a list.")
-               for(j in 1:length(control$custom_spacetime)) {
-                    if(nrow(control$custom_spacetime[[j]]) != num_spacetimebasisfns | ncol(control$custom_spacetime[[j]]) != num_spacetimebasisfns)
+               for(j in 1:length(control[["custom_spacetime"]])) {
+                    if(nrow(control[["custom_spacetime"]][[j]]) != num_spacetimebasisfns | ncol(control[["custom_spacetime"]][[j]]) != num_spacetimebasisfns)
                     stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
                     } 
                }
-          if(is.list(control$custom_spacetime)) {
+          if(is.list(control[["custom_spacetime"]])) {
                if(G_control$structure[sum(which_B_used[1:3])] != "homogeneous") #' I am almost certain you can set this identity as well and it would work. But anyway...
                     stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_spacetime, then the corresponding element in G_control$structure must be set to \"homogeneous\"...this is a current constraint of CBFM. Sorry!")
                }
