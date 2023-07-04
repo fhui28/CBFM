@@ -232,7 +232,7 @@
 
 #' @noRd
 
-.update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
+.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
                             trial_size, family, Sigma_control, estimate_lambda, which_B) {
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
@@ -374,12 +374,10 @@
                          new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
                          }
                     if(is.list(Sigma_control[["custom_spacetime"]])) {
-                         #starting_lambdas <- .get_initial_lambdas(BtKB = BtKB, custom_spacetime = Sigma_control[["custom_spacetime"]])
-                         num_lambdas <- length(Sigma_control[["custom_spacetime"]])
                          
                          fn_lambda <- function(x) { 
                               expx <- mgcv::notExp(x)
-                              Sigmainv_spacetime <- Reduce("+", lapply(1:num_lambdas, function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]]) * expx[j2])) 
+                              Sigmainv_spacetime <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]]) * expx[j2])) 
                               trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
                               
                               out <- 0.5*num_spp*determinant(Sigmainv_spacetime)$mod - 0.5*trace_quantity
@@ -404,8 +402,7 @@
                          #      return(as.vector(-out1))
                          #      }
                          
-                         update_lambda <- optim(par = mgcv::notLog(rep(1, num_lambdas)), fn = fn_lambda, 
-                                                control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
@@ -469,7 +466,7 @@
                if(is.matrix(Sigma_control[["custom_spacetime"]]))
                     out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_spacetime"]] * Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
                if(is.list(Sigma_control[["custom_spacetime"]]))
-                    out <- list(Loading = NULL, nugget = NULL, 
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
                                 invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / Sigma[x])) )
                     out$cov <- .pinv(out$invcov)
                     }

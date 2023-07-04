@@ -1821,7 +1821,7 @@
 #' @importFrom doParallel registerDoParallel
 #' @importFrom MASS theta.mm
 #' @importFrom methods as
-#' @importFrom mgcv betar gam gam.vcomp k.check ldTweedie logLik.gam model.matrix.gam notExp pen.edf predict.gam nb rTweedie Tweedie tw ziplss
+#' @importFrom mgcv betar gam gam.vcomp k.check ldTweedie logLik.gam model.matrix.gam notExp notLog pen.edf predict.gam nb rTweedie Tweedie tw ziplss
 #' @importFrom numDeriv grad
 #' @importFrom parallel detectCores
 #' @importFrom stats fitted dnorm pnorm qnorm rnorm dbinom pbinom rbinom dnbinom pnbinom rnbinom dbeta pbeta rbeta dexp pexp rexp dgamma pgamma rgamma dlogis plogis qlogis dpois ppois rpois runif dchisq pchisq qchisq qqnorm as.formula binomial formula Gamma logLik model.matrix na.omit optim nlminb residuals 
@@ -2247,8 +2247,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                if(is.list(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
-                    new_LoadingnuggetSigma_spacetime <- list(invcov = Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / 0.1))) 
-                    # Note this object will not contain the individual constituent Sigma_spacetime matrices. Basically assume all the starting values for lambda are equal to 0.1.
+                    new_LoadingnuggetSigma_spacetime <- list(lambdas = rep(0.1, length(Sigma_control[["custom_spacetime"]]))) #' This is an arbitrary starting value!
+                    new_LoadingnuggetSigma_spacetime$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / new_LoadingnuggetSigma_spacetime$lambdas[x])) 
+                    # Note this object will not contain the individual constituent Sigma_spacetime matrices. 
                     new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
                     }
                }
@@ -2784,11 +2785,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
                     new_Sigma_space <- .update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$invcov, basis_effects_mat = centered_BF_mat, 
-                         Ginv = new_LoadingnuggetG_space$invcov, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
-                         linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
-                         powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
-                         trial_size = trial_size, family = family, Sigma_control = Sigma_control, 
-                         estimate_lambda = estimate_lambda_not_Sigma, which_B = 1)
+                                                        Ginv = new_LoadingnuggetG_space$invcov, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
+                                                        linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
+                                                        powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
+                                                        trial_size = trial_size, family = family, Sigma_control = Sigma_control, 
+                                                        estimate_lambda = estimate_lambda_not_Sigma, which_B = 1)
                     
                     new_LoadingnuggetSigma_space <- .update_LoadingSigma_fn(Sigma = new_Sigma_space, Sigma_control = Sigma_control, 
                                                                             use_rank_element = 1, 
@@ -2805,11 +2806,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_time"]], nrow = num_spp, ncol = num_timebasisfns, byrow = TRUE)
                     
                     new_Sigma_time <- .update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_time$invcov, basis_effects_mat = centered_BF_mat, 
-                         Ginv = new_LoadingnuggetG_time$invcov, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
-                         linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
-                         powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
-                         trial_size = trial_size, family = family, Sigma_control = Sigma_control, 
-                         estimate_lambda = estimate_lambda_not_Sigma, which_B = 2)
+                                                       Ginv = new_LoadingnuggetG_time$invcov, B = B_time, X = X, ziX = ziX, y_vec = as.vector(y), 
+                                                       linpred_vec = c(new_fit_CBFM_ptest$linear_predictors),  dispparam = new_fit_CBFM_ptest$dispparam, 
+                                                       powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
+                                                       trial_size = trial_size, family = family, Sigma_control = Sigma_control, 
+                                                       estimate_lambda = estimate_lambda_not_Sigma, which_B = 2)
                     
                     new_LoadingnuggetSigma_time <- .update_LoadingSigma_fn(Sigma = new_Sigma_time, Sigma_control = Sigma_control, 
                                                                            use_rank_element = sum(which_B_used[1:2]), 
@@ -2825,15 +2826,14 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(nonzeromean_B_spacetime)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_spacetime"]], nrow = num_spp, ncol = num_spacetimebasisfns, byrow = TRUE)
                     
-                    new_Sigma_spacetime <- .update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$invcov, basis_effects_mat = centered_BF_mat, 
-                         Ginv = new_LoadingnuggetG_spacetime$invcov, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
-                         linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
-                         powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
-                         trial_size = trial_size, family = family, Sigma_control = Sigma_control, 
-                         estimate_lambda = estimate_lambda_not_Sigma, which_B = 3)
-                    #print(new_Sigma_spacetime)
-                    #print(new_fit_CBFM_ptest$basis_effects_mat)
-                    
+                    new_Sigma_spacetime <- .update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_spacetime$invcov, 
+                                                            lambdas = new_LoadingnuggetSigma_spacetime$lambdas, basis_effects_mat = centered_BF_mat, 
+                                                            Ginv = new_LoadingnuggetG_spacetime$invcov, B = B_spacetime, X = X, ziX = ziX, y_vec = as.vector(y), 
+                                                            linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
+                                                            powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
+                                                            trial_size = trial_size, family = family, Sigma_control = Sigma_control, 
+                                                            estimate_lambda = estimate_lambda_not_Sigma, which_B = 3)
+
                     new_LoadingnuggetSigma_spacetime <- .update_LoadingSigma_fn(Sigma = new_Sigma_spacetime, Sigma_control = Sigma_control, 
                                                                                 use_rank_element = sum(which_B_used[1:3]),
                                                                                 estimate_lambda_not_Sigma = estimate_lambda_not_Sigma, which_B = 3)
