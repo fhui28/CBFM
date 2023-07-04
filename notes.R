@@ -35,7 +35,7 @@ registerDoParallel(cores = detectCores()-2)
 #' # **Example 1: Fitting a CBFM to data from a spatial CBFM**
 #' This is a just a general testing function
 ##------------------------------
-set.seed(072023)
+set.seed(2023)
 num_sites <- 500 # 500 (units) sites 
 num_spp <- 10 # Number of species
 num_X <- 4 # Number of regression slopes
@@ -108,20 +108,12 @@ Sigma_tensorprod
 fitcbfm_tensorprod$Sigma_spacetime
 fitcbfm_tensorprod$G_spacetime
 
+dev.off()
 matplot(simy$linear_predictors, fitcbfm_fixed$linear_predictors, pch = 19); abline(0,1)
+matplot(simy$linear_predictors, fitcbfm_random$linear_predictors, pch = 19); abline(0,1)
 matplot(simy$linear_predictors, fitcbfm_tensorprod$linear_predictors, pch = 19); abline(0,1)
 
 
-
-
-fitcbfm_singlespp <- CBFM(y = simy$y[,1,drop=FALSE], formula = ~ chla + O2, data = dat,
-                       B_space = basisfunctions, B_spacetime = MM_tensorprod, family = binomial(), 
-                       control = list(trace = 1),
-                       G_control = list(rank = c(5,"full"), structure = c("unstructured", "homogeneous")), 
-                       Sigma_control = list(rank = c(5,1), custom_spacetime = Sigma_tensorprod))
-
-fitcbfm_singlespp$basis_effects_mat
-fitcbfm_singlespp$Sigma_spacetime
 
 
 
