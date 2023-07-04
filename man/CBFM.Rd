@@ -37,7 +37,7 @@ CBFM(
     custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
   G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95,
     by = 0.05), maxit = 100, tol = 1e-04, method = "REML", trace = 0, custom_space =
-    NULL, custom_time = NULL, custom_spactime = NULL, min_sp = 0),
+    NULL, custom_time = NULL, custom_spactime = NULL),
   k_check_control = list(subsample = 5000, n.rep = 400)
 )
 }
@@ -139,7 +139,7 @@ The rank/s should be at least 2, although internal checks are also performed to 
 
 Finally. note if a particular element in \code{G_control$structure} is set to "identity" or "homogeneous", then a corresponding element in \code{G_control$rank} must still be supplied, but it is ignored.}
 \item{structure: }{The structure to assume for the between-species correlation matrix if it is estimated. This either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. The current options for each element are "unstructured" (default) which assumes an unstructured form subject to the corresponding element in \code{G_control$rank}, "identity" which assumes an unknown, estimated scalar multiplied by an identity matrix, and "homogeneous" which is the same as assuming an unstructured form but the entire matrix is the multiplied by an unknown, estimated scalar.
-\emph{The latter two options must not be used unless you know what are doing in terms of what you want to achieve from the basis functions, especially as less checks are made in this setting to ensure parameter identifiability of the model in these settings!}}
+\emph{The latter two options should not be used unless you know what are doing in terms of what you want to achieve from the basis functions, especially as little checks are made in this setting to ensure parameter identifiability of the model in these settings!}}
 \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.}
 \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.}
 \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.}
@@ -148,9 +148,6 @@ Finally. note if a particular element in \code{G_control$structure} is set to "i
 \item{custom_space: }{A custom, pre-specified baseline between-species correlation matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
 \item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
 \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
-\item{min_sp: }{When a particular \code{G_control$structure} is set to "identity", this feature allows a minimum amount of smoothing to be applied to the corresponding basis function coefficients. Similar to \code{G_control$rank} and \code{G_control$structure}, this either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices.
-
-Note if a particular element in \code{G_control$structure} is set to "unstructured" or "homogeneous", then a corresponding element in \code{G_control$min_sp} must still be supplied, but it is ignored.}
 }}
 
 \item{k_check_control}{A list of parameters for controlling \code{\link[mgcv:k.check]{mgcv::k.check()}} when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on how this test works. This should be a list with the following two arguments:
