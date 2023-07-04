@@ -2247,7 +2247,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                if(is.list(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
-                    new_LoadingnuggetSigma_spacetime <- list(invcov = Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / 0.001))) 
+                    new_LoadingnuggetSigma_spacetime <- list(invcov = Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / 0.1))) 
                     # Note this object will not contain the individual constituent Sigma_spacetime matrices. Basically assume all the starting values for lambda are equal to 0.1.
                     new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
                     }
