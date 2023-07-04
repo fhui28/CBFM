@@ -77,7 +77,7 @@ Type objective_function<Type>::operator() () {
         if(!isNA(y(i))) {
           predvalue = dbinom(y(i), Type(trial_size(i)), invlogit(eta(i)), true);
           }
-        if(predvalue < -10000) 
+        if(predvalue < -10000)
           predvalue = -10000;
         nll -= predvalue; 
         }

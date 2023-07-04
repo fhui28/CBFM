@@ -1,16 +1,22 @@
-update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
-                        trial_size, family, G_control, use_rank_element, return_correlation = TRUE) {
+## Functions for updating G and Sigma
+## Hidden and not exported
+
+#' @noRd
+
+.update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
+                        trial_size, family, G_control, use_rank_element, return_correlation) {
+     
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
      use_structure <- G_control$structure[use_rank_element]
-     use_min_sp <- G_control$min_sp[use_rank_element]
+     #use_min_sp <- G_control$min_sp[use_rank_element]
      
      #if(num_spp == 1) 
      #        return(solve(Ginv))
      
      G_control$method <- match.arg(G_control$method, choices = c("simple","REML","ML")) 
-     use_structure <- match.arg(use_structure, choices = c("unstructured","identity")) 
+     use_structure <- match.arg(use_structure, choices = c("unstructured","identity","homogeneous")) 
      G_control$inv_method <- "chol2inv" #match.arg(G_control$inv_method, choices = c("chol2inv","schulz"))
      A_Sigmain_AT <- basis_effects_mat %*% tcrossprod(Sigmainv, basis_effects_mat)
 
@@ -22,9 +28,10 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
      if(G_control$method == "simple") {
           if(use_structure == "unstructured") 
                new_G <- A_Sigmain_AT / num_basisfns
-          if(use_structure == "identity") 
-               new_G <- sum(diag(A_Sigmain_AT)) / (num_basisfns*num_spp)
-               new_G <- diag(x = new_G, nrow = num_spp)
+          if(use_structure == "homogeneous") #' Pass the estimation of lambda in G = lambda * R into estimation of Sigma
+               new_G <- A_Sigmain_AT / num_basisfns
+          if(use_structure == "identity")  #' Pass the estimation of lambda in G = lambda * R into estimation of Sigma
+               new_G <- Matrix::Diagonal(n = num_spp)
           }
      
      if(G_control$method %in% c("REML","ML")) {
@@ -53,9 +60,9 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     }
                }
           
-          if(use_structure == "unstructured") {
-               BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-               BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
+          if(use_structure %in% c("unstructured", "homogeneous")) {
+               BtKB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+               BtKB <- Matrix::bdiag(BtKB)
                gc()
       
                vecPsi <- do.call(rbind, lapply(1:num_basisfns, function(k) kronecker(Matrix::Diagonal(n = num_spp), Sigmainv[,k]))) 
@@ -73,13 +80,15 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     cw_Ginv_Sigmainv <- Matrix::Matrix(kronecker(chol2inv(chol(cw_G)), Sigmainv), sparse = TRUE)
            
                     if(G_control$inv_method == "chol2inv")
-                         Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                         tic <- proc.time()
+                         Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BtKB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
            #                if(G_control$inv_method == "schulz") {
-           #                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
+           #                     mat <- forceSymmetric(BtKB + cw_Ginv_Sigmainv)
            #                     Q1 <- as.vector(.schulz_inversion_cmpfn(mat = mat))
            #                     rm(mat)
            #                     }
-           
+                         toc <- proc.time()
+                         
                     new_G <- matrix(0, nrow = num_spp, ncol = num_spp)
                     if(num_spp > 1)
                          new_G[lower.tri(new_G, diag = TRUE)] <- crossprod(Q2, Q1)
@@ -97,19 +106,9 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
                     }
                }
           
+          #' Pass the estimation of lambda in G = lambda * R into estimation of Sigma
           if(use_structure == "identity") {
-               BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-               BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
-               gc()
-               
-               fn <- function(x) {
-                    out <- 0.5*num_basisfns*num_spp*log(x) - 0.5*x*sum(diag(A_Sigmain_AT))
-                    out <- out - 0.5*determinant(BWB_minus_BWX_XWXinv_XWB + x*kronecker(Matrix::Diagonal(n = num_spp), Sigmainv))$mod
-                    return(out)
-                    }
-               
-               update_invnew_G <- stats::optimise(f = fn, interval = c(use_min_sp,1e8), maximum = TRUE)
-               new_G <- (1/update_invnew_G$maximum)*Matrix::Diagonal(n = num_spp)
+               new_G <- Matrix::Diagonal(n = num_spp)
                }     
           }
           
@@ -120,10 +119,12 @@ update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_v
      }
      
      
-update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRUE) {
+#' @noRd
+
+.update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation) {
      num_spp <- nrow(G)
      num_rank <- G_control$rank[use_rank_element]
-     use_structure <- G_control$rank[use_rank_element]
+     use_structure <- G_control$structure[use_rank_element]
      if(num_rank != "full")
              num_rank <- as.numeric(num_rank)
      
@@ -134,19 +135,19 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
      
      if(use_structure == "identity") {
           out <- list(Loading = NULL, nugget = NULL, cov = G)
-          out$covinv <- chol2inv(chol(out$cov))
+          out$invcov <- chol2inv(chol(out$cov))
           return(out)
           }
      
      if(num_spp <= 2) {
         out <- list(Loading = NULL, nugget = NULL, cov = G)
-        out$covinv <- chol2inv(chol(out$cov))
+        out$invcov <- chol2inv(chol(out$cov))
         return(out)
         }
      
      if(num_rank == "full") {
         out <- list(Loading = NULL, nugget = NULL, cov = G)
-        out$covinv <- chol2inv(chol(out$cov))
+        out$invcov <- chol2inv(chol(out$cov))
         return(out)
         }     
      
@@ -192,7 +193,7 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
                }
           
           out <- list(Loading = best_Loading, nugget = best_nugget, cov = tcrossprod(best_Loading) + diag(x = best_nugget, nrow = num_spp))
-          out$covinv <- chol2inv(chol(out$cov))
+          out$invcov <- chol2inv(chol(out$cov))
           return(out)
           }
      
@@ -223,140 +224,253 @@ update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation = TRU
           rm(do_svd)
           
           out <- list(Loading = new_Loading, nugget = new_nugget, cov = tcrossprod(new_Loading) + diag(x = new_nugget, nrow = num_spp))
-          out$covinv <- chol2inv(chol(out$cov))
+          out$invcov <- chol2inv(chol(out$cov))
           return(out)
           }
      }
      
 
-update_Sigma_fn <- function(Sigmainv, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
-                            trial_size, family, Sigma_control) {
-        num_spp <- nrow(basis_effects_mat)
-        num_basisfns <- ncol(Sigmainv)
-        trial_size <- as.vector(trial_size)
+#' @noRd
 
-        Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","REML","ML")) 
-        Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) 
+.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
+                            trial_size, family, Sigma_control, estimate_lambda, which_B) {
+     num_spp <- nrow(basis_effects_mat)
+     num_basisfns <- ncol(Sigmainv)
+     trial_size <- as.vector(trial_size)
+
+     Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","REML","ML")) 
+     Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) 
      
-        AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
+     AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
      
-        if(family$family == "binomial") {
-                linpred_vec[linpred_vec > 5] <- 5
-                linpred_vec[linpred_vec < -5] <- -5
-                }
+     if(family$family == "binomial") {
+          linpred_vec[linpred_vec > 10] <- 10
+          linpred_vec[linpred_vec < -10] <- -10
+          }
 
           
-        if(Sigma_control$method == "simple") {
-                new_Sigma <- AT_Ginv_A / num_spp
-                }
+     if(Sigma_control$method == "simple") { 
+          if(estimate_lambda)
+               stop("The simple and fast method for estimating Sigma can not be used when the structure of G is set to either \"identity\" or \"homogeneous\".")
+          
+          new_Sigma <- AT_Ginv_A / num_spp
+          return(as.matrix(new_Sigma))
+          }
 
-        if(Sigma_control$method %in% c("REML","ML")) {
-             zieta <- NULL
-             if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
-                  zieta <- as.vector(tcrossprod(ziX, zibetas))
-                  }
-             ## Note weights are on a per-species basis i.e., site runs faster than species
-                weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                              powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
+     if(Sigma_control$method %in% c("REML","ML")) { 
+          zieta <- NULL
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
+               zieta <- as.vector(tcrossprod(ziX, zibetas))
+               }
+          ## Note weights are on a per-species basis i.e., site runs faster than species
+          weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
+                                        powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
 
-                ## Set up to REML and ML
-                weights_mat[is.na(y_vec)] <- 0
-                weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
-                if(Sigma_control$method == "REML") {
-                     inner_fn <- function(j) {
-                          XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                          BTWX <- crossprod(B, X*weights_mat[,j])               
-                          return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+          ## Set up to REML and ML
+          weights_mat[is.na(y_vec)] <- 0
+          weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+          if(Sigma_control$method == "REML") {
+               inner_fn <- function(j) {
+                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
+                    BTWX <- crossprod(B, X*weights_mat[,j])               
+                    return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                    }
+               }
+          if(Sigma_control$method == "ML") {
+               inner_fn <- function(j) {
+                    return(crossprod(B*sqrt(weights_mat[,j])))
+                    }
+               }
+                
+          if(estimate_lambda == 0) {
+               BtKB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+               BtKB <- Matrix::bdiag(BtKB)
+               gc()               
+
+               Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), as(kronecker(Ginv[,k], diag(nrow = num_basisfns)), "sparseMatrix"))) )
+               #Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), kronecker(Ginv[,k], Diagonal(n = num_basisfns)))) )
+               needonly_cols <- unlist(sapply(1:num_basisfns, function(j) (j-1)*num_basisfns + j:num_basisfns))
+               Q2 <- Q2[, needonly_cols, drop = FALSE]
+               rm(weights_mat)
+               gc()
+     
+               counter <- 0
+               diff <- 10
+               cw_Sigma <- chol2inv(chol(Sigmainv))
+               while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
+                       cw_Ginv_Sigmainv <- Matrix(kronecker(Ginv, chol2inv(chol(cw_Sigma))), sparse = TRUE)    
+     
+                       if(Sigma_control$inv_method == "chol2inv")
+                            Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BtKB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
+                              
+     #                if(Sigma_control$inv_method == "schulz") {
+     #                     mat <- forceSymmetric(BtKB + cw_Ginv_Sigmainv)
+     #                     Q1 <- as.vector(.schulz_inversion_cmpfn(mat = mat))
+     #                     rm(mat)
+     #                     }
+                    
+                       new_Sigma <- matrix(0, nrow = num_basisfns, ncol = num_basisfns)
+                       new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
+                       new_Sigma <- new_Sigma + t(new_Sigma) - diag(x = diag(new_Sigma), nrow = num_basisfns)
+                       new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
+                       new_Sigma <- Matrix::forceSymmetric(new_Sigma) 
+                    
+                       diff <- 0.5 * mean(as.vector((new_Sigma - cw_Sigma)^2))
+                       if(Sigma_control$trace > 0)
+                            message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
+                       cw_Sigma <- new_Sigma
+                       counter <- counter + 1
+                       }
+               return(as.matrix(new_Sigma))
+               }
+          
+          if(estimate_lambda == 1) {
+               BtKB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
+               BtKB <- Matrix::bdiag(BtKB)
+               gc()
+               
+               #' Parametrizing in terms of rho = notLog(1/lambda), where lambda is the variance component. 
+               #' 1. When there is a single lambda, then the covariance matrix of the B's is parametrized as (lambda x G) \otimes Sigma = G \otimes (lambda x Sigma)
+               #' 2. When there are multiple lambdas, then the covariance matrix of the B's generalizes the form on the RHS of the above as = G \otimes (\sum_r (lambda_r x Sigma_r)^{-1})^{-1} = G \otimes (\sum_r Sigma_r^{-1}/lambda_r)^{-1}. This form is chosen to be consistent with how GAMs in mgcv set up their tensor product penalties.  
+               
+               if(which_B == 1) {
+                    Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
+                    trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
+                    fn <- function(x) { 
+                         expx <- mgcv::notExp(x)
+                         out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                         out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_space))$mod
+                         return(out)
+                         }
+                    
+                    update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                    new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                    }
+               if(which_B == 2) {
+                    Sigmainv_time <- .pinv(Sigma_control[["custom_time"]])
+                    trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
+                    fn <- function(x) { 
+                         expx <- mgcv::notExp(x)
+                         out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                         out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_time))$mod
+                         return(out)
+                         }
+                    
+                    update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                    new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                    }
+               if(which_B == 3) {
+                    if(is.matrix(Sigma_control[["custom_spacetime"]])) {
+                         Sigmainv_spacetime <- .pinv(Sigma_control[["custom_spacetime"]])
+                         trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
+                         fn <- function(x) { 
+                              expx <- mgcv::notExp(x)
+                              out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                              out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_spacetime))$mod
+                              return(out)
+                              }
+                         
+                         update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                         new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         }
+                    if(is.list(Sigma_control[["custom_spacetime"]])) {
+                         
+                         fn_lambda <- function(x) { 
+                              expx <- mgcv::notExp(x)
+                              Sigmainv_spacetime <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]]) * expx[j2])) 
+                              trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
+                              
+                              out <- 0.5*num_spp*determinant(Sigmainv_spacetime)$mod - 0.5*trace_quantity
+                              out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_spacetime))$mod
+                              return(as.vector(-out))
+                              }
+                         
+                         # gr_lambda <- function(x) { # This gradient computation conditions on and thus assumes W is not a function of lambda. I think mgcv will actually do this additional calculation. But in the context of a PQL algorithm I am not sure you need it?  
+                         #      expx <- mgcv::notExp(x)
+                         #      eachSigmainv_spacetime <- lapply(1:length(Sigma_control[["custom_spacetime"]]), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]])) 
+                         #      Sigmainv_spacetime <- Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(j2) eachSigmainv_spacetime[[j2]] * expx[j2])) 
+                         #      BtKB_plus_GSigma_inv <- .pinv(BtKB + kronecker(Ginv, Sigmainv_spacetime))
+                         #      Sigma_spacetime <- .pinv(Sigmainv_spacetime)
+                         #      
+                         #      out1 <- 0.5 * num_spp * sapply(1:length(eachSigmainv_spacetime), 
+                         #                     function(j2) sum(diag(Sigma_spacetime %*% eachSigmainv_spacetime[[j2]] * expx[j2])))
+                         #      out1 <- out1 - 0.5 * sapply(1:length(eachSigmainv_spacetime), 
+                         #                            function(j2) sum(diag(AT_Ginv_A %*% eachSigmainv_spacetime[[j2]] * expx[j2])))
+                         #      out1 <- out1 - 0.5 * sapply(1:length(eachSigmainv_spacetime), 
+                         #                            function(j2) sum(diag(BtKB_plus_GSigma_inv %*% kronecker(Ginv, eachSigmainv_spacetime[[j2]] * expx[j2]))))
+                         #      
+                         #      return(as.vector(-out1))
+                         #      }
+                         
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
-                if(Sigma_control$method == "ML") {
-                     inner_fn <- function(j) {
-                          return(crossprod(B*sqrt(weights_mat[,j])))
-                          }
-                    }
-                
                
-                BWB_minus_BWX_XWXinv_XWB <- foreach(j = 1:num_spp) %dopar% inner_fn(j = j) 
-                BWB_minus_BWX_XWXinv_XWB <- Matrix::bdiag(BWB_minus_BWX_XWXinv_XWB)
-                gc()               
-
-                Q2 <- do.call(rbind, lapply(1:num_spp, function(k) kronecker(Matrix::Diagonal(n = num_basisfns), kronecker(Ginv[,k], Matrix::Diagonal(n = num_basisfns)))) )
-                needonly_cols <- unlist(sapply(1:num_basisfns, function(j) (j-1)*num_basisfns + j:num_basisfns))
-                Q2 <- Q2[, needonly_cols, drop = FALSE]
-                rm(weights_mat)
-                gc()
-
-                counter <- 0
-                diff <- 10
-                cw_Sigma <- chol2inv(chol(Sigmainv))
-                while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
-                        cw_Ginv_Sigmainv <- Matrix(kronecker(Ginv, chol2inv(chol(cw_Sigma))), sparse = TRUE)    
-
-                        if(Sigma_control$inv_method == "chol2inv")
-                                Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
-                         
-#                if(Sigma_control$inv_method == "schulz") {
-#                     mat <- forceSymmetric(BWB_minus_BWX_XWXinv_XWB + cw_Ginv_Sigmainv)
-#                     Q1 <- as.vector(.schulz_inversion_cmpfn(mat = mat))
-#                     rm(mat)
-#                     }
                
-                        new_Sigma <- matrix(0, nrow = num_basisfns, ncol = num_basisfns)
-                        new_Sigma[lower.tri(new_Sigma, diag = TRUE)] <- crossprod(Q2, Q1)
-                        new_Sigma <- new_Sigma + t(new_Sigma) - diag(x = diag(new_Sigma), nrow = num_basisfns)
-                        new_Sigma <- (new_Sigma + AT_Ginv_A)/num_spp
-                        new_Sigma <- Matrix::forceSymmetric(new_Sigma) 
-               
-                        diff <- 0.5 * mean(as.vector((new_Sigma - cw_Sigma)^2))
-                        if(Sigma_control$trace > 0)
-                                message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
-                        cw_Sigma <- new_Sigma
-                        counter <- counter + 1
-                        }
-                }
-        
-        return(as.matrix(new_Sigma))
-        }
+               return(as.vector(new_lambda))
+               }
+          } 
+     }
 	
 
-update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element) {
-     num_basisfns <- nrow(Sigma)
-     num_rank <- Sigma_control$rank[use_rank_element]
+#' @noRd
+.update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element, estimate_lambda_not_Sigma, which_B) {
+     if(!estimate_lambda_not_Sigma) {
+          num_basisfns <- nrow(Sigma)
+          num_rank <- Sigma_control$rank[use_rank_element]
      
-     if(num_rank == "full") {
-        out <- list(Loading = NULL, nugget = NULL, cov = Sigma)
-        out$covinv <- chol2inv(chol(out$cov))
-        return(out)
-        }
-     
-     min_err <- Inf
-     counter <- 0
-     diff <- 10
-     err <- Inf
-     cw_nugget <- min(diag(Sigma))*0.1
-     num_rank <- as.numeric(num_rank)
-     while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
-          Sigmatilde <- Sigma - diag(x = cw_nugget, nrow = num_basisfns)
+          if(num_rank == "full") {
+             out <- list(Loading = NULL, nugget = NULL, cov = Sigma)
+             out$invcov <- chol2inv(chol(out$cov))
+             return(out)
+             }
           
-          do_svd <- svd(Sigmatilde)
-          new_approx <- do_svd$u[, 1:num_rank,drop=FALSE] %*% tcrossprod(diag(x = do_svd$d[1:num_rank], nrow = num_rank), do_svd$v[, 1:num_rank,drop=FALSE])
-          new_nugget <- mean(diag(Sigma - new_approx))
-                    
-          err <- c(err, 0.5 * mean((Sigma - new_approx)^2))
-          diff <- err[length(err)-1]/err[length(err)] - 1
-          if(Sigma_control$trace)
-               message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
-          cw_nugget <- new_nugget
-          counter <- counter + 1
+          min_err <- Inf
+          counter <- 0
+          diff <- 10
+          err <- Inf
+          cw_nugget <- min(diag(Sigma))*0.1
+          num_rank <- as.numeric(num_rank)
+          while(diff > Sigma_control$tol & counter < Sigma_control$maxit) {
+               Sigmatilde <- Sigma - diag(x = cw_nugget, nrow = num_basisfns)
+               
+               do_svd <- svd(Sigmatilde)
+               new_approx <- do_svd$u[, 1:num_rank,drop=FALSE] %*% tcrossprod(diag(x = do_svd$d[1:num_rank], nrow = num_rank), do_svd$v[, 1:num_rank,drop=FALSE])
+               new_nugget <- mean(diag(Sigma - new_approx))
+                         
+               err <- c(err, 0.5 * mean((Sigma - new_approx)^2))
+               diff <- err[length(err)-1]/err[length(err)] - 1
+               if(Sigma_control$trace)
+                    message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
+               cw_nugget <- new_nugget
+               counter <- counter + 1
+               }
+               
+          rm(do_svd)
+          do_svd <- svd(new_approx)
+          new_Loading <- do_svd$u[, 1:num_rank,drop=FALSE] %*% diag(x = sqrt(do_svd$d[1:num_rank]), nrow = num_rank)
+          rm(do_svd)
+     
+          out <- list(Loading = new_Loading, nugget = new_nugget, cov = tcrossprod(new_Loading) + diag(x = new_nugget, nrow = num_basisfns))
+          out$invcov <- chol2inv(chol(out$cov))
           }
-          
-     rm(do_svd)
-     do_svd <- svd(new_approx)
-     new_Loading <- do_svd$u[, 1:num_rank,drop=FALSE] %*% diag(x = sqrt(do_svd$d[1:num_rank]), nrow = num_rank)
-     rm(do_svd)
      
-     out <- list(Loading = new_Loading, nugget = new_nugget, cov = tcrossprod(new_Loading) + diag(x = new_nugget, nrow = num_basisfns))
-     out$covinv <- chol2inv(chol(out$cov))
+     #' After lambda has been estimated in the updating Sigma part of the algorithm, Sigma itself is adjusted based on this i.e., kronecker(lambda x R, Sigma) = kronecker(R, lambda x Sigma)
+     if(estimate_lambda_not_Sigma) {
+          if(which_B == 1)
+               out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
+          if(which_B == 2)
+               out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
+          if(which_B == 3) {
+               if(is.matrix(Sigma_control[["custom_spacetime"]]))
+                    out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_spacetime"]] * Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
+               if(is.list(Sigma_control[["custom_spacetime"]]))
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
+                                invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / Sigma[x])) )
+                    out$cov <- .pinv(out$invcov)
+                    }
+          }
+     
      return(out)
      }
-     

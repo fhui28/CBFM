@@ -10,7 +10,7 @@ tweedielogfam()
 An object of class "family".
 }
 \description{
-\verb{r lifecycle::badge("stable")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 
 A specified family object for the Tweedie distribution using the log link function and a power mean-variance relationship
 }

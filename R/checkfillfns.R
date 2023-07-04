@@ -60,7 +60,50 @@
 #                warning("There are columns of formed B that are highly correlated. This could cause potential issues and instability in the fitted model.")          
           }
      }
+
+
      
+.check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used) {
+     if(is.null(Sigma_control[["custom_space"]]) & which_B_used[1]) {
+          if(G_control$structure[1] != "unstructured")
+               stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+          }
+     if(is.null(Sigma_control[["custom_time"]]) & which_B_used[2]) {
+          if(G_control$structure[sum(which_B_used[1:2])] != "unstructured")
+               stop("If Sigma_control$custom_time is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+          }
+     if(is.null(Sigma_control[["custom_spacetime"]]) & which_B_used[3]) {
+          if(G_control$structure[sum(which_B_used[1:3])] != "unstructured")
+               stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+          }
+     
+     
+     if(any(G_control$structure %in% c("identity", "homogeneous"))) {
+          warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options should not be done unless you know what are doing, especially as very little checks are made to ensure parameter identifiability of the model in these settings!")
+          }
+     
+     
+     if(which_B_used[1]) {
+          if(G_control$structure[1] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_space"]])) {
+               stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
+               } }
+          }
+     
+     if(which_B_used[2]) {
+          if(G_control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_time"]])) {
+                    stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
+               } }
+          }
+          
+     if(which_B_used[3]) {
+          if(G_control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_spacetime"]])) {
+               stop("For any G_control$structure set to \"identity\" or \"homogeneous\", the corresponding element of Sigma_control$custom_xxx must be supplied to ensure parameter identifiability of the model in these settings")
+               } }
+          }
+     
+     }
+
+
 
 .check_family <- function(family, y, trial_size) {
     if(!(family$family[1] %in% c("gaussian", "Gamma", "negative.binomial", "poisson", "binomial", "tweedie", "beta", 
@@ -81,7 +124,33 @@
         }
      }
 
+
+.check_G_correlation <- function(custom_Sigma, G_structure) {
+     if(is.null(custom_Sigma)) #' If no custom Sigma is supplied, then G must be estimated as a correlation matrix
+          out <- 1
+     if(!is.null(custom_Sigma)) { #' If custom Sigma is supplied, then G can be estimated as correlation or covariance depending on structure
+          if(G_structure == "unstructured")
+               out <- 0
+          if(G_structure == "identity")
+               out <- 1
+          if(G_structure == "homogeneous")
+               out <- 1
+          }
      
+     return(out)
+     } 
+     
+
+.check_nonzeromeans <- function(nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime) {
+     if(nonzeromean_B_space)
+          message("A non-zero mean vector is being used for the distribution of the spatial basis function coefficients. Please check this is what you want!")
+     if(nonzeromean_B_time)
+          message("A non-zero mean vector is being used for the distribution of the temporal basis function coefficients. Please check this is what you want!")
+     if(nonzeromean_B_spacetime)
+          message("A non-zero mean vector is being used for the distribution of the spatio-temporal basis function coefficients. Please check this is what you want!")
+     }
+
+
 .check_offset <- function(offset = NULL, y) {
      if(!is.null(offset)) { 
           if(!is.matrix(offset)) 
@@ -256,7 +325,7 @@
      }
      
      
-.fill_G_control <- function(control, which_B_used, num_spp) {
+.fill_G_control <- function(control, which_B_used, num_spp, Sigma_control) {
      if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
@@ -271,13 +340,13 @@
      if(sum(which_B_used) != length(control$structure))
           stop("G_control$structure should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the structure of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$structure should be a vector with length 2.
                Please note structure still needs to be supplied even when custom Gs are used (although the corresponding element is ignored in such case).")
-     if(is.null(control$min_sp))
-          control$min_sp <- rep(0, sum(which_B_used))
-     if(length(control$min_sp) == 1)
-          control$min_sp <- rep(control$min_sp, sum(which_B_used))
-     if(sum(which_B_used) != length(control$min_sp))
-          stop("G_control$min_sp should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the minimum smoothing parameter to apply to an (identity structured) G for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$min_sp should be a vector with length 2, irrespective of how many of G_control$structure was set to an identity structure.
-               Put simply, please note min_sp still needs to be supplied even when an unstructured G is used, and even when custom Gs are used (although the corresponding element is ignored in such cases).")
+     # if(is.null(control$min_sp))
+     #      control$min_sp <- rep(0, sum(which_B_used))
+     # if(length(control$min_sp) == 1)
+     #      control$min_sp <- rep(control$min_sp, sum(which_B_used))
+     # if(sum(which_B_used) != length(control$min_sp))
+     #      stop("G_control$min_sp should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the minimum smoothing parameter to apply to an (identity structured) G for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$min_sp should be a vector with length 2, irrespective of how many of G_control$structure was set to an identity structure.
+     #           Put simply, please note min_sp still needs to be supplied even when an unstructured G is used, and even when custom Gs are used (although the corresponding element is ignored in such cases).")
      if(is.null(control$nugget_profile))          
           control$nugget_profile = seq(0.05, 0.95, by = 0.05)
      if(is.null(control$maxit))
@@ -292,37 +361,36 @@
           control$trace <- 0
           
      control$which_custom_G_used <- c(0,0,0)
-     if(!is.null(control$custom_space)) {
+     if(!is.null(control[["custom_space"]])) {
         if(which_B_used[1] == 0)
             stop("Please do not supply G_control$custom_space if B_space is also not supplied.")
-        if(nrow(control$custom_space) != num_spp | ncol(control$custom_space) != num_spp)
+        if(nrow(control[["custom_space"]]) != num_spp | ncol(control[["custom_space"]]) != num_spp)
             stop("G_control$custom_space should be a square matrix with the same dimensions as ncol(y).") 
          control$which_custom_G_used[1] <- 1
          }
-     if(!is.null(control$custom_time)) {
+     if(!is.null(control[["custom_time"]])) {
          if(which_B_used[2] == 0)
             stop("Please do not supply G_control$custom_time if B_time is also not supplied.")
-        if(nrow(control$custom_time) != num_spp | ncol(control$custom_time) != num_spp)
+        if(nrow(control[["custom_time"]]) != num_spp | ncol(control[["custom_time"]]) != num_spp)
             stop("G_control$custom_time should be a square matrix with the same dimensions as ncol(y).") 
         control$which_custom_G_used[2] <- 1
         }
-     if(!is.null(control$custom_spacetime)) {
+     if(!is.null(control[["custom_spacetime"]])) {
          if(which_B_used[3] == 0) 
             stop("Please do not supply G_control$custom_spacetime if B_spacetime is also not supplied.")
-        if(nrow(control$custom_spacetime) != num_spp | ncol(control$custom_spacetime) != num_spp)
+        if(nrow(control[["custom_spacetime"]]) != num_spp | ncol(control[["custom_spacetime"]]) != num_spp)
             stop("G_control$custom_spacetime should be a square matrix with the same dimensions as ncol(y).") 
         control$which_custom_G_used[3] <- 1
         }
-
-    control$method <- match.arg(control$method, choices = c("REML", "simple", "ML"))
-    #control$structure <- match.arg(control$structure, choices = c("unstructured", "identity"))
+          
+     control$method <- match.arg(control$method, choices = c("REML", "simple", "ML"))
     #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
      
     return(control)
     }
      
 
-.fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
+.fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns, G_control) {
     if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
@@ -331,13 +399,6 @@
           stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2. 
                Please note ranks still needs to be supplied even when custom Sigmas are used (although the corresponding rank is ignored in such case).")
           }
-     # if(is.null(control$structure))
-     #      control$structure <- rep("unstructured", sum(which_B_used))
-     # if(length(control$structure) == 1)
-     #      control$structure <- rep(control$structure, sum(which_B_used))
-     # if(sum(which_B_used) != length(control$structure))
-     #      stop("Sigma_control$structure should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the structure of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$structure should be a vector with length 2.
-     #           Please note structure still needs to be supplied even when custom Sigmas are used (although the corresponding element is ignored in such case).")
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$tol))
@@ -350,28 +411,39 @@
           control$trace <- 0
     
      control$which_custom_Sigma_used <- c(0,0,0)
-     if(!is.null(control$custom_space)) {
+     if(!is.null(control[["custom_space"]])) {
         if(which_B_used[1] == 0)
             stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
-        if(nrow(control$custom_space) != num_spacebasisfns | ncol(control$custom_space) != num_spacebasisfns)
+        if(nrow(control[["custom_space"]]) != num_spacebasisfns | ncol(control[["custom_space"]]) != num_spacebasisfns)
             stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
-         message("Because Sigma_control$custom_space is supplied, then G_space will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
          control$which_custom_Sigma_used[1] <- 1
          }
-     if(!is.null(control$custom_time)) {
+     if(!is.null(control[["custom_time"]])) {
          if(which_B_used[2] == 0)
             stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
-        if(nrow(control$custom_time) != num_timebasisfns | ncol(control$custom_time) != num_timebasisfns)
+        if(nrow(control[["custom_time"]]) != num_timebasisfns | ncol(control[["custom_time"]]) != num_timebasisfns)
             stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
-        message("Because Sigma_control$custom_time is supplied, then G_time will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
         control$which_custom_Sigma_used[2] <- 1
         }
-     if(!is.null(control$custom_spacetime)) {
+     if(!is.null(control[["custom_spacetime"]])) {
          if(which_B_used[3] == 0) 
             stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
-        if(nrow(control$custom_spacetime) != num_spacetimebasisfns | ncol(control$custom_spacetime) != num_spacetimebasisfns)
-            stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).") 
-        message("Because Sigma_control$custom_spacetime is supplied, then G_spacetime will be estimated as a covariance instead of a correlation matrix (unless it was also supplied).")
+          if(is.matrix(control[["custom_spacetime"]])) {
+               if(nrow(control[["custom_spacetime"]]) != num_spacetimebasisfns | ncol(control[["custom_spacetime"]]) != num_spacetimebasisfns)
+                    stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
+               }
+          if(is.list(control[["custom_spacetime"]])) {
+               if(length(control[["custom_spacetime"]]) == 1)
+                    stop("If the list Sigma_control$custom_spacetime is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_spacetime to just be a single matrix instead of a list.")
+               for(j in 1:length(control[["custom_spacetime"]])) {
+                    if(nrow(control[["custom_spacetime"]][[j]]) != num_spacetimebasisfns | ncol(control[["custom_spacetime"]][[j]]) != num_spacetimebasisfns)
+                    stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
+                    } 
+               }
+          if(is.list(control[["custom_spacetime"]])) {
+               if(G_control$structure[sum(which_B_used[1:3])] != "homogeneous") #' I am almost certain you can set this identity as well and it would work. But anyway...
+                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_spacetime, then the corresponding element in G_control$structure must be set to \"homogeneous\"...this is a current constraint of CBFM. Sorry!")
+               }
         control$which_custom_Sigma_used[3] <- 1
         }
 

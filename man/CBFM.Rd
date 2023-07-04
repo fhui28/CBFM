@@ -25,8 +25,8 @@ CBFM(
   nonzeromean_B_space = FALSE,
   nonzeromean_B_time = FALSE,
   nonzeromean_B_spacetime = FALSE,
-  start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam
-    = NULL, powerparam = NULL),
+  start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam =
+    NULL, powerparam = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
   control = list(maxit = 100, inner_maxit = 1, optim_lower = -50, optim_upper = 50,
@@ -35,9 +35,9 @@ CBFM(
     NULL, ridge = 0, ziridge = 0, trace = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "REML", trace = 0,
     custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
-  G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05,
-    0.95, by = 0.05), maxit = 100, tol = 1e-04, method = "REML", trace = 0, custom_space =
-    NULL, custom_time = NULL, custom_spactime = NULL, min_sp = 0),
+  G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95,
+    by = 0.05), maxit = 100, tol = 1e-04, method = "REML", trace = 0, custom_space =
+    NULL, custom_time = NULL, custom_spactime = NULL),
   k_check_control = list(subsample = 5000, n.rep = 400)
 )
 }
@@ -46,7 +46,7 @@ CBFM(
 
 \item{formula}{An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!); please see \code{\link[mgcv:formula.gam]{mgcv::formula.gam()}}, \code{\link[mgcv:gam.models]{mgcv::gam.models()}}, \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}, and \code{\link[mgcv:s]{mgcv::s()}} for more details.}
 
-\item{ziformula}{An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for #' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument}
+\item{ziformula}{An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the basic smoothing terms we have tried so far!)}
 
 \item{data}{A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument).}
 
@@ -68,19 +68,19 @@ CBFM(
 
 \item{stderrors}{Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed.}
 
-\item{select}{For cases where \code{formula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
+\item{select}{For cases where \code{formula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details. Note also this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
 
-\item{gamma}{For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
+\item{gamma}{For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
 
-\item{ziselect}{For cases where \code{ziformula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details, noting that its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Note this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
+\item{ziselect}{For cases where \code{ziformula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details. Note also this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
 
-\item{zigamma}{For cases where \code{ziformula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, and we refer to the help file for more information. As with the \code{select} argument, its implementation for the purposes of CBFM is a \emph{wee bit experimental}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
+\item{zigamma}{For cases where \code{ziformula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
 
-\item{nonzeromean_B_space}{This is an experimental feature that allows the distribution of the spatial basis function coefficients to have a non-zero mean vector. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
+\item{nonzeromean_B_space}{This experimental feature allows the distribution of the spatial basis function coefficients to have a non-zero mean vector. \emph{Use at your own risk!}}
 
-\item{nonzeromean_B_time}{This is an experimental feature that allows the distribution of the temporal basis function coefficients to have a non-zero mean vector. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
+\item{nonzeromean_B_time}{This experimental feature allows the distribution of the temporal basis function coefficients to have a non-zero mean vector. \emph{Use at your own risk!}}
 
-\item{nonzeromean_B_spacetime}{This is an experimental feature that allows the distribution of the spatio-temporal basis function coefficients to have a non-zero mean vector. \emph{Please leave it as it as at the moment i.e., set to \code{FALSE}!}}
+\item{nonzeromean_B_spacetime}{This experimental feature allows the distribution of the spatio-temporal basis function coefficients to have a non-zero mean vector. \emph{Use at your own risk!}}
 
 \item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
 \itemize{
@@ -133,25 +133,21 @@ The rank/s should be at least 2, although internal checks are also performed to 
 
 \item{G_control}{A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
 \itemize{
-\item{rank}{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices.
+\item{rank: }{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices.
 
 The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank correlation matrix is estimated.
 
-Finally. note if a particular element in \code{G_control$structure} is set to "identity", then a corresponding element in \code{G_control$rank} must still be supplied, but it is ignored.}
-\item{structure: }{The structure to assume for the between-species correlation matrix if it is estimated. This either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. The current options for each element are "unstructured" (default) which assumes an unstructured form subject to the corresponding element in \code{G_control$rank}, and "identity" which assumes a constant multiplied by an identity matrix. The latter should \emph{not} be used unless you know what are doing in terms of what you want to achieve from the basis functions.}
+Finally. note if a particular element in \code{G_control$structure} is set to "identity" or "homogeneous", then a corresponding element in \code{G_control$rank} must still be supplied, but it is ignored.}
+\item{structure: }{The structure to assume for the between-species correlation matrix if it is estimated. This either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices. The current options for each element are "unstructured" (default) which assumes an unstructured form subject to the corresponding element in \code{G_control$rank}, "identity" which assumes an unknown, estimated scalar multiplied by an identity matrix, and "homogeneous" which is the same as assuming an unstructured form but the entire matrix is the multiplied by an unknown, estimated scalar.
+\emph{The latter two options should not be used unless you know what are doing in terms of what you want to achieve from the basis functions, especially as little checks are made in this setting to ensure parameter identifiability of the model in these settings!}}
 \item{nugget_profile: }{The sequence of values to try for calculating the nugget effect in each between-species correlation matrix. Please see details below for more information.}
 \item{maxit: }{The maximum number of iterations for inner update of the community-level covariance matrices.}
 \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.}
 \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. \emph{Note that the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.}}
 \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
-\item{custom_space: }{A custom, pre-specified baseline between-species correlation matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
-\item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+\item{custom_space: }{A custom, pre-specified baseline between-species correlation matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
+\item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
 \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
-\item{min_sp: }{This is an experimental feature that, when a particular \code{G_control$structure} is set to "identity", allows a minimum amount of smoothing to be applied to the corresponding basis function coefficients. Similar to \code{G_control$rank} and \code{G_control$structure}, this either equals to a single character string or a vector of character strings with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single string, then it is assumed that the same form is used for all the correlation matrices.
-
-Note if a particular element in \code{G_control$structure} is set to "unstructured", then a corresponding element in \code{G_control$min_sp} must still be supplied, but it is ignored.
-
-\emph{Please leave it as it as at the moment i.e., set to 0!}}
 }}
 
 \item{k_check_control}{A list of parameters for controlling \code{\link[mgcv:k.check]{mgcv::k.check()}} when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on how this test works. This should be a list with the following two arguments:
@@ -161,7 +157,7 @@ Note if a particular element in \code{G_control$structure} is set to "unstructur
 }}
 }
 \value{
-An object of class \code{CBFM} which includes the following components, not necessarily in the order below (and as appropriate). Note outputs resulting from experimental input arguments are now itemized below:
+An object of class \code{CBFM} which includes the following components, not necessarily in the order below, and as appropriate:
 \item{call: }{The matched function call.}
 \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
 \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
@@ -213,14 +209,10 @@ Similarly, for zero-truncated count distributions, while the mean of the base co
 }
 
 Please use the \code{\link[=summary.CBFM]{summary.CBFM()}} function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
-\item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-\item{allzi_parametric_effects: }{If \code{ziformula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
-\item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
-\item{allzi_smooth_estimates: }{If \code{ziformula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
 \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of \code{\link[base:proc.time]{base::proc.time()}}.}
 }
 \description{
-\verb{r lifecycle::badge("experimental")}
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
 Fits CBFMs to spatio-temporal multivariate abundance data, where the basis functions are used to account for spatio-temporal correlation within and between-species. Three types of basis functions can supplied and included in conjunction with each other: 1) spatial basis functions; 2) temporal basis functions; 3) spatio-temporal basis functions. For the part of the mean model corresponding to the measured covariates, CBFM currently permits both parametric terms and/or smoothing terms, where the latter makes use are included in a similar manner to \code{\link[mgcv:gam]{mgcv::gam()}}. Estimation and inference for CBFM is based on a maximum penalized quasi-likelihood (PQL) estimation approach.
 }
@@ -305,7 +297,7 @@ The following response distributions are permitted:
 Hurdle CBFMs are also possible; please see \code{\link[=makeahurdle]{makeahurdle()}} for more information.
 }
 
-Missing (\code{NA}) values are permitted as part of the response matrix. These are simply passed over during the fitting process i.e., effectively the action \code{\link[stats:na.omit]{stats::na.omit()}} is taken.
+Missing (\code{NA}) values are permitted as part of the response matrix. These are simply passed over during the fitting process i.e., effectively the action \code{\link[stats:na.fail]{stats::na.omit()}} is taken.
 }
 
 \subsection{Constructing basis functions}{
@@ -335,6 +327,35 @@ Standard errors and resulting inferential tools like confidence intervals are ba
 Also, the current estimation approach \strong{does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}}, does not provide uncertainty estimates in the smoothing parameter. This is in line with the main aims of this CBFM package, which are tailored more towards estimation and inference of regression coefficients and spatio-temporal prediction, in a relatively computationally efficient and scalable manner. Future versions of package may seek to rectify this, but for now... apologies!
 }
 }
+\section{Warning}{
+\enumerate{
+\item CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. \strong{Please do not use them for data that are not spatially or temporally indexed}. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}}, \code{\link[boral:boral]{boral::boral()}}, and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
+\item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
+\item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well, if at all!
+\item As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}.
+}
+}
+
+\section{CBFM is not working for my data?!}{
+Once you have finished grumbling about the package and its developer, please brew some tea and make yourself comfy...debugging takes a while!
+
+As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
+\itemize{
+\item An initial thing to try is to bump up the number of inner iterations i.e., \code{control$inner_maxit} from the default of 1 to something like 10, 20 or even higher. This will give more opportunities for the inner estimation component of the PQL algorithm (where all regression and smoothing coefficients are updated) to try converge to a stable point, before proceeding to estimating the other model parameters.
+\item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
+\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
+}
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{manygam <- foreach::foreach(j = 1:num_spp) \%dopar\%
+    gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
+start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
+}\if{html}{\out{</div>}}
+\itemize{
+\item Analogously, the argument \code{control$subsequent_betas_dampen} can be used to dampen the values obtained for the species-specific regression coefficients during subsequent running of the PQL estimation algorithm. Basically, it is an \emph{ad-hoc} solution to when updates potentially fail due to e.g., overfitting causing coefficients to become extremely large in magnitude.
+\item If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on \href{https://github.com/fhui28/CBFM}{CBFM Github page} \emph{if} you think there is a genuine bug in the package. Otherwise, you can email the authors of this package on potential general statistical modeling questions, although we may not be able to get to them soon let along have the time to get to them at all (we are paid to be statistical consultants...apologies in advance!). Please do not post general statistical modeling issues on Github issues, as they will likely be ignored or deleted without prior consent.
+}
+}
+
 \examples{
 \dontrun{
 library(autoFRK)
@@ -421,17 +442,6 @@ toc - tic
 
 summary(fitcbfm) \%>\% 
 str
-
-# Example of plotting parametric model terms
-fitcbfm$all_parametric_effects$species <- fitcbfm$all_parametric_effects$species \%>\%
-fct_inorder
-ggplot(fitcbfm$all_parametric_effects, aes(x = value, y = partial, color = species)) +
-geom_line() +
-geom_rug(aes(x = value), sides = "b", show.legend = FALSE, color = "black") +
-facet_wrap(. ~ term, nrow = 2) +
-labs(x = "Covariate", y = "Effect") +
-theme_bw() +
-theme(legend.position = "bottom")
 
 
 # Calculate predictions onto test dataset
@@ -520,16 +530,6 @@ toc-tic
 
 summary(fitcbfm_gam) \%>\% 
 str
-
-# Example of plotting smooth model terms
-fitcbfm_gam$all_smooth_estimates$species <- fitcbfm_gam$all_smooth_estimates$species \%>\%
-fct_inorder
-ggplot() +
-geom_line(data = fitcbfm_gam$all_smooth_estimates \%>\% subset(smooth == "s(depth)"), 
-aes(x = depth, y = est, color = species), show.legend = FALSE) +
-geom_rug(aes(x = depth), data = dat_train, sides = "b", color = "black") +
-labs(x = "depth", y = "Effect") +
-theme_bw()
 
 
 # Calculate predictions onto test dataset
@@ -1780,35 +1780,8 @@ Zammit-Mangion, A., and Cressie, N. (2017). FRK: An R package for spatial and sp
 Cressie, N., Sainsbury-Dale, M., and Zammit-Mangion, A. (2021). Basis-Function Models in Spatial Statistics. Annual Review of Statistics and Its Application, 9.
 }
 \seealso{
-\code{\link[=corX]{corX()}} for calculating between-species (cross-)correlations due to measured covariates, \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for extracting the fitted values from a CBFM fit, \code{\link[=influence.CBFM]{influence.CBFM()}} for calculating some basic influence measures from a CBFM fit, \code{\link[=ordinate.CBFM]{ordinate.CBFM()}} for an \emph{ad-hoc} approach to constructing spatio-temporal ordinations from a CBFM fit, \code{\link[=plot.CBFM]{plot.CBFM()}} for basic residual diagnostics from a CBFM fit, \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating residuals from a CBFM fit, \code{\link[=simulate.CBFM]{simulate.CBFM()}} for simulating spatio-temporal multivariate abundance data from a CBFM fit, \code{\link[=summary.CBFM]{summary.CBFM()}} for summaries including standard errors and confidence intervals, and \code{\link[=varpart]{varpart()}} for variance partitioning of a CBFM fit.
+\code{\link[=corX]{corX()}} for calculating between-species (cross-)correlations due to measured covariates, \code{\link[=corB]{corB()}} for calculating residual between-species (cross-)correlations due to the basis functions, \code{\link[=fitted.CBFM]{fitted.CBFM()}} for extracting the fitted values from a CBFM fit, \code{\link[=gratia_effects]{gratia_effects()}} for calculating smooth estimates and parametric effects suitable for plotting/visualization; \code{\link[=influence.CBFM]{influence.CBFM()}} for calculating some basic influence measures from a CBFM fit, \code{\link[=ordinate.CBFM]{ordinate.CBFM()}} for an \emph{ad-hoc} approach to constructing spatio-temporal ordinations from a CBFM fit, \code{\link[=plot.CBFM]{plot.CBFM()}} for basic residual diagnostics from a CBFM fit, \code{\link[=predict.CBFM]{predict.CBFM()}} for constructing predictions from a CBFM fit, \code{\link[=residuals.CBFM]{residuals.CBFM()}} for calculating residuals from a CBFM fit, \code{\link[=simulate.CBFM]{simulate.CBFM()}} for simulating spatio-temporal multivariate abundance data from a CBFM fit, \code{\link[=summary.CBFM]{summary.CBFM()}} for summaries including standard errors and confidence intervals, and \code{\link[=varpart]{varpart()}} for variance partitioning of a CBFM fit.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak
-}
-\section{Warning}{
-\enumerate{
-\item CBFMs are designed for \emph{spatio-temporal} multivariate abundance data, such that you can sensibly construct basis functions from the space-time coordinate of each observational unit. \strong{Please do not use them for data that are not spatially or temporally indexed}. We recommend you fit standard LVMs in those scenarios, such that made available in \code{\link[gllvm:gllvm]{gllvm::gllvm()}}, \code{\link[boral:boral]{boral::boral()}}, and \code{\link[Hmsc:sampleMcmc]{Hmsc::sampleMcmc()}}.
-\item Not for some distributions it is not the mean of the entire distribution which is modeled. For example, in zero-inflated distributions it is the mean of the non-zero-inflated component that is modeled with the regression model described above. In zero-truncated distributions, it is the mean of the base count distribution that is modeled with the regression model described above.
-\item Not all (in fact, not many) of the smoothing available that are available in \code{\link[mgcv:gam.models]{mgcv::gam.models()}} have been fully tested out, so please be aware that some make not work well, if at all!
-\item As mentioned above, all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}, as well as the any dispersion/power parameters, analogous to default settings in \code{\link[mgcv:summary.gam]{mgcv::summary.gam()}}. This can lead to standard errors that are potentially too small, so please keep this in mind. Also, the current estimation approach does not provide uncertainty quantification of \eqn{\Sigma} and \eqn{G}.
-\item The returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be \emph{very} large data frames!
-}
-}
-\section{CBFM is not working for my data?!}{
-
-Once you have finished grumbling about the package and its developer, please brew some tea and make yourself comfy...debugging takes a while!
-
-As with any real-life statistical modeling problem, it is almost impossible to determine what the source of the issue is without looking at the data and specific application first hand. Therefore, we can only provide some general avenues to pursue below as a first step towards making CBFM run on your data, and of course we can not guarantee that the output produced from this debugging makes any ecological sense!
-\itemize{
-\item An initial thing to try is to bump up the number of inner iterations i.e., \code{control$inner_maxit} from the default of 1 to something like 10, 20 or even higher. This will give more opportunities for the inner estimation component of the PQL algorithm (where all regression and smoothing coefficients are updated) to try converge to a stable point, before proceeding to estimating the other model parameters.
-\item Sometimes the starting values that CBFM constructs are not that great! A common situation where this occurs is when smoothers are employed in \code{formula} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument, which as the name suggests, dampens the starting estimated coefficients from potentially extreme magnitudes, and can facilitate the underlying PQL estimation algorithm to "get going".
-\item Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using \code{\link[mgcv:gam]{mgcv::gam()}} with the same formula as you will use in \code{formula}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
-}\preformatted{manygam <- foreach::foreach(j = 1:num_spp) \%dopar\%
-    gam(response ~ s(temp) + s(depth) + s(chla) + s(O2) + s(x,y), data = data.frame(response = simy_train[,j], dat_train), family = xxx)
-start_params = list(betas = t(sapply(manygam, coef)[1:37,])) # Or as appropriate the number of coefficients excluding the spatial-temporal smoothing terms
-}
-\itemize{
-\item Analogously, the argument \code{control$subsequent_betas_dampen} can be used to dampen the values obtained for the species-specific regression coefficients during subsequent running of the PQL estimation algorithm. Basically, it is an \emph{ad-hoc} solution to when updates potentially fail due to e.g., overfitting causing coefficients to become extremely large in magnitude.
-\item If, after multiple attempts at debugging and you CBF'd anymore (pun-intended), then you can post the issue up on \href{https://github.com/fhui28/CBFM}{CBFM Github page} \emph{if} you think there is a genuine bug in the package. Otherwise, you can email the authors of this package on potential general statistical modeling questions, although we may not be able to get to them soon let along have the time to get to them at all (we are paid to be statistical consultants...apologies in advance!). Please do not post general statistical modeling issues on Github issues, as they will likely be ignored or deleted without prior consent.
-}
 }
