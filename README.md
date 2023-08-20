@@ -1,23 +1,14 @@
 # CBFM (Community-level basis function models)
 
-<!-- badges: start --> [![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM) [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental) <!-- badges: end -->
+[![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM) [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 
 `CBFM` is an R package for spatial and spatio-temporal joint species distributing modeling of multivariate abundance data, based on the idea of using community-level (species-common) basis functions. It offers an alternative and connected (but by no means necessarily superior) approach to the popular spatio-temporal generalized linear latent variable model (GLLVM) method.
 
 As the name suggests, community-level basis function models (CBFMs) is built on the idea of fixed-rank kriging (FRK), where spatially- and/or temporally-indexed basis functions are included to account for spatio-temporal correlations within and between species. In doing so, CBFMs bear a lot of similarity to and thus can be set up as a type of (big) generalized additive model or GAM. This in turns allows CBFMs to be estimated in a computationally efficient and scalable manner, by adapting some of the existing machinery available for fitting and performing inference with GAMs.
 
-The main manuscript introducing CBFMs as a method is available at [here](https://doi.org/10.1111/2041-210X.14184). 
-
+The main manuscript introducing CBFMs as a method is available at [here](https://doi.org/10.1111/2041-210X.14184).
 
 # Installation
-
-````{=html}
-<!--Down the road, you can install the package on CRAN using:
-```
-install.packages("CBFM")
-```
--->
-````
 
 Currently, `CBFM` is available and can be installed from github with the help of `devtools` package using:
 
@@ -29,11 +20,9 @@ Alternatively, or if the above does not work, you may download a (supposedly) st
 
 # Getting started
 
-For getting started with `CBFM` though, please have a read of the manuscript available  [here](https://doi.org/10.1111/2041-210X.14184). We also recommend installing it and reading the help file for the main CBFM function. 
+For getting started with `CBFM` though, please have a read of the manuscript available [here](https://doi.org/10.1111/2041-210X.14184). We also recommend installing it and reading the help file for the main CBFM function.
 
-Some broad introductions to joint species distribution modeling, especially using GLLVMs, please see [So Many Variables: Joint Modeling in Community Ecology](https://doi.org/10.1016/j.tree.2015.09.007), [How to make more out of community data? A conceptual framework and its implementation as models and software](https://doi.org/10.1111/zele.12757), 
-<!--[Joint dynamic species distribution models: a tool for community ordination and spatio-temporal monitoring](https://doi.org/10.1111/geb.12464) -->
-and the textbook [Joint Species Distribution Modelling, with Applications in R](https://doi.org/10.1017/9781108591720).
+Some broad introductions to joint species distribution modeling, especially using GLLVMs, please see [So Many Variables: Joint Modeling in Community Ecology](https://doi.org/10.1016/j.tree.2015.09.007), [How to make more out of community data? A conceptual framework and its implementation as models and software](https://doi.org/10.1111/zele.12757), and the textbook [Joint Species Distribution Modelling, with Applications in R](https://doi.org/10.1017/9781108591720). <!--[Joint dynamic species distribution models: a tool for community ordination and spatio-temporal monitoring](https://doi.org/10.1111/geb.12464) -->
 
 Note there are also some excellent existing \texttt{R} packages to fit joint species distribution models using GLLVMs, including: [Hmsc](https://cran.r-project.org/web/packages/Hmsc/index.html), [GLLVM](https://cran.r-project.org/web/packages/gllvm/index.html), [sjSDM](https://github.com/TheoreticalEcology/s-jSDM), and [VAST](https://rdrr.io/github/James-Thorson/VAST/), among others. All of these have some capacity to handle spatio-temporal multivariate abundance data using spatio-temporal GLLVMs, or variations thereof.
 
