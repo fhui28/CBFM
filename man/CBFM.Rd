@@ -20,8 +20,10 @@ CBFM(
   stderrors = TRUE,
   select = FALSE,
   gamma = 1,
+  knots = NULL,
   ziselect = FALSE,
   zigamma = 1,
+  ziknots = NULL,
   nonzeromean_B_space = FALSE,
   nonzeromean_B_time = FALSE,
   nonzeromean_B_spacetime = FALSE,
@@ -72,9 +74,13 @@ CBFM(
 
 \item{gamma}{For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
 
+\item{knots}{For cases where \code{formula} involves smoothing terms, this is an optional list containing user specified knot values to be used for basis construction. For most bases, the user simply supplies the knots to be used, which must match up with the k value supplied. Please see \code{\link[mgcv:gam]{mgcv::gam()}} for more details. Note the knot values are assumed to be common across species.}
+
 \item{ziselect}{For cases where \code{ziformula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details. Note also this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.}
 
 \item{zigamma}{For cases where \code{ziformula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in \code{\link[mgcv:gam]{mgcv::gam()}}. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.}
+
+\item{ziknots}{For cases where \code{ziformula} involves smoothing terms, this is an optional list containing user specified knot values to be used for basis construction. For most bases, the user simply supplies the knots to be used, which must match up with the k value supplied. Please see \code{\link[mgcv:gam]{mgcv::gam()}} for more details. Note the knot values are assumed to be common across species.}
 
 \item{nonzeromean_B_space}{This experimental feature allows the distribution of the spatial basis function coefficients to have a non-zero mean vector. \emph{Use at your own risk!}}
 
@@ -230,7 +236,7 @@ where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predict
 
 The vector of predictors \eqn{x_i} is created based on the \code{formula} and \code{data} arguments. Smoothing terms are permitted in \code{formula}, and these can be included in the same way as in \code{\link[mgcv:gam.models]{mgcv::gam.models()}}; see also \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}}. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see \code{\link[mgcv:random.effects]{mgcv::random.effects()}} and \code{\link[mgcv:gam.vcomp]{mgcv::gam.vcomp()}} for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are \emph{not} random row effects as found in packages such as \code{\link[boral:boral]{boral::boral()}} and \code{\link[gllvm:gllvm]{gllvm::gllvm()}}, and also are currently are not designed to draw the slopes from a common distribution as in \code{\link[Hmsc:Hmsc-package]{Hmsc::Hmsc-package()}} or Pollock et al., (2014), say.
 
-When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the \code{\link[mgcv:k.check]{mgcv::k.check()}} function; see that function's help file as well as \code{\link[mgcv:choose.k]{mgcv::choose.k()}} for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}} and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details. However, we warn the user that \strong{some of the smoothers available as part of \code{mgcv} e.g., \code{\link[mgcv:linear.functional.terms]{mgcv::linear.functional.terms()}}, has not been fully tested for CBFM}, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!
+When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the \code{\link[mgcv:k.check]{mgcv::k.check()}} function; see that function's help file as well as \code{\link[mgcv:choose.k]{mgcv::choose.k()}} for more general details. Furthermore, selection of smoothing terms as well as user specified knot values for basis construction are also possible; please see \code{\link[mgcv:gam]{mgcv::gam()}}, \code{\link[mgcv:gam.selection]{mgcv::gam.selection()}}, and \code{\link[mgcv:step.gam]{mgcv::step.gam()}} for more details. However, we warn the user that \strong{some of the smoothers available as part of \code{mgcv} e.g., \code{\link[mgcv:linear.functional.terms]{mgcv::linear.functional.terms()}}, has not been fully tested for CBFM}, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!
 
 Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be written as:
 

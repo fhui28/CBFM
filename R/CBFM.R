@@ -20,8 +20,10 @@
 #' @param stderrors Should standard errors of the estimates be calculated? This defaults to \code{TRUE}, but can be set of \code{FALSE} if only point estimations of the regression coefficients for the covariates and basis functions are desired. Please see details later on for more information on how standard errors are constructed. 
 #' @param select For cases where \code{formula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. Note also this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.  
 #' @param gamma For cases where \code{formula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in [mgcv::gam()]. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.  
+#' @param knots For cases where \code{formula} involves smoothing terms, this is an optional list containing user specified knot values to be used for basis construction. For most bases, the user simply supplies the knots to be used, which must match up with the k value supplied. Please see [mgcv::gam()] for more details. Note the knot values are assumed to be common across species. 
 #' @param ziselect For cases where \code{ziformula} involves smoothing terms, setting this to \code{TRUE} adds an extra penalty to each smoothing term so that it can be penalized to zero i.e., null space penalization. Please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. Note also this argument has no effect on any parametric terms in the model i.e., it can not shrink parametric terms to zero.  
 #' @param zigamma For cases where \code{ziformula} involves smoothing terms, setting this to a value greater than one leads to smoother terms i.e., increased penalization. Note the argument can either be set to a scalar, or a vector with length equal to the number of species i.e., \code{ncol(y)}. This argument plays exactly the same role as the \code{gamma} argument in [mgcv::gam()]. Finally, note this argument has no effect on any parametric terms or the basis functions part of the CBFM.  
+#' @param ziknots For cases where \code{ziformula} involves smoothing terms, this is an optional list containing user specified knot values to be used for basis construction. For most bases, the user simply supplies the knots to be used, which must match up with the k value supplied. Please see [mgcv::gam()] for more details. Note the knot values are assumed to be common across species. 
 #' @param nonzeromean_B_space This experimental feature allows the distribution of the spatial basis function coefficients to have a non-zero mean vector. *Use at your own risk!*
 #' @param nonzeromean_B_time This experimental feature allows the distribution of the temporal basis function coefficients to have a non-zero mean vector. *Use at your own risk!*
 #' @param nonzeromean_B_spacetime This experimental feature allows the distribution of the spatio-temporal basis function coefficients to have a non-zero mean vector. *Use at your own risk!*
@@ -147,7 +149,7 @@
 #' 
 #' The vector of predictors \eqn{x_i} is created based on the \code{formula} and \code{data} arguments. Smoothing terms are permitted in \code{formula}, and these can be included in the same way as in [mgcv::gam.models()]; see also [mgcv::smooth.terms()]. Note smoothing terms in this context also permits the inclusion of (species-specific) random intercepts and slopes, through the use of the \code{s(..., bs = "re")}; please see [mgcv::random.effects()] and [mgcv::gam.vcomp()] for more details. These may be used, say, as a simple approach to account for nested sampling designs, multiple data sources/surveys etc..., although please note these random effects are specific to each species i.e., they are *not* random row effects as found in packages such as [boral::boral()] and [gllvm::gllvm()], and also are currently are not designed to draw the slopes from a common distribution as in [Hmsc::Hmsc-package()] or Pollock et al., (2014), say.  
 #' 
-#' When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms is also possible, using either shrinkage smoothers or null space penalization; please see [mgcv::gam.selection()] and [mgcv::step.gam()] for more details. However, we warn the user that **some of the smoothers available as part of \code{mgcv} e.g., [mgcv::linear.functional.terms()], has not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
+#' When smoothing terms are included in the CBFM, a check of the smooth basis dimension and whether it is adequate is also automatically performed, courtesy of the [mgcv::k.check()] function; see that function's help file as well as [mgcv::choose.k()] for more general details. Furthermore, selection of smoothing terms as well as user specified knot values for basis construction are also possible; please see [mgcv::gam()], [mgcv::gam.selection()], and [mgcv::step.gam()] for more details. However, we warn the user that **some of the smoothers available as part of \code{mgcv} e.g., [mgcv::linear.functional.terms()], has not been fully tested for CBFM**, so some make may not work. If you encounter any problems, please post a Github issue on the CBFM repository!  
 #' 
 #' Next, the vector basis functions \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. At least one of these arguments must be supplied. As an example, suppose we wish to fit a CBFM with spatial and temporal basis functions included in an additive manner. Then only \code{B_space} and \code{B_time} should be supplied, in which case the mean regression model for the CBFM can be written as:
 #' 
@@ -1831,7 +1833,7 @@
 
 CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, 
-     select = FALSE, gamma = 1, ziselect = FALSE, zigamma = 1,
+     select = FALSE, gamma = 1, knots = NULL, ziselect = FALSE, zigamma = 1, ziknots = NULL,
      nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
@@ -1916,7 +1918,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      ## Form covariate model matrix
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
      tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
+     nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), knots = knots, fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
      rownames(X) <- rownames(y)
@@ -1951,7 +1953,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(!is.null(ziformula)) {
           ziformula <- .check_X_formula(formula = ziformula, data = as.data.frame(data))          
           tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse = " ") ) )
-          nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), fit = TRUE, control = list(maxit = 1))
+          nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), knots = ziknots, fit = TRUE, control = list(maxit = 1))
           ziX <- model.matrix(nullfit)
           rm(tmp_formula, nullfit)
           rownames(ziX) <- rownames(y)
@@ -1995,26 +1997,26 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
                     
           if(family$family %in% c("gaussian","poisson","Gamma")) {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], knots = knots, method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("binomial")) {
                tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse = " ") ) )
                use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
                
-               fit0 <-  try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
+               fit0 <-  try(gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = offset[,j], knots = knots, method = control$gam_method, family = family, gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("negative.binomial")) {
-               fit0 <-  try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = nb(), gamma = full_gamma[j]), silent = TRUE)
+               fit0 <-  try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family %in% c("Beta")) {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = betar(link = "logit"), gamma = full_gamma[j]), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], knots = knots, method = control$gam_method, family = betar(link = "logit"), gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family == "tweedie") {
-               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], method = control$gam_method, family = Tweedie(p = 1.6, link = "log"), gamma = full_gamma[j]), silent = TRUE)
+               fit0 <- try(gam(tmp_formula, data = data.frame(response = y[,j], data), offset = offset[,j], knots = knots, method = control$gam_method, family = Tweedie(p = 1.6, link = "log"), gamma = full_gamma[j]), silent = TRUE)
                fit0$logLik <-  try(logLik(fit0), silent = TRUE)
                }
           if(family$family == "zipoisson") {
@@ -2026,8 +2028,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                init_pi <- rep(mean(y[,j] == 0, na.rm = TRUE), num_units) # Initial weights/posterior probabilities of being in zero-inflation component
                init_lambda <- mean(y[,j], na.rm = TRUE)
                w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dpois(0, init_lambda)), 0)
-               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = "poisson", gamma = full_gamma[j])
-               fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
+               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = "poisson", gamma = full_gamma[j])
+               fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
                MM <- model.matrix(fit0)
                cw_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)) 
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
@@ -2039,8 +2041,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          break;
                     
                     w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dpois(0, lambda = exp(MM %*% fit0$coefficients + fit0$offset))), 0) # Posterior probabilities of being in zero-inflation component
-                    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = "poisson", gamma = full_gamma[j])
-                    fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
+                    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = "poisson", gamma = full_gamma[j])
+                    fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
                     new_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
@@ -2061,8 +2063,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                init_pi <- rep(mean(y[,j] == 0, na.rm = TRUE), num_units) # Initial weights/posterior probabilities of being in zero-inflation component
                init_lambda <- mean(y[,j], na.rm = TRUE)
                w <- ifelse(y[,j] == 0, init_pi / (init_pi + (1-init_pi) * dnbinom(0, mu = init_lambda, size = 1/0.2)), 0)
-               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = nb(), gamma = full_gamma[j])
-               fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
+               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
+               fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
                MM <- model.matrix(fit0)
                cw_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
@@ -2074,8 +2076,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          break;
 
                     w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dnbinom(0, mu = exp(MM %*% fit0$coefficients + fit0$offset), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
-                    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, method = control$gam_method, family = nb(), gamma = full_gamma[j])
-                    fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
+                    fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
+                    fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
                     new_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
@@ -2094,7 +2096,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     cw_offset <- numeric(num_units)
                tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data),1:10),], off = c(cw_offset, numeric(10))) # Append some zeros speeds ziplss up a heck of a lot!
                
-               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), gamma = full_gamma[j])
+               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), knots = knots, gamma = full_gamma[j])
                if(!inherits(fit0, "try-error")) {
                     MM <- model.matrix(fit0)
                     MM <- MM[1:(nrow(MM)-10),,drop=FALSE]
@@ -2120,7 +2122,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                w <- c(w1, w2)
                rm(w2) ## This way of constructing the weights and GAM set up is the *only* one I have constructed so far that ensures MM = X
                fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j], numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                               weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], method = control$gam_method, family = nb(), gamma = full_gamma[j])
+                               weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
                MM <- predict.gam(fit0, newdata = data, type = "lpmatrix")
                cw_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE), log = TRUE)
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
@@ -2138,7 +2140,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     w <- c(w1, w2)
                     rm(w2) 
                     fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                    weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], method = control$gam_method, family = nb(), gamma = full_gamma[j]), silent = TRUE)
+                                    weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j]), silent = TRUE)
                     if(inherits(fit0, "try-error"))
                          break;
                     new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE), log = TRUE)
@@ -2462,11 +2464,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     
                     if(family$family %in% c("gaussian","poisson","Gamma")) {
                          if(control$ridge > 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          H = Hmat, family = family, select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, H = Hmat, family = family, select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          family = family, select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, family = family, select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
@@ -2475,41 +2477,41 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
      
                          if(control$ridge > 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, knots = knots, 
                                           method = control$gam_method, H = Hmat, family = family, select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, 
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, knots = knots, 
                                           method = control$gam_method, family = family, select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("negative.binomial")) {
                          if(control$ridge > 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          H = Hmat, family = nb(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, H = Hmat, family = nb(), select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          family = nb(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, family = nb(), select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("Beta")) {
                          if(control$ridge > 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          H = Hmat, family = betar(link = "logit"), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, H = Hmat, family = betar(link = "logit"), select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          family = betar(link = "logit"), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, family = betar(link = "logit"), select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
                     if(family$family %in% c("tweedie")) {
                          if(control$ridge > 0)
-                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                     H = Hmat, family = tw(link = "log"), select = select, gamma = full_gamma[j])
+                         fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                     method = control$gam_method, H = Hmat, family = tw(link = "log"), select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          family = tw(link = "log"), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, family = tw(link = "log"), select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
                          }
@@ -2518,18 +2520,21 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
                          
                          if(control$ridge > 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          weights = 1-getweights[,j], H = Hmat, family = "poisson", select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, weights = 1-getweights[,j], H = Hmat, family = "poisson", 
+                                          select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          weights = 1-getweights[,j], family = "poisson", select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, weights = 1-getweights[,j], family = "poisson", 
+                                          select = select, gamma = full_gamma[j])
                          
                          if(control$ziridge > 0)
-                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), method = control$gam_method, 
-                                          H = ziHmat, family = "binomial", select = ziselect, gamma = full_zigamma[j]))
+                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), knots = ziknots, 
+                                                            method = control$gam_method, H = ziHmat, family = "binomial", 
+                                                            select = ziselect, gamma = full_zigamma[j]))
                          if(control$ziridge == 0)
-                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), method = control$gam_method, 
-                                          family = "binomial", select = ziselect, gamma = full_zigamma[j]))
+                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), knots = ziknots, 
+                                                            method = control$gam_method, family = "binomial", select = ziselect, gamma = full_zigamma[j]))
 
                          
                          fit0$logLik <- sum(.dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)))
@@ -2540,17 +2545,21 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
                          
                          if(control$ridge > 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method, 
-                                          weights = 1-getweights[,j], H = Hmat, family = nb(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method, weights = 1-getweights[,j], H = Hmat, family = nb(), 
+                                          select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, method = control$gam_method,
-                                          weights = 1-getweights[,j], family = nb(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
+                                          method = control$gam_method,weights = 1-getweights[,j], family = nb(), 
+                                          select = select, gamma = full_gamma[j])
                          if(control$ziridge > 0)
-                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), method = control$gam_method, 
-                                                            H = ziHmat, family = "binomial", select = ziselect, gamma = full_zigamma[j]))
+                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), knots = ziknots, 
+                                                            method = control$gam_method, H = ziHmat, family = "binomial", 
+                                                            select = ziselect, gamma = full_zigamma[j]))
                          if(control$ziridge == 0)
-                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), method = control$gam_method, 
-                                                            family = "binomial", select = ziselect, gamma = full_zigamma[j]))
+                              fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = getweights[,j], data), knots = ziknots, 
+                                                            method = control$gam_method, family = "binomial", select = ziselect, 
+                                                            gamma = full_zigamma[j]))
 
                          fit0$logLik <- sum(.dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE)))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
@@ -2560,9 +2569,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data), 1:10),], off = c(new_offset, numeric(10))) # Append some zeros avoids a non-convergence problem in mgcv
                          tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " "), "+ offset(off)" ) )
                          if(control$ridge > 0)
-                              fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, H = Hmat, family = ziplss(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, knots = knots, method = control$gam_method, 
+                                          H = Hmat, family = ziplss(), select = select, gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, knots = knots, method = control$gam_method, 
+                                          family = ziplss(), select = select, gamma = full_gamma[j])
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset 
                          fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
@@ -2590,12 +2601,12 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               rm(w2)
                               if(control$ridge > 0) {
                                    fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                                   offset = new_offset[c(1:num_units,1:num_units)], method = control$gam_method, 
+                                                   offset = new_offset[c(1:num_units,1:num_units)], knots = knots, method = control$gam_method, 
                                                    weights = w, H = Hmat, family = nb(), select = select, gamma = full_gamma[j]), silent = TRUE)
                                    }
                               if(control$ridge == 0) {
                                    fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                                   offset = new_offset[c(1:num_units,1:num_units)], method = control$gam_method,
+                                                   offset = new_offset[c(1:num_units,1:num_units)], knots = knots, method = control$gam_method,
                                                    weights = w, family = nb(), select = select, gamma = full_gamma[j]), silent = TRUE)
                                    }
                               if(inherits(fit0, "try-error"))
@@ -3044,6 +3055,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      out_CBFM$ziformula <- ziformula
      out_CBFM$select <- select
      out_CBFM$gamma <- full_gamma
+     out_CBFM$knots <- knots
+     out_CBFM$ziselect <- ziselect
+     out_CBFM$zigamma <- full_zigamma
+     out_CBFM$ziknots <- ziknots
      out_CBFM$B <- B
      out_CBFM$which_B_used <- which_B_used
      out_CBFM$which_custom_Sigma_used <- Sigma_control$which_custom_Sigma_used
