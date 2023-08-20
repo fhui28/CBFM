@@ -92,7 +92,7 @@ model.matrix.CBFM <- function(object, zi = FALSE, ...) {
           stop("`object' is not of class \"CBFM\"")
         
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+     nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), knots = object$knots, fit = TRUE, control = list(maxit = 1))
      MM <- predict.gam(nullfit, type = "lpmatrix", ...)
         
      if(zi) {
@@ -100,7 +100,7 @@ model.matrix.CBFM <- function(object, zi = FALSE, ...) {
                stop("A model matrix associated with the probability of zero-inflation can be only be obtained for zero-inflated CBFMs.")
           
           tmp_formula <- as.formula(paste("response", paste(as.character(object$ziformula),collapse = " ") ) )
-          nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+          nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), knots = object$ziknots, fit = TRUE, control = list(maxit = 1))
           MM <- predict.gam(nullfit, type = "lpmatrix", ...)
           }
         return(MM)

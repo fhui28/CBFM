@@ -121,7 +121,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
               
                ## Summary tables for modeling the probability of zero-inflation
                if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-                    nullfit <- gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+                    nullfit <- gam(tmp_ziformula, data = data.frame(response = object$y[,j], object$data), knots = object$ziknots, fit = TRUE, control = list(maxit = 1))
                    
                     # Individual parametric coefficient p-values...
                     if(sum(nullfit$nsdf) > 0) {
@@ -260,7 +260,7 @@ summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("di
 
               
                ## Summary tables for modeling the mean/location parameter
-               nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), fit = TRUE, control = list(maxit = 1))
+               nullfit <- gam(tmp_formula, data = data.frame(response = object$y[,j], object$data), knots = object$knots, fit = TRUE, control = list(maxit = 1))
 
                # Individual parametric coefficient p-values...
                if(sum(nullfit$nsdf) > 0) {
