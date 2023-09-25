@@ -235,8 +235,10 @@ function() {
      ziformula <- NULL
      data = dat_train
      family =  stats::binomial() 
-     B_space = train_space_basisfunctions
-     B_time = train_time_basisfunctions
+     B_space = train_basisfunctions
+     B_time = NULL
+     knots = NULL
+     ziknots = NULL
      B_spacetime = NULL
      offset = NULL
      ncores = NULL
@@ -253,8 +255,8 @@ function() {
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      control = list(trace = 1)
-     G_control = list(rank = c(5,5), structure = c("unstructured", "identity"))
-     Sigma_control = list(rank = c(5,"full"), custom_time = custom_Sigma_time)
+     G_control = list(rank = c(5), structure = c("unstructured"))
+     Sigma_control = list(rank = c(5))
      k_check_control = list(subsample = 5000, n.rep = 400)
      }
 

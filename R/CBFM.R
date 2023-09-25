@@ -2626,7 +2626,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          }
 
                     
-                    out <- list(coefficients = fit0$coefficients, linear.predictors = fit0$linear.predictors, logLik = fit0$logLik, fit = fit0, S = .get_bigS(fit_gam = fit0, num_X = num_X))
+                    out <- list(coefficients = fit0$coefficients, 
+                                linear.predictors = fit0$linear.predictors, 
+                                logLik = fit0$logLik, 
+                                fit = fit0, 
+                                S = .get_bigS(fit_gam = fit0, num_X = num_X))
                     if(family$family %in% c("gaussian","Gamma"))                        
                          out$dispparam <- fit0$sig2
                     if(family$family %in% c("negative.binomial","zinegative.binomial","ztnegative.binomial"))                        
