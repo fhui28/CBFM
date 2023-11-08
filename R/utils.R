@@ -164,44 +164,45 @@
   
 ## Function for calculating some starting lambda values, which are then used into .update_Sigma_fn() when multiple lambda's need to be estimated.
 ## Based on and acknowledgments go to the initial.sp function in the mgcv package.
-.get_initial_lambdas <- function(BtKB, custom_spacetime) {
-     starting_lambdainv <- array(0, length(custom_spacetime))
-     ldxx <- diag(BtKB)
-     ldss <- ldxx * 0
-     pen <- rep(FALSE, length(ldxx))
-     
-     S <- lapply(custom_spacetime, .pinv)
-     
-     for(j in 1:length(custom_spacetime)) {
-          rsS <- rowMeans(abs(S[[j]]))
-          csS <- colMeans(abs(S[[j]]))
-          dS <- diag(abs(S[[j]]))
-          thresh <- .Machine$double.eps^0.8 * max(abs(S[[j]]))
-          ind <- rsS > thresh & csS > thresh & dS > thresh
-          ss <- diag(S[[j]])[ind]
-          xx <- ldxx
-          xx <- xx[ind]
-          pen <- pen | ind
-          sizeXX <- mean(xx)
-          sizeS <- mean(ss)
-          starting_lambdainv[j] <- sizeXX / sizeS
-          ldss <- ldss + starting_lambdainv[j] * diag(S[[j]])
-          }
-          
-     ind <- ldss > 0 & pen & ldxx > 0
-     ldxx <- ldxx[ind]
-     ldss <- ldss[ind]
-     while(mean(ldxx/(ldxx + ldss)) > 0.4) {
-          starting_lambdainv <- starting_lambdainv * 10
-          ldss <- ldss * 10
-          }
-     while (mean(ldxx/(ldxx + ldss)) < 0.4) {
-          starting_lambdainv <- starting_lambdainv/10
-          ldss <- ldss/10
-          }
-     
-     return(1/starting_lambdainv)
-     }
+## Not currently not actually used!
+# .get_initial_lambdas <- function(BtKB, custom_spacetime) {
+#      starting_lambdainv <- array(0, length(custom_spacetime))
+#      ldxx <- diag(BtKB)
+#      ldss <- ldxx * 0
+#      pen <- rep(FALSE, length(ldxx))
+#      
+#      S <- lapply(custom_spacetime, .pinv)
+#      
+#      for(j in 1:length(custom_spacetime)) {
+#           rsS <- rowMeans(abs(S[[j]]))
+#           csS <- colMeans(abs(S[[j]]))
+#           dS <- diag(abs(S[[j]]))
+#           thresh <- .Machine$double.eps^0.8 * max(abs(S[[j]]))
+#           ind <- rsS > thresh & csS > thresh & dS > thresh
+#           ss <- diag(S[[j]])[ind]
+#           xx <- ldxx
+#           xx <- xx[ind]
+#           pen <- pen | ind
+#           sizeXX <- mean(xx)
+#           sizeS <- mean(ss)
+#           starting_lambdainv[j] <- sizeXX / sizeS
+#           ldss <- ldss + starting_lambdainv[j] * diag(S[[j]])
+#           }
+#           
+#      ind <- ldss > 0 & pen & ldxx > 0
+#      ldxx <- ldxx[ind]
+#      ldss <- ldss[ind]
+#      while(mean(ldxx/(ldxx + ldss)) > 0.4) {
+#           starting_lambdainv <- starting_lambdainv * 10
+#           ldss <- ldss * 10
+#           }
+#      while (mean(ldxx/(ldxx + ldss)) < 0.4) {
+#           starting_lambdainv <- starting_lambdainv/10
+#           ldss <- ldss/10
+#           }
+#      
+#      return(1/starting_lambdainv)
+#      }
 
 
 ## This function is used specifically when an additive form of the CBFM is used, for use in the construction of the Bayesian posterior covariance matrix for standard errors.
