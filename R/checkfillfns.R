@@ -330,9 +330,11 @@
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
           control$rank <- rep(control$rank, sum(which_B_used))
+     
      if(sum(which_B_used) != length(control$rank))
           stop("G_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of G to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$rank should be a vector with length 2.
                Please note ranks still needs to be supplied even when custom Gs are used (although the corresponding element is ignored in such case).")
+     
      if(is.null(control$structure))
           control$structure <- rep("unstructured", sum(which_B_used))
      if(length(control$structure) == 1)
@@ -347,6 +349,7 @@
      # if(sum(which_B_used) != length(control$min_sp))
      #      stop("G_control$min_sp should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the minimum smoothing parameter to apply to an (identity structured) G for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then G_control$min_sp should be a vector with length 2, irrespective of how many of G_control$structure was set to an identity structure.
      #           Put simply, please note min_sp still needs to be supplied even when an unstructured G is used, and even when custom Gs are used (although the corresponding element is ignored in such cases).")
+     
      if(is.null(control$nugget_profile))          
           control$nugget_profile = seq(0.05, 0.95, by = 0.05)
      if(is.null(control$maxit))
@@ -399,6 +402,7 @@
           stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2. 
                Please note ranks still needs to be supplied even when custom Sigmas are used (although the corresponding rank is ignored in such case).")
           }
+     
      if(is.null(control$maxit))
           control$maxit <- 100
      if(is.null(control$tol))
@@ -421,9 +425,23 @@
      if(!is.null(control[["custom_time"]])) {
          if(which_B_used[2] == 0)
             stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
-        if(nrow(control[["custom_time"]]) != num_timebasisfns | ncol(control[["custom_time"]]) != num_timebasisfns)
-            stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
-        control$which_custom_Sigma_used[2] <- 1
+          if(is.matrix(control[["custom_time"]])) {
+               if(nrow(control[["custom_time"]]) != num_timebasisfns | ncol(control[["custom_time"]]) != num_timebasisfns)
+                    stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
+               }
+          if(is.list(control[["custom_time"]])) {
+               if(length(control[["custom_time"]]) == 1)
+                    stop("If the list Sigma_control$custom_time is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_time to just be a single matrix instead of a list.")
+               for(j in 1:length(control[["custom_time"]])) {
+                    if(nrow(control[["custom_time"]][[j]]) != num_timebasisfns | ncol(control[["custom_time"]][[j]]) != num_timebasisfns)
+                         stop("Each element in the list Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).")
+                    } 
+               }
+          if(is.list(control[["custom_time"]])) {
+               if(G_control$structure[sum(which_B_used[1:2])] != "homogeneous") #' I am almost certain you can set this identity as well and it would work. But anyway...
+                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_time, then the corresponding element in G_control$structure must be set to \"homogeneous\"...this is a current constraint of CBFM. Sorry!")
+          }
+          control$which_custom_Sigma_used[2] <- 1
         }
      if(!is.null(control[["custom_spacetime"]])) {
          if(which_B_used[3] == 0) 

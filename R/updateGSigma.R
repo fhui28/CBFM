@@ -347,17 +347,33 @@
                     new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
                     }
                if(which_B == 2) {
-                    Sigmainv_time <- .pinv(Sigma_control[["custom_time"]])
-                    trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
-                    fn <- function(x) { 
-                         expx <- mgcv::notExp(x)
-                         out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                         out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_time))$mod
-                         return(out)
-                         }
+                    if(is.matrix(Sigma_control[["custom_time"]])) {
+                         Sigmainv_time <- .pinv(Sigma_control[["custom_time"]])
+                         trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
+                         fn <- function(x) { 
+                              expx <- mgcv::notExp(x)
+                              out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                              out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_time))$mod
+                              return(out)
+                              }
                     
-                    update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                    new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                         new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         }
+                    if(is.list(Sigma_control[["custom_time"]])) {
+                         
+                         fn_lambda <- function(x) { 
+                              expx <- mgcv::notExp(x)
+                              Sigmainv_time <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_time"]][[j2]]) * expx[j2])) 
+                              trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
+                              
+                              out <- 0.5*num_spp*determinant(Sigmainv_time)$mod - 0.5*trace_quantity
+                              out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_time))$mod
+                              return(as.vector(-out))
+                              }
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
+                         }
                     }
                if(which_B == 3) {
                     if(is.matrix(Sigma_control[["custom_spacetime"]])) {
@@ -460,8 +476,14 @@
      if(estimate_lambda_not_Sigma) {
           if(which_B == 1)
                out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
-          if(which_B == 2)
-               out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
+          if(which_B == 2) {
+               if(is.matrix(Sigma_control[["custom_time"]]))
+                    out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
+               if(is.list(Sigma_control[["custom_time"]]))
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
+                                invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / Sigma[x])) )
+               out$cov <- .pinv(out$invcov)
+               }
           if(which_B == 3) {
                if(is.matrix(Sigma_control[["custom_spacetime"]]))
                     out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_spacetime"]] * Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
