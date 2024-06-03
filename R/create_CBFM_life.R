@@ -94,7 +94,7 @@
 #' library(MASS)
 #' library(mvtnorm)
 #' library(sp)
-#' library(RandomFields)
+#' library(geoR)
 #' library(tidyverse)
 #' 
 #' set.seed(2021)

@@ -63,7 +63,7 @@
 #' library(mvtnorm)
 #' library(ROCR)
 #' library(sp)
-#' library(RandomFields)
+#' library(geoR)
 #' library(tidyverse)
 #' library(corrplot)
 #' 
@@ -92,10 +92,10 @@
 #' 
 #' # Simulate latent variable component
 #' # We will use this information in later examples as well
-#' true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
-#' x = xy$x, y = xy$y, n = 2)@data %>% 
-#' as.matrix
-#' spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
+#' true_lvs <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
+#' cov.pars = c(1, 2))$data %>%
+#'      as.matrix
+#' spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
 #' set.seed(NULL)
 #' 
 #' # Simulate spatial multivariate abundance data (presence-absence)

@@ -49,6 +49,7 @@ Suggests:
     devtools,
     FRK,
     gamlss,
+    geoR,
     Hmsc,
     knitr,
     mvabund,
