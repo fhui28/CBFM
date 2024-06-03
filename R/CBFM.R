@@ -1983,7 +1983,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      origwd <- getwd()          
      # Please see https://github.com/kaskr/adcomp/issues/321 for flags argument
      setwd(TMB_directories$compile)
-     TMB::compile(paste0(getDLL, ".cpp"), flags = "-Wno-ignored-attributes -O2 -mfpmath=sse -msse2 -mstackrealign" )
+     TMB::compile(paste0(getDLL, ".cpp")) #, flags = "-Wno-ignored-attributes -O2 -mfpmath=sse -msse2 -mstackrealign" 
      dyn.load(paste0(TMB_directories$compile, "/", TMB::dynlib(getDLL)))
      setwd(origwd)
      

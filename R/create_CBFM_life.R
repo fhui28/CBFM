@@ -81,7 +81,7 @@
 #' }
 #' 
 #' @details # Warning
-#' Note **no** checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
+#' Note **no** checks are made on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
