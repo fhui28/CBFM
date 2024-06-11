@@ -2379,6 +2379,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                ## Update smoothing coefficients for all basis functions, one species at a time
                ##-------------------------
                update_basiscoefsspp_fn <- function(j) {
+                    dyn.load(paste0(TMB_directories$compile, "/", TMB::dynlib(getDLL)))
+                    
                     tidbits_parameters <- list(basis_effects = new_fit_CBFM_ptest$basis_effects_mat[j,])
                     
                     tidbits_data$y <- y[,j]
@@ -2456,7 +2458,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                update_basiscoefsspp_cmpfn <- compiler::cmpfun(update_basiscoefsspp_fn)
                     
-               all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
+               all_update_coefs <- foreach(j = 1:num_spp, .export = c("tidbits_data")) %dopar% update_basiscoefsspp_cmpfn(j = j)
                for(j in 1:num_spp) {
                     new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par 
                     }
@@ -2660,7 +2662,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }               
                update_Xcoefsspp_cmpfn <- compiler::cmpfun(update_Xcoefsspp_fn)
                
-               all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
+               all_update_coefs <- foreach(j = 1:num_spp, .export = c("new_fit_CBFM_ptest")) %dopar% update_Xcoefsspp_cmpfn(j = j)
                new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
                new_fit_CBFM_ptest$linear_predictors <- sapply(all_update_coefs, function(x) x$linear.predictors)         
                for(j in 1:num_spp) {
@@ -2944,13 +2946,13 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      while(inner_err > control$tol & final_counter <= control$final_maxit) {
           getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX)
 
-          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_basiscoefsspp_cmpfn(j = j)
+          all_update_coefs <- foreach(j = 1:num_spp, .export = c("tidbits_data")) %dopar% update_basiscoefsspp_cmpfn(j = j)
           for(j in 1:num_spp) {
                new_fit_CBFM_ptest$basis_effects_mat[j,] <- all_update_coefs[[j]]$par
                }
           rm(all_update_coefs)
           
-          all_update_coefs <- foreach(j = 1:num_spp) %dopar% update_Xcoefsspp_cmpfn(j = j)
+          all_update_coefs <- foreach(j = 1:num_spp, .export = c("new_fit_CBFM_ptest")) %dopar% update_Xcoefsspp_cmpfn(j = j)
           new_fit_CBFM_ptest$betas <- do.call(rbind, lapply(all_update_coefs, function(x) x$coefficients))
           new_fit_CBFM_ptest$linear_predictors <- sapply(all_update_coefs, function(x) x$linear.predictors)          
           for(j in 1:num_spp) {
