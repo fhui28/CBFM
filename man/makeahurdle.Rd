@@ -59,7 +59,7 @@ library(FRK)
 library(MASS)
 library(mvtnorm)
 library(sp)
-library(RandomFields)
+library(geoR)
 library(tidyverse)
 
 
@@ -89,13 +89,13 @@ scale \%>\%
 as.matrix
 
 # Simulate latent variable components
-true_lvs_pa <- RFsimulate(model = RMexp(var=1, scale=2), 
-x = xy$x, y = xy$y, n = 2)@data \%>\% 
-as.matrix
-spp_loadings_pa <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
-true_lvs_ztp <- RFsimulate(model = RMexp(var=1, scale=2.5), 
-x = xy$x, y = xy$y, n = 2)@data \%>\% 
-as.matrix
+true_lvs <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
+cov.pars = c(1, 2))$data \%>\%
+     as.matrix
+spp_loadings_pa <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
+true_lvs_ztp <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
+cov.pars = c(1, 2.5))$data \%>\%
+     as.matrix
 spp_loadings_ztp <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 set.seed(NULL)
 
@@ -267,13 +267,13 @@ scale \%>\%
 as.matrix
 
 # Simulate latent variable components
-true_lvs_pa <- RFsimulate(model = RMexp(var=1, scale=2), 
-x = xy$x, y = xy$y, n = 2)@data \%>\% 
-as.matrix
-spp_loadings_pa <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
-true_lvs_ztnb <- RFsimulate(model = RMexp(var=1, scale=2.5), 
-x = xy$x, y = xy$y, n = 2)@data \%>\% 
-as.matrix
+true_lvs_pa <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
+cov.pars = c(1, 2))$data \%>\%
+     as.matrix
+spp_loadings_pa <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)
+true_lvs_ztnb <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
+cov.pars = c(1, 2.5))$data \%>\%
+     as.matrix
 spp_loadings_ztnb <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 set.seed(NULL)
 

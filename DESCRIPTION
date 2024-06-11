@@ -33,13 +33,12 @@ Imports:
     mgcv,
     numDeriv,
     parallel,
-    sp,
     stats,
     tdigest,
     tweedie,
 Depends: R (>= 3.5.0), TMB
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 NeedsCompilation: no
 URL: https://github.com/fhui28/CBFM
 BugReports: https://github.com/fhui28/CBFM/issues
@@ -55,9 +54,9 @@ Suggests:
     mvabund,
     mvtnorm,
     pscl,
-    RandomFields,
     rmarkdown,
     ROCR,
+    sp,
     tidyverse,
     statmod
 VignetteBuilder: knitr

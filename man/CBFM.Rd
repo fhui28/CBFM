@@ -371,7 +371,7 @@ library(mvabund)
 library(mvtnorm)
 library(ROCR)
 library(sp)
-library(RandomFields)
+library(geoR)
 library(tidyverse)
 
 ##------------------------------
@@ -399,9 +399,9 @@ as.matrix
 
 # Simulate latent variable component
 # We will use this information in later examples as well
-true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
-x = xy$x, y = xy$y, n = 2)@data \%>\% 
-as.matrix
+true_lvs <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential", 
+cov.pars = c(1, 2))$data \%>\% 
+     as.matrix
 spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 set.seed(NULL)
 
@@ -1115,9 +1115,9 @@ dat <- data.frame(xy, X)
 
 # Simulate latent variable component
 # We will use this information in later examples as well
-true_lvs <- RFsimulate(model = RMexp(var=1, scale=2), 
-x = xy$x, y = xy$y, n = 2)@data \%>\% 
-as.matrix
+true_lvs <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential", 
+cov.pars = c(1, 2))$data \%>\% 
+     as.matrix
 spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 set.seed(NULL)
 
@@ -1424,12 +1424,12 @@ as.matrix
 
 # Simulate latent variable component
 # We will also use this information in examples below
-true_space_lvs <- RFsimulate(model = RMexp(var = 1, scale = 2), x = xy$x, y = xy$y, 
-n = 2)@data \%>\% 
-as.matrix
-true_time_lvs <- RFsimulate(model = RMgauss(var = 1, scale = 1), x = dat$time, 
-n = 2)@data \%>\% 
-as.matrix
+true_space_lvs <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential", 
+cov.pars = c(1, 2))$data \%>\% 
+     as.matrix
+true_time_lvs <- grf(grid = cbind(dat$time, 0), nsim = 2, cov.model = "gaussian", 
+cov.pars = c(1, 1))$data \%>\% 
+     as.matrix
 spp_space_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 spp_time_loadings <- matrix(runif(num_spp * 2, -0.5, 0.5), nrow = num_spp) 
 

@@ -115,7 +115,7 @@ Note that with zero truncated distributions being available, generating spatio-t
 }
 }
 \section{Warning}{
-Note \strong{no} checks are on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
+Note \strong{no} checks are made on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
 }
 
 \examples{
@@ -125,7 +125,7 @@ library(FRK)
 library(MASS)
 library(mvtnorm)
 library(sp)
-library(RandomFields)
+library(geoR)
 library(tidyverse)
 
 set.seed(2021)
