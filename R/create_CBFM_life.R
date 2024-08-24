@@ -22,7 +22,6 @@
 #' @param dispparam A vector of species-specific dispersion parameters, to be used for distributions that require one.  
 #' @param powerparam A vector of species-specific power parameters, to be used for distributions that require one. 
 #' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note that \code{ziformula} is supplied, then this argument is ignored.
-#' @param offset A matrix of offset terms.  
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
 #' @param only_y If \code{TRUE}, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if \code{FALSE}, then additional information about is returned.
 #' 

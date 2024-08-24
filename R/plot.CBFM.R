@@ -3,7 +3,7 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} or \code{CBFM_hurdle} project: 1) a plot of residuals against estimated linear predictors (log of the fitted values for a hurdle model); 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
+#' Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} or \code{CBFM_hurdle} object: 1) a plot of residuals against estimated linear predictors (log of the fitted values for a hurdle model); 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
 #' 
 #' @param x An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param type The type of residuals to be used in constructing the plots. Currently the options available are: "response" (default), "pearson", "PIT", "dunnsmyth", and "partial". Can be abbreviated.
@@ -22,7 +22,7 @@
 #' @details 
 #' This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the \code{gllvm} package, especially Jenni Niku, for the code!
 #' 
-#' As basic residual diagnostics, these plots should behave a follows: 
+#' As basic residual diagnostics, these plots should behave as follows: 
 #' 
 #' 1. the plot of residuals versus linear predictors/log of the fitted values should not exhibit any noticeable pattern such as (inverse) fan-shape or a trend; 
 #' 2. the normal probability plot should have the residuals lying approximately on a straight line and almost all residuals lying within the (approximate) simulation envelopes; 

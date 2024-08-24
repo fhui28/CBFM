@@ -1,6 +1,6 @@
 #' @title Construct predictions for a (hurdle) CBFM fit
 #' 
-#' @description 
+#' @description
 #' `r lifecycle::badge("experimental")`
 #' 
 #' Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in [mgcv::predict.gam()] this is also known as the linear predictor matrix.  

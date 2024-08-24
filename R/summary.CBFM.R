@@ -1,4 +1,4 @@
-#' @title Summary for a CBFM bit
+#' @title Summary for a CBFM fit
 #' 
 #' @description 
 #' `r lifecycle::badge("experimental")`

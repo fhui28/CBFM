@@ -2,7 +2,7 @@
 % Please edit documentation in R/summary.CBFM.R
 \name{summary.CBFM}
 \alias{summary.CBFM}
-\title{Summary for a CBFM bit}
+\title{Summary for a CBFM fit}
 \usage{
 \method{summary}{CBFM}(
   object,
