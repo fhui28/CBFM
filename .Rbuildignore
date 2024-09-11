@@ -4,6 +4,7 @@
 ^doc$
 ^notes.R
 ^additionalpredictfns.R
+^additionalpredictfns_withoffset.R
 ^additionalpredictfns_test.R
 ^.github
 ^paper$
