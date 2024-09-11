@@ -7,7 +7,7 @@
 #' 
 #' 
 #' @param object An object of class \code{CBFM}.
-#' @param new_B_space A new matrix of new spatial basis functions at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original \code{B_space} argument are returned. Please note this should only be supp'lied if \code{B_space} was supplied in the original CBFM fit.  
+#' @param new_B_space A new matrix of new spatial basis functions at which correlations are to be calculated. If this is not provided, then correlations corresponding to the original \code{B_space} argument are returned. Please note this should only be supplied if \code{B_space} was supplied in the original CBFM fit.  
 #' @param new_B_space2 A second new matrix of new spatial basis functions at which cross-correlations are to be calculated. If this is supplied, then \code{new_B_space} must also be supplied, as the function assumes then the user desires calculation of cross-correlations due to these spatial basis functions.
 #' @param new_B_time A new matrix of temporal basis functions at which calculations are to be calculated. If this is not provided, then correlations corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.  
 #' @param new_B_time2 A second new matrix of temporal basis functions at which cross-calculations are to be calculated.  If this is supplied, then \code{new_B_time} must also be supplied, as the function assumes then the user desires calculation of cross-correlations due to these temporal basis functions.

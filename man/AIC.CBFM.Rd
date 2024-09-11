@@ -109,7 +109,7 @@ AIC(fitcbfm, k = log(nobs(fitcbfm)), use_edf = TRUE)
 \references{
 Akaike, H. (1974). A new look at the statistical model identification. IEEE Transactions on Automatic Control, 19, 716-723.
 
-Schwarz, G. (1978). Estimating the dimension of a model. The Annals of Atatistics, 6, 461-464.
+Schwarz, G. (1978). Estimating the dimension of a model. The Annals of Statistics, 6, 461-464.
 }
 \seealso{
 \code{\link[=AICc.CBFM]{AICc.CBFM()}} for calculating the corrected AIC specifically, \code{\link[=logLik.CBFM]{logLik.CBFM()}} for extracting the log-likelihood value from a CBFM fit, and \code{\link[=nobs.CBFM]{nobs.CBFM()}} for extracting the number of observational units from a CBFM fit.

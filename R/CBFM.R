@@ -66,7 +66,7 @@
 #' When \code{subsequent_betas_dampen} is a vector, then the dampening factor can vary with species.
 #' Note that this argument *only* comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. } 
 
-#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalzed cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
+#' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note that [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalized cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
 
@@ -295,7 +295,7 @@
 
 #' \item{null_deviance_perspecies: }{The value of each species' contribution to the null deviance. Note the deviance calculation here does *not* include the quadratic term of the PQL}
 
-#' \item{deviance_explained: }{The *percentage* of null deviance explained by the model. In community ecology this is typically not very high (haha!); please see [varpart()] for more capacity to perform variance partitioning in a CBFM. This is constructed by examining \code{deviance} to \code{null_deviance}.}
+#' \item{deviance_explained: }{The *percentage* of null deviance explained by the model. In community ecology this is typically not very high; please see [varpart()] for more capacity to perform variance partitioning in a CBFM. This is constructed by examining \code{deviance} to \code{null_deviance}.}
 
 #' \item{deviance_explained_perspecies: }{The *percentage* of null deviance explained by the model, on a per-species basis. This is constructed by examining \code{deviance_perspecies} to \code{null_deviance_perspecies}.}
 

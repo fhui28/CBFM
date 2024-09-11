@@ -16,7 +16,7 @@
 #' @return A matrix resulting from the tensor product, with the number of columns equal to \code{ncol(B1)*ncol(B2)}. 
 #' 
 #' @details # Warnings
-#' No attempt is made by the function to made the resulting matrix sparse, unless the suppled \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
+#' No attempt is made by the function to made the resulting matrix sparse, unless the supplied \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 

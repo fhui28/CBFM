@@ -15,7 +15,7 @@ An object of class "family".
 A specified family object for the negative binomial distribution using the log link function and a quadratic mean-variance relationship.
 }
 \details{
-This family object was cretated specifically for fitting CBFMs to overdispersed count data
+This family object was created specifically for fitting CBFMs to overdispersed count data.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

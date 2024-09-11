@@ -18,7 +18,7 @@
 #' 
 #' For \code{type = "pearson"}, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance. Note the variance incorporates any scaled parameters if present, and so sometimes this type of residual is referred to as scaled Pearson residuals.
 #' 
-#' For \code{type = "PIT"}, this returns the probability integral transform residuals that are also used in [DHARMa::simulateResiduals()] and [mpcmp::rPIT()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard uniform distribution (Dunn and Smyth, 1996). Note there is a level of jitting used in producing the PIT residuals.
+#' For \code{type = "PIT"}, this returns the probability integral transform residuals that are also used in [DHARMa::simulateResiduals()] and [mpcmp::rPIT()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard uniform distribution (Dunn and Smyth, 1996). Note there is a level of jittering used in producing the PIT residuals.
 #' 
 #' For \code{type = "dunnsmyth"}, this returns the Dunn-Smyth residuals that are also used in [boral::ds.residuals()] and[gllvm::residuals.gllvm()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard normal distribution (Dunn and Smyth, 1996). Note there is a level of jitting used in producing the Dunn-Smyth residuals.
 #' 

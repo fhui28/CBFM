@@ -25,7 +25,7 @@ For the purposes of this package, this function may be used for constructing a m
 The tensor product is formed by multiplying the first column of \code{B2} with \code{B1}, then the second column of \code{B2} with \code{B1}, and so on, working through all the columns of \code{B2}.
 }
 \section{Warnings}{
-No attempt is made by the function to made the resulting matrix sparse, unless the suppled \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
+No attempt is made by the function to made the resulting matrix sparse, unless the supplied \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
 }
 
 \examples{

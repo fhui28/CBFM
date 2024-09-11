@@ -56,7 +56,7 @@
 #' 
 #' Sadykova, D., Scott, B. E., De Dominicis, M., Wakelin, S. L., Sadykov, A., and Wolf, J. (2017). Bayesian joint models with INLA exploring marine mobile predator–prey and competitor species habitat overlap. Ecology and Evolution, 7, 5212-5226.
 #' 
-#' Smith, A., Hofner, B., Lamb, J. S., Osenkowski, J., Allison, T., Sadoti, G., and Paton, P. (2019). Modeling spatiotemporal abundance of mobile wildlife in highly variable environments using boosted GAMLSS hurdle models. Ecology and evolution, 9, 2346-2364.
+#' Smith, A., Hofner, B., Lamb, J. S., Osenkowski, J., Allison, T., Sadoti, G., and Paton, P. (2019). Modeling spatio-temporal abundance of mobile wildlife in highly variable environments using boosted GAMLSS hurdle models. Ecology and evolution, 9, 2346-2364.
 #' 
 #' Thorson, J. T. (2019). Guidance for decisions using the Vector Autoregressive Spatio-Temporal (VAST) package in stock, ecosystem, habitat and climate assessments. Fisheries Research, 210, 143-161.
 #' 

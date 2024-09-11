@@ -9,7 +9,7 @@ varpart(object, groupX = NULL)
 \arguments{
 \item{object}{An object of class \code{CBFM}.}
 
-\item{groupX}{A vector of group indicator variables, which allows the variance partitioning to be done for groups of covariates (including the intercept) i.e., calculating how much of the total variation does a certain subset of the covariates explain. The length of \code{groupX} must be equal to \code{ncol(object$betas)}. Defaults to \code{NULL}, in whih case all the covariates are treated as a single group.}
+\item{groupX}{A vector of group indicator variables, which allows the variance partitioning to be done for groups of covariates (including the intercept) i.e., calculating how much of the total variation does a certain subset of the covariates explain. The length of \code{groupX} must be equal to \code{ncol(object$betas)}. Defaults to \code{NULL}, in which case all the covariates are treated as a single group.}
 }
 \value{
 A list with the following components (if applicable):
@@ -26,7 +26,7 @@ A list with the following components (if applicable):
 For each species, partition the variance of the linear predictor from a fitted \code{CBFM} object into components associated with (groups of) the covariates, and the basis function included.
 }
 \details{
-Variance partitioning can be performed for a communiy-level basis function model (CBFM) fit in a similar manner to how it is performed for latent variables models e.g., by \code{\link[boral:calc.varpart]{boral::calc.varpart()}}. For the purposes of the package, the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
+Variance partitioning can be performed for a community-level basis function model (CBFM) fit in a similar manner to how it is performed for latent variables models e.g., by \code{\link[boral:calc.varpart]{boral::calc.varpart()}}. For the purposes of the package, the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 
