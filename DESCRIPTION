@@ -36,7 +36,7 @@ Imports:
     stats,
     tdigest,
     tweedie,
-Depends: R (>= 3.5.0), TMB
+Depends: R (>= 4.1.0), TMB
 Encoding: UTF-8
 RoxygenNote: 7.3.1
 NeedsCompilation: no
