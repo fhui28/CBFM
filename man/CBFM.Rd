@@ -89,7 +89,7 @@ CBFM(
 \item{nonzeromean_B_spacetime}{This experimental feature allows the distribution of the spatio-temporal basis function coefficients to have a non-zero mean vector. \emph{Use at your own risk!}}
 
 \item{start_params}{Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms:
-\itemize{
+\describe{
 \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.}
 \item{zibetas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates for the zero-inflation component (if included), where the number of rows is equal to the number of species.}
 \item{basis_effect_mat: }{A matrix of starting values for the species-specific regression coefficients related to the combined matrix of basis functions. Again, the number of rows is equal to the number of species, while the number of columns should equal to \code{ncol(B_space, B_time, B_spacetime)} (or whatever the supplied basis functions are).}
@@ -100,7 +100,7 @@ CBFM(
 \item{TMB_directories}{A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.}
 
 \item{control}{A list of parameters for controlling the fitting process for the "outer" PQL estimation part of the CBFM. This should be a list with the following arguments:
-\itemize{
+\describe{
 \item{maxit: }{The maximum number of iterations for the outer algorithm. Defaults to 100.}
 \item{inner_maxit: }{The maximum number of iterations for the inner (EM) algorithm. Defaults to 1, although it is recommended that this is tested out and increased if convergence presents as an issue.}
 \item{optim_lower/optim_upper: }{Upper and lower box constraints when updating regression coefficients related to the basis functions. Note no constraints are put in place when updating regression coefficients related to the covariates; this are controlled internally by \code{\link[mgcv:gam.control]{mgcv::gam.control()}} itself.}
@@ -124,7 +124,7 @@ Note that this argument \emph{only} comes into play when the first attempt, whic
 }}
 
 \item{Sigma_control}{A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the community-level covariance matrices of the basis function regression coefficients. This should be a list with the following arguments:
-\itemize{
+\describe{
 \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single scalar or character string, then it is assumed that the same rank is used for all the community-level covariance matrices.
 
 The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank covariance matrix is estimated.}
@@ -138,7 +138,7 @@ The rank/s should be at least 2, although internal checks are also performed to 
 }}
 
 \item{G_control}{A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
-\itemize{
+\describe{
 \item{rank: }{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices.
 
 The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank correlation matrix is estimated.
@@ -157,7 +157,7 @@ Finally. note if a particular element in \code{G_control$structure} is set to "i
 }}
 
 \item{k_check_control}{A list of parameters for controlling \code{\link[mgcv:k.check]{mgcv::k.check()}} when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on how this test works. This should be a list with the following two arguments:
-\itemize{
+\describe{
 \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.}
 \item{n.rep: }{How many re-shuffles of the residuals should be done in order to a P-value for testing. }
 }}
