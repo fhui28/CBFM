@@ -3,9 +3,9 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extracts the log-likelihood from a fitted \code{CBFM} or code{CBFM_hurdle} object.
+#' Extracts the log-likelihood from a fitted \code{CBFM} or \code{CBFM_hurdle} object.
 #'
-#' @param object An object of class \code{CBFM} or code{CBFM_hurdle}.
+#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
 #' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'

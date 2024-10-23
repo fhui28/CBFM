@@ -418,8 +418,22 @@
      if(!is.null(control[["custom_space"]])) {
         if(which_B_used[1] == 0)
             stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
-        if(nrow(control[["custom_space"]]) != num_spacebasisfns | ncol(control[["custom_space"]]) != num_spacebasisfns)
-            stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).") 
+        if(is.matrix(control[["custom_space"]])) {
+            if(nrow(control[["custom_space"]]) != num_spacebasisfns | ncol(control[["custom_space"]]) != num_spacebasisfns)
+                stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).")             
+            }
+        if(is.list(control[["custom_space"]])) {
+               if(length(control[["custom_space"]]) == 1)
+                    stop("If the list Sigma_control$custom_space is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_space to just be a single matrix instead of a list.")
+               for(j in 1:length(control[["custom_space"]])) {
+                    if(nrow(control[["custom_space"]][[j]]) != num_timebasisfns | ncol(control[["custom_space"]][[j]]) != num_timebasisfns)
+                         stop("Each element in the list Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).")
+                    } 
+               }
+          if(is.list(control[["custom_space"]])) {
+               if(G_control$structure[sum(which_B_used[1])] != "homogeneous") #' I am almost certain you can set this identity as well and it would work. But anyway...
+                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_space, then the corresponding element in G_control$structure must be set to \"homogeneous\"...this is a current constraint of CBFM. Sorry!")
+          }
          control$which_custom_Sigma_used[1] <- 1
          }
      if(!is.null(control[["custom_time"]])) {

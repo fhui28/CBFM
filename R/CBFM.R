@@ -28,7 +28,7 @@
 #' @param nonzeromean_B_time This experimental feature allows the distribution of the temporal basis function coefficients to have a non-zero mean vector. *Use at your own risk!*
 #' @param nonzeromean_B_spacetime This experimental feature allows the distribution of the spatio-temporal basis function coefficients to have a non-zero mean vector. *Use at your own risk!*
 #' @param start_params Starting values for the CBFM. If desired, then a list should be supplied, which must contain at least one the following terms: 
-#' \itemize{
+#' \describe{
 #' \item{betas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates, where the number of rows is equal to the number of species.} 
 
 #' \item{zibetas: }{A matrix of starting values for the species-specific regression coefficients related to the covariates for the zero-inflation component (if included), where the number of rows is equal to the number of species.} 
@@ -42,7 +42,7 @@
 #' }
 #' @param TMB_directories A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.
 #' @param control A list of parameters for controlling the fitting process for the "outer" PQL estimation part of the CBFM. This should be a list with the following arguments:
-#' \itemize{
+#' \describe{
 #' \item{maxit: }{The maximum number of iterations for the outer algorithm. Defaults to 100.} 
 
 #' \item{inner_maxit: }{The maximum number of iterations for the inner (EM) algorithm. Defaults to 1, although it is recommended that this is tested out and increased if convergence presents as an issue.}  
@@ -78,7 +78,7 @@
 
 #' }
 #' @param Sigma_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the community-level covariance matrices of the basis function regression coefficients. This should be a list with the following arguments:
-#' \itemize{
+#' \describe{
 #' \item{rank: }{The rank of the community-level covariance matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a single scalar or character string, then it is assumed that the same rank is used for all the community-level covariance matrices. 
 #' 
 #' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank covariance matrix is estimated.} 
@@ -98,7 +98,7 @@
 #' \item{custom_spacetime: }{A custom, pre-specified community-level covariance matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 #' }
 #' @param G_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
-#' \itemize{
+#' \describe{
 #' \item{rank: }{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of \code{B_space/B_time/B_spacetime} are supplied. If it is a scalar, then it is assumed that the same rank is used for all the correlation matrices. 
 #' 
 #' The rank/s should be at least 2, although internal checks are also performed to assess if the rank is too large so that estimation is not feasible. If the character string "full" is used, then a full-rank correlation matrix is estimated. 
@@ -126,7 +126,7 @@
 #' }
 
 #' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
-#' \itemize{
+#' \describe{
 #' \item{subsample: }{If the number of observational units i.e., \code{nrow(y)} exceeds this number, then testing is done using a random sub-sample of units of this size.} 
 
 #' \item{n.rep: }{How many re-shuffles of the residuals should be done in order to a P-value for testing. } 
@@ -2205,8 +2205,17 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                new_LoadingnuggetSigma_space <- list(invcov = start_params$Sigma_space)
                }
           if(!is.null(Sigma_control[["custom_space"]])) { 
-               start_params$Sigma_space <- NULL
-               new_LoadingnuggetSigma_space <- list(invcov = .pinv(V = Sigma_control[["custom_space"]]), cov = Sigma_control[["custom_space"]])
+               if(is.matrix(Sigma_control[["custom_time"]])) {
+                    start_params$Sigma_space <- NULL
+                    new_LoadingnuggetSigma_space <- list(invcov = .pinv(V = Sigma_control[["custom_space"]]), cov = Sigma_control[["custom_space"]])
+                    }
+               if(is.list(Sigma_control[["custom_space"]])) {
+                    start_params$Sigma_space <- NULL
+                    new_LoadingnuggetSigma_space <- list(lambdas = rep(0.1, length(Sigma_control[["custom_space"]]))) #' This is an arbitrary starting value!
+                    new_LoadingnuggetSigma_space$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_space"]]), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / new_LoadingnuggetSigma_space$lambdas[x])) 
+                    # Note this object will not contain the individual constituent Sigma_space matrices. 
+                    new_LoadingnuggetSigma_space$cov <- .pinv(new_LoadingnuggetSigma_space$invcov)
+                    }
                }
           if(is.null(G_control[["custom_space"]])) {
                start_params$G_space <- diag(1, nrow = num_spp)

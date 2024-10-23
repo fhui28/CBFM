@@ -334,17 +334,33 @@
                #' 2. When there are multiple lambdas, then the covariance matrix of the B's generalizes the form on the RHS of the above as = G \otimes (\sum_r (lambda_r x Sigma_r)^{-1})^{-1} = G \otimes (\sum_r Sigma_r^{-1}/lambda_r)^{-1}. This form is chosen to be consistent with how GAMs in mgcv set up their tensor product penalties.  
                
                if(which_B == 1) {
-                    Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
-                    trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
-                    fn <- function(x) { 
-                         expx <- mgcv::notExp(x)
-                         out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                         out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_space))$mod
-                         return(out)
+                    if(is.matrix(Sigma_control[["custom_space"]])) {
+                        Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
+                        trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
+                        fn <- function(x) { 
+                            expx <- mgcv::notExp(x)
+                            out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                            out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_space))$mod
+                            return(out)
+                            }
+                        
+                        update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                        new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                        }
+                    if(is.list(Sigma_control[["custom_space"]])) {
+                         
+                         fn_lambda <- function(x) { 
+                              expx <- mgcv::notExp(x)
+                              Sigmainv_space <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_space"]][[j2]]) * expx[j2])) 
+                              trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
+                              
+                              out <- 0.5*num_spp*determinant(Sigmainv_space)$mod - 0.5*trace_quantity
+                              out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_space))$mod
+                              return(as.vector(-out))
+                              }
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
-                    
-                    update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                    new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
                     }
                if(which_B == 2) {
                     if(is.matrix(Sigma_control[["custom_time"]])) {
