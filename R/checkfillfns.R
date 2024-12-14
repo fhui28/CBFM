@@ -426,7 +426,7 @@
                if(length(control[["custom_space"]]) == 1)
                     stop("If the list Sigma_control$custom_space is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_space to just be a single matrix instead of a list.")
                for(j in 1:length(control[["custom_space"]])) {
-                    if(nrow(control[["custom_space"]][[j]]) != num_timebasisfns | ncol(control[["custom_space"]][[j]]) != num_timebasisfns)
+                    if(nrow(control[["custom_space"]][[j]]) != num_spacebasisfns | ncol(control[["custom_space"]][[j]]) != num_spacebasisfns)
                          stop("Each element in the list Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).")
                     } 
                }

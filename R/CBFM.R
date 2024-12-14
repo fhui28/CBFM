@@ -1911,8 +1911,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      control <- .fill_control(control = control, num_spp = ncol(y), which_B_used = which_B_used, nonzeromean_B_space = nonzeromean_B_space, nonzeromean_B_time = nonzeromean_B_time, nonzeromean_B_spacetime = nonzeromean_B_spacetime)
      G_control <- .fill_G_control(control = G_control, which_B_used = which_B_used, num_spp = ncol(y), Sigma_control = Sigma_control)
      Sigma_control <- .fill_Sigma_control(control = Sigma_control, which_B_used = which_B_used, 
-                                          num_spacebasisfns = num_spacebasisfns, num_timebasisfns = num_timebasisfns, 
-                                          num_spacetimebasisfns = num_spacetimebasisfns, G_control = G_control) # Sigma_control must be done after G_control, as the latter needs the former supplied to check G_control$structure
+                                          num_spacebasisfns = num_spacebasisfns, 
+                                          num_timebasisfns = num_timebasisfns, 
+                                          num_spacetimebasisfns = num_spacetimebasisfns, 
+                                          G_control = G_control) # Sigma_control must be done after G_control, as the latter needs the former supplied to check G_control$structure
+     
      which_nonzeromean_B <- 1*c(nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime)
 
      ## Form covariate model matrix
