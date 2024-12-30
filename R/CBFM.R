@@ -2208,7 +2208,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                new_LoadingnuggetSigma_space <- list(invcov = start_params$Sigma_space)
                }
           if(!is.null(Sigma_control[["custom_space"]])) { 
-               if(is.matrix(Sigma_control[["custom_time"]])) {
+               if(is.matrix(Sigma_control[["custom_space"]])) {
                     start_params$Sigma_space <- NULL
                     new_LoadingnuggetSigma_space <- list(invcov = .pinv(V = Sigma_control[["custom_space"]]), cov = Sigma_control[["custom_space"]])
                     }
@@ -2822,7 +2822,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(nonzeromean_B_space)
                          centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[["mean_B_space"]], nrow = num_spp, ncol = num_spacebasisfns, byrow = TRUE)
                     
-                    new_Sigma_space <- .update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$invcov, basis_effects_mat = centered_BF_mat, 
+                    new_Sigma_space <- .update_Sigma_fn(Sigmainv = new_LoadingnuggetSigma_space$invcov, 
+                                                        lambdas = new_LoadingnuggetSigma_space$lambdas, basis_effects_mat = centered_BF_mat, 
                                                         Ginv = new_LoadingnuggetG_space$invcov, B = B_space, X = X, ziX = ziX, y_vec = as.vector(y), 
                                                         linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), dispparam = new_fit_CBFM_ptest$dispparam, 
                                                         powerparam = new_fit_CBFM_ptest$powerparam, zibetas = new_fit_CBFM_ptest$zibetas, 
