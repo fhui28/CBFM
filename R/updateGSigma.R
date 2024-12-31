@@ -490,8 +490,14 @@
      
      #' After lambda has been estimated in the updating Sigma part of the algorithm, Sigma itself is adjusted based on this i.e., kronecker(lambda x R, Sigma) = kronecker(R, lambda x Sigma)
      if(estimate_lambda_not_Sigma) {
-          if(which_B == 1)
-               out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
+          if(which_B == 1) {
+               if(is.matrix(Sigma_control[["custom_space"]]))
+                    out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
+               if(is.list(Sigma_control[["custom_space"]]))
+               out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
+                           invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / Sigma[x])) )
+               out$cov <- .pinv(out$invcov)
+               }
           if(which_B == 2) {
                if(is.matrix(Sigma_control[["custom_time"]]))
                     out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
