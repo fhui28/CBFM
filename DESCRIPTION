@@ -38,7 +38,7 @@ Imports:
     tweedie,
 Depends: R (>= 4.1.0), TMB
 Encoding: UTF-8
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 NeedsCompilation: no
 URL: https://github.com/fhui28/CBFM
 BugReports: https://github.com/fhui28/CBFM/issues

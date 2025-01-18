@@ -28,7 +28,8 @@ CBFM(
   nonzeromean_B_time = FALSE,
   nonzeromean_B_spacetime = FALSE,
   start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam =
-    NULL, powerparam = NULL),
+    NULL, powerparam = NULL, custom_space_lambdas = NULL, custom_time_lambdas = NULL,
+    custom_spacetime_lambdas = NULL),
   TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile =
     system.file("executables", package = "CBFM")),
   control = list(maxit = 100, inner_maxit = 1, optim_lower = -50, optim_upper = 50,
@@ -95,6 +96,9 @@ CBFM(
 \item{basis_effect_mat: }{A matrix of starting values for the species-specific regression coefficients related to the combined matrix of basis functions. Again, the number of rows is equal to the number of species, while the number of columns should equal to \code{ncol(B_space, B_time, B_spacetime)} (or whatever the supplied basis functions are).}
 \item{dispparam: }{A vector of starting values for the species-specific dispersion parameters, to be used for distributions that require one.}
 \item{powerparam: }{A vector of starting values for the species-specific power parameters, to be used for distributions that require one.}
+\item{custom_space_lambdas: }{Not used and can be safely ignored.}
+\item{custom_time_lambdas: }{Not used and can be safely ignored.}
+\item{custom_spacetime_lambdas: }{Not used and can be safely ignored.}
 }}
 
 \item{TMB_directories}{A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.}
