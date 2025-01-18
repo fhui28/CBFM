@@ -348,7 +348,6 @@
                         new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
                         }
                     if(is.list(Sigma_control[["custom_space"]])) {
-                         
                          fn_lambda <- function(x) { 
                               expx <- mgcv::notExp(x)
                               Sigmainv_space <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_space"]][[j2]]) * expx[j2])) 
@@ -359,6 +358,7 @@
                               return(as.vector(-out))
                               }
                          update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         #update_lambda <- nlminb(start = mgcv::notLog(1/lambdas), objective = fn_lambda, control = list(trace = 0, maxit = 1000))
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
