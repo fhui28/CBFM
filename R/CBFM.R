@@ -39,6 +39,11 @@
 
 #' \item{powerparam: }{A vector of starting values for the species-specific power parameters, to be used for distributions that require one.}
 
+#' \item{custom_space_lambdas: }{Not used and can be safely ignored.}
+
+#' \item{custom_time_lambdas: }{Not used and can be safely ignored.}
+
+#' \item{custom_spacetime_lambdas: }{Not used and can be safely ignored.}
 #' }
 #' @param TMB_directories A list with two elements, identifying the directory where TMB C++ file exists (\code{cpp}), and the directory where the corresponding compiled files to be placed (\code{compile}). Unless you really want to do some real mucking around, these should be left at their default i.e., the directory where the packages were installed locally. Please note a version of the C++ file will be copied to the \code{compile} directory.
 #' @param control A list of parameters for controlling the fitting process for the "outer" PQL estimation part of the CBFM. This should be a list with the following arguments:
@@ -1835,7 +1840,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, 
      select = FALSE, gamma = 1, knots = NULL, ziselect = FALSE, zigamma = 1, ziknots = NULL,
      nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
-     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL),
+     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, 
+                         custom_space_lambdas = NULL, custom_time_lambdas = NULL, custom_spacetime_lambdas = NULL),
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM")),
      control = list(maxit = 100, inner_maxit = 1, optim_lower = -50, optim_upper = 50, convergence_type = "parameters_MSE", tol = 1e-4, final_maxit = 100,   
                     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
@@ -2214,7 +2220,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                if(is.list(Sigma_control[["custom_space"]])) {
                     start_params$Sigma_space <- NULL
-                    new_LoadingnuggetSigma_space <- list(lambdas = rep(0.1, length(Sigma_control[["custom_space"]]))) #' This is an arbitrary starting value!
+                    if(!is.null(start_params$custom_space_lambdas))
+                         new_LoadingnuggetSigma_space <- list(lambdas = start_params$custom_space_lambdas) 
+                    if(is.null(start_params$custom_space_lambdas))
+                         new_LoadingnuggetSigma_space <- list(lambdas = rep(10, length(Sigma_control[["custom_space"]]))) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_space$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_space"]]), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / new_LoadingnuggetSigma_space$lambdas[x])) 
                     # Note this object will not contain the individual constituent Sigma_space matrices. 
                     new_LoadingnuggetSigma_space$cov <- .pinv(new_LoadingnuggetSigma_space$invcov)
@@ -2242,7 +2251,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                if(is.list(Sigma_control[["custom_time"]])) {
                     start_params$Sigma_time <- NULL
-                    new_LoadingnuggetSigma_time <- list(lambdas = rep(0.1, length(Sigma_control[["custom_time"]]))) #' This is an arbitrary starting value!
+                    if(!is.null(start_params$custom_time_lambdas))
+                         new_LoadingnuggetSigma_time <- list(lambdas = start_params$custom_time_lambdas) 
+                    if(is.null(start_params$custom_time_lambdas))
+                         new_LoadingnuggetSigma_time <- list(lambdas = rep(10, length(Sigma_control[["custom_time"]]))) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_time$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_time"]]), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / new_LoadingnuggetSigma_time$lambdas[x])) 
                     # Note this object will not contain the individual constituent Sigma_time matrices. 
                     new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
@@ -2270,7 +2282,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     }
                if(is.list(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
-                    new_LoadingnuggetSigma_spacetime <- list(lambdas = rep(0.1, length(Sigma_control[["custom_spacetime"]]))) #' This is an arbitrary starting value!
+                    if(!is.null(start_params$custom_spacetime_lambdas))
+                         new_LoadingnuggetSigma_spacetime <- list(lambdas = start_params$custom_spacetime_lambdas) 
+                    if(is.null(start_params$custom_spacetime_lambdas))
+                         new_LoadingnuggetSigma_spacetime <- list(lambdas = rep(0.1, length(Sigma_control[["custom_spacetime"]]))) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_spacetime$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / new_LoadingnuggetSigma_spacetime$lambdas[x])) 
                     # Note this object will not contain the individual constituent Sigma_spacetime matrices. 
                     new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
@@ -2744,7 +2759,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           ## Update between spp correlation matrix G. First assume unstructured, then cov2cor, then update loading and nugget. 
           ##-------------------------
           if(control$trace == 1)
-               message("Updating between response correlaton (covariance) matrices, G.")
+               message("Updating between response correlation (covariance) matrices, G.")
           if(which_B_used[1]) {
                if(is.null(G_control[["custom_space"]])) {
                     centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[,1:num_spacebasisfns,drop=FALSE]+.Machine$double.eps
