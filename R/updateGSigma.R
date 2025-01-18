@@ -352,8 +352,9 @@
                               expx <- mgcv::notExp(x)
                               Sigmainv_space <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_space"]][[j2]]) * expx[j2])) 
                               trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
+                              e <- eigen(Sigmainv_space, only.values = TRUE, symmetric = TRUE)$values
                               
-                              out <- 0.5*num_spp*determinant(Sigmainv_space)$mod - 0.5*trace_quantity
+                              out <- 0.5*num_spp*sum(log(e[e > .Machine$double.eps])) - 0.5*trace_quantity
                               out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_space))$mod
                               return(as.vector(-out))
                               }
@@ -382,8 +383,9 @@
                               expx <- mgcv::notExp(x)
                               Sigmainv_time <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_time"]][[j2]]) * expx[j2])) 
                               trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
+                              e <- eigen(Sigmainv_time, only.values = TRUE, symmetric = TRUE)$values
                               
-                              out <- 0.5*num_spp*determinant(Sigmainv_time)$mod - 0.5*trace_quantity
+                              out <- 0.5*num_spp*sum(log(e[e > .Machine$double.eps])) - 0.5*trace_quantity
                               out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_time))$mod
                               return(as.vector(-out))
                               }
@@ -411,28 +413,12 @@
                               expx <- mgcv::notExp(x)
                               Sigmainv_spacetime <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]]) * expx[j2])) 
                               trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
+                              e <- eigen(Sigmainv_spacetime, only.values = TRUE, symmetric = TRUE)$values
                               
-                              out <- 0.5*num_spp*determinant(Sigmainv_spacetime)$mod - 0.5*trace_quantity
+                              out <- 0.5*num_spp*sum(log(e[e > .Machine$double.eps])) - 0.5*trace_quantity
                               out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_spacetime))$mod
                               return(as.vector(-out))
                               }
-                         
-                         # gr_lambda <- function(x) { # This gradient computation conditions on and thus assumes W is not a function of lambda. I think mgcv will actually do this additional calculation. But in the context of a PQL algorithm I am not sure you need it?  
-                         #      expx <- mgcv::notExp(x)
-                         #      eachSigmainv_spacetime <- lapply(1:length(Sigma_control[["custom_spacetime"]]), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]])) 
-                         #      Sigmainv_spacetime <- Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(j2) eachSigmainv_spacetime[[j2]] * expx[j2])) 
-                         #      BtKB_plus_GSigma_inv <- .pinv(BtKB + kronecker(Ginv, Sigmainv_spacetime))
-                         #      Sigma_spacetime <- .pinv(Sigmainv_spacetime)
-                         #      
-                         #      out1 <- 0.5 * num_spp * sapply(1:length(eachSigmainv_spacetime), 
-                         #                     function(j2) sum(diag(Sigma_spacetime %*% eachSigmainv_spacetime[[j2]] * expx[j2])))
-                         #      out1 <- out1 - 0.5 * sapply(1:length(eachSigmainv_spacetime), 
-                         #                            function(j2) sum(diag(AT_Ginv_A %*% eachSigmainv_spacetime[[j2]] * expx[j2])))
-                         #      out1 <- out1 - 0.5 * sapply(1:length(eachSigmainv_spacetime), 
-                         #                            function(j2) sum(diag(BtKB_plus_GSigma_inv %*% kronecker(Ginv, eachSigmainv_spacetime[[j2]] * expx[j2]))))
-                         #      
-                         #      return(as.vector(-out1))
-                         #      }
                          
                          update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
