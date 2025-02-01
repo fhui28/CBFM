@@ -12,7 +12,8 @@
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
-#' @param offset A matrix of offset terms.  
+#' @param offset A matrix of offset terms to be applied in association with the \code{formula} argument. 
+#' @param zioffset A matrix of offset terms to be applied in association with the \code{ziformula} argument. 
 #' @param betas A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.
 #' @param zibetas A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species in the resulting simulated dataset.
 #' @param basis_effects_mat A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.   
@@ -270,13 +271,17 @@
 #' @importFrom gamlss.dist PO dPO pPO qPO rPO NBI dNBI pNBI qNBI rNBI
 #' @importFrom gamlss.tr trun.r
 #' @importFrom mgcv gam model.matrix.gam
-#' @importFrom stats rbeta rbinom rgamma rnorm rnbinom rpois plogis
+#' @importFrom stats model.frame model.offset rbeta rbinom rgamma rnorm rnbinom rpois plogis
 #' @importFrom tweedie rtweedie
 #' @md
 
-create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, offset = NULL,  
-     betas, zibetas = NULL, basis_effects_mat = NULL, Sigma = list(space = NULL, time = NULL, spacetime = NULL), G = list(space = NULL, time = NULL, spacetime = NULL), 
-     trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, max_resp = Inf, only_y = FALSE) {
+create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
+                             offset = NULL, zioffset = NULL,
+                             betas, zibetas = NULL, basis_effects_mat = NULL, 
+                             Sigma = list(space = NULL, time = NULL, spacetime = NULL), 
+                             G = list(space = NULL, time = NULL, spacetime = NULL), 
+                             trial_size = 1, dispparam = NULL, powerparam = NULL, zeroinfl_prob = NULL, 
+                             max_resp = Inf, only_y = FALSE) {
      
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
      tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
@@ -346,10 +351,18 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
      ## Generate response
      true_eta_B <- tcrossprod(B, basis_effects_mat)
      true_eta <- tcrossprod(X, betas) + true_eta_B
-     if(!is.null(ziformula))
-          true_zieta <- tcrossprod(ziX, zibetas)
      if(!is.null(offset))
           true_eta <- true_eta + offset
+     if(!is.null(model.offset(model.frame(formula, data = as.data.frame(data)))))
+          true_eta <- true_eta + model.offset(model.frame(formula, data = as.data.frame(data)))
+     if(!is.null(ziformula)) {
+          true_zieta <- tcrossprod(ziX, zibetas)
+          if(!is.null(zioffset))
+               true_zieta <- true_zieta + zioffset
+          
+          if(!is.null(model.offset(model.frame(ziformula, data = as.data.frame(data)))))
+               true_zieta <- true_zieta + model.offset(model.frame(ziformula, data = as.data.frame(data)))
+          }
      
      sim_y <- matrix(NA, nrow = num_units, ncol = num_spp, dimnames = list(units = paste0("unit", 1:num_units), response = paste0("spp", 1:num_spp)))
      for(j in 1:num_spp) {
@@ -423,6 +436,16 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                     true_eta <- tcrossprod(X, betas) + true_eta_B
                     if(!is.null(offset))
                          true_eta <- true_eta + offset
+                    if(!is.null(model.offset(model.frame(formula, data = as.data.frame(data)))))
+                         true_eta <- true_eta + model.offset(model.frame(formula, data = as.data.frame(data)))
+                    if(!is.null(ziformula)) {
+                         true_zieta <- tcrossprod(ziX, zibetas)
+                         if(!is.null(zioffset))
+                              true_zieta <- true_zieta + zioffset
+                         
+                         if(!is.null(model.offset(model.frame(ziformula, data = as.data.frame(data)))))
+                              true_zieta <- true_zieta + model.offset(model.frame(ziformula, data = as.data.frame(data)))
+                         }
                     }
                
                for(j in 1:num_spp)

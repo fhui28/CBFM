@@ -16,6 +16,7 @@ LinkingTo:
 ##--------------------------------------
 #' # Random testing jazz
 ##-------------------------------------
+rm(list = ls())
 library(autoFRK)
 library(FRK)
 library(MASS)
@@ -23,7 +24,7 @@ library(mvabund)
 library(mvtnorm)
 library(ROCR)
 library(sp)
-library(RandomFields)
+library(geoR)
 library(tidyverse)
 library(ggmatplot)
 library(doParallel)
@@ -35,21 +36,20 @@ registerDoParallel(cores = detectCores()-2)
 #' # **Example 1: Fitting a CBFM to data from a spatial CBFM**
 #' This is a just a general testing function
 ##------------------------------
-set.seed(2023)
+set.seed(022025)
 num_sites <- 500 # 500 (units) sites 
 num_spp <- 10 # Number of species
 num_X <- 4 # Number of regression slopes
  
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 spp_intercepts <- runif(num_spp, -2, 0)
-spp_gear <- rnorm(num_spp, mean = 1.5, sd = 1)
 
 # Simulate spatial coordinates and environmental covariate components
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rep(c(0,1), c(450,50)))
-colnames(X) <- c("temp", "depth", "chla", "O2", "gear")
+X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rlnorm(n = num_sites, meanlog = 2, sdlog = 2))
+colnames(X) <- c("temp", "depth", "chla", "O2", "areaswept")
 dat <- data.frame(xy, X)
-useformula <- ~ temp + depth + chla + O2
+useformula <- ~ temp + depth + chla + O2 + offset(log(areaswept))
 
 # Set up spatial basis functions for CBFM 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
@@ -61,9 +61,13 @@ true_Sigma_space <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_b
 true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>%
 cov2cor
 
-simy <- create_CBFM_life(family = binomial(), formula = useformula, data = dat,
-                         B_space = basisfunctions, betas = cbind(spp_intercepts, spp_slopes),
-                         Sigma = list(space = true_Sigma_space), G = list(space = true_G_space))
+simy <- create_CBFM_life(family = binomial(), 
+                         formula = useformula, 
+                         data = dat,
+                         B_space = basisfunctions, 
+                         betas = cbind(spp_intercepts, spp_slopes),
+                         Sigma = list(space = true_Sigma_space), 
+                         G = list(space = true_G_space))
 
 
 #' ## Fit different flavors of CBFMs

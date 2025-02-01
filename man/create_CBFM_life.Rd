@@ -13,6 +13,7 @@ create_CBFM_life(
   B_time = NULL,
   B_spacetime = NULL,
   offset = NULL,
+  zioffset = NULL,
   betas,
   zibetas = NULL,
   basis_effects_mat = NULL,
@@ -41,7 +42,9 @@ create_CBFM_life(
 
 \item{B_spacetime}{An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
 
-\item{offset}{A matrix of offset terms.}
+\item{offset}{A matrix of offset terms to be applied in association with the \code{formula} argument.}
+
+\item{zioffset}{A matrix of offset terms to be applied in association with the \code{ziformula} argument.}
 
 \item{betas}{A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.}
 
