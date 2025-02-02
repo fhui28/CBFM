@@ -70,56 +70,38 @@ simy <- create_CBFM_life(family = binomial(),
                          G = list(space = true_G_space))
 
 
+
 #' ## Fit different flavors of CBFMs
-fitcbfm_fixed <- CBFM(y = simy$y, formula = ~ s(temp) + depth + chla + O2, data = dat,
-                   B_space = basisfunctions, family = binomial(), 
-                   control = list(trace = 1), G_control = list(rank = 5), Sigma_control = list(rank = 5))
+fitcbfm_offset1 <- CBFM(y = simy$y, 
+                      formula = ~ temp + depth + chla + O2, 
+                      data = dat,
+                      offset = matrix(log(dat$areaswept), nrow = nrow(simy$y), ncol = ncol(simy$y), byrow = FALSE),
+                      B_space = basisfunctions, 
+                      family = binomial(), 
+                      control = list(trace = 1), 
+                      G_control = list(rank = 2),
+                      Sigma_control = list(rank = 2))
+
+fitcbfm_offset2 <- CBFM(y = simy$y, 
+                        formula = ~ temp + depth + chla + O2 + offset(log(dat$areaswept)), 
+                        data = dat,
+                        B_space = basisfunctions, 
+                        family = binomial(), 
+                        control = list(trace = 1), 
+                        G_control = list(rank = 2),
+                        Sigma_control = list(rank = 2))
+
+fitcbfm_nooffset <- CBFM(y = simy$y, 
+                        formula = ~ temp + depth + chla + O2, 
+                        data = dat,
+                        B_space = basisfunctions, 
+                        family = binomial(), 
+                        control = list(trace = 1), 
+                        G_control = list(rank = 2),
+                        Sigma_control = list(rank = 2))
 
 
-
-fake_gam <- gam(simy$y[,1] ~ s(temp), data = dat, family = binomial(), method = "REML", fit = FALSE)
-MM_temp <- fake_gam$X[,-1]
-Sigma_temp <- .pinv(fake_gam$smooth[[1]]$S[[1]])
-fitcbfm_random <- CBFM(y = simy$y, formula = ~ depth + chla + O2, data = dat,
-                   B_space = basisfunctions, B_time = MM_temp, family = binomial(), 
-                   control = list(trace = 1, inner_maxit = 10),
-                   G_control = list(rank = c(5,"full"), structure = c("unstructured", "homogeneous")), 
-                   Sigma_control = list(rank = c(5,1), custom_time = Sigma_temp))
-
-
-Sigma_temp
-fitcbfm_random$Sigma_time
-fitcbfm_random$Sigma_time/Sigma_temp
-fitcbfm_random$G_time
-
-matplot(simy$linear_predictors, fitcbfm_fixed$linear_predictors, pch = 19); abline(0,1)
-matplot(simy$linear_predictors, fitcbfm_random$linear_predictors, pch = 19); abline(0,1)
-
-
-
-fake_gam <- gam(simy$y[,1] ~ te(temp, depth), data = dat, family = binomial(), method = "REML", fit = FALSE)
-MM_tensorprod <- fake_gam$X[,-1]
-Sigma_tensorprod <- lapply(1:length(fake_gam$smooth[[1]]$S), function(x) .pinv(fake_gam$smooth[[1]]$S[[x]]))
-fitcbfm_tensorprod <- CBFM(y = simy$y, formula = ~ chla + O2, data = dat,
-                       B_space = basisfunctions, B_spacetime = MM_tensorprod, family = binomial(), 
-                       control = list(trace = 1),
-                       G_control = list(rank = c(5,2), structure = c("unstructured", "homogeneous")), 
-                       Sigma_control = list(rank = c(5,1), custom_spacetime = Sigma_tensorprod))
-
-
-fitcbfm_random$basis_effects_mat
-Sigma_tensorprod
-fitcbfm_tensorprod$Sigma_spacetime
-fitcbfm_tensorprod$G_spacetime
-
-dev.off()
-matplot(simy$linear_predictors, fitcbfm_fixed$linear_predictors, pch = 19); abline(0,1)
-matplot(simy$linear_predictors, fitcbfm_random$linear_predictors, pch = 19); abline(0,1)
-matplot(simy$linear_predictors, fitcbfm_tensorprod$linear_predictors, pch = 19); abline(0,1)
-
-
-
-
+fitcbfm_offset1$betas - fitcbfm_offset2$betas
 
 
 ##------------------------------

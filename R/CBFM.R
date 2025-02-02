@@ -12,7 +12,7 @@
 #' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
-#' @param offset A matrix of offset terms.  
+#' @param offset A matrix of offset terms to applied in association with the \code{formula} argument.
 #' @param ncores To speed up fitting, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as \code{y}.
@@ -2040,7 +2040,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = "poisson", gamma = full_gamma[j])
                fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
                MM <- model.matrix(fit0)
-               cw_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)) 
+               cw_eta <- MM %*% fit0$coefficients
+               if(!is.null(model.offset(model.frame(fit0))))
+                    cw_eta <- cw_eta + model.offset(model.frame(fit0))
+               cw_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi)) 
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
 
                inner_err <- Inf
@@ -2049,10 +2052,16 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(inner_inner_counter > 20)
                          break;
                     
-                    w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dpois(0, lambda = exp(MM %*% fit0$coefficients + fit0$offset))), 0) # Posterior probabilities of being in zero-inflation component
+                    cw_eta <- MM %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))
+                    w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dpois(0, lambda = exp(cw_eta))), 0) # Posterior probabilities of being in zero-inflation component
                     fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = "poisson", gamma = full_gamma[j])
                     fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
-                    new_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi))
+                    cw_eta <- MM %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))
+                    new_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2075,7 +2084,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
                fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
                MM <- model.matrix(fit0)
-               cw_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
+               cw_eta <- MM %*% fit0$coefficients
+               if(!is.null(model.offset(model.frame(fit0))))
+                    cw_eta <- cw_eta + model.offset(model.frame(fit0))
+               cw_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
@@ -2084,10 +2096,16 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(inner_inner_counter > 20)
                          break;
 
-                    w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dnbinom(0, mu = exp(MM %*% fit0$coefficients + fit0$offset), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
+                    cw_eta <- MM %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))
+                    w <- ifelse(y[,j] == 0, fitted(fitzi) / (fitted(fitzi) + (1-fitted(fitzi)) * dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE))), 0) # Posterior probabilities of being in zero-inflation component
                     fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), weights = 1-w, offset = cw_offset, knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
                     fitzi <- suppressWarnings(gam(tmp_ziformula, data = data.frame(taus = w, data), knots = ziknots, method = control$gam_method, family = "binomial", gamma = full_zigamma[j]))
-                    new_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = MM %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
+                    cw_eta <- MM %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))
+                    new_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2111,7 +2129,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     MM <- MM[1:(nrow(MM)-10),,drop=FALSE]
                     MM <- MM[, -ncol(MM), drop=FALSE]
                     fit0$coefficients <- fit0$coefficients[1:ncol(MM)] 
-                    fit0$logLik <- .dztpois(y[,j], lambda = exp(MM %*% fit0$coefficients + cw_offset), log = TRUE) # .dztpois y = 0 values to -Inf, and handles NA values; because offset is in formula, then offset is contained in linear.predictors
+                    cw_eta <- MM %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))
+                    fit0$logLik <- .dztpois(y[,j], lambda = exp(cw_eta), log = TRUE) # .dztpois y = 0 values to -Inf, and handles NA values; because offset is in formula, then offset is contained in linear.predictors
                     fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])
                     rm(MM)
                     }
@@ -2133,7 +2154,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j], numeric(num_units)), data[c(1:num_units,1:num_units),]), 
                                weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
                MM <- predict.gam(fit0, newdata = data, type = "lpmatrix")
-               cw_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE), log = TRUE)
+               cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
+               if(!is.null(model.offset(model.frame(fit0))))
+                    cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
+               cw_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
@@ -2142,7 +2166,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     if(inner_inner_counter > 20)
                          break;
                     
-                    initw <- dnbinom(0, mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE)) + 1e-4)
+                    cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
+                    initw <- dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) + 1e-4)
                     initw[initw > 0.1/1e-4] <- 0.1/1e-4
                     w2 <- numeric(num_units)
                     w2[find_nonzeros] <- initw
@@ -2152,7 +2179,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                                     weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j]), silent = TRUE)
                     if(inherits(fit0, "try-error"))
                          break;
-                    new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE), log = TRUE)
+                    cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
+                    if(!is.null(model.offset(model.frame(fit0))))
+                         cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
+                    new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2311,9 +2341,16 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      counter <- 0
      diff <- 10
      converged <- FALSE
-     if(is.null(offset)) { ## Only make offset here, after initial fitting done
+     
+     ## Only make offset here, after initial fitting done
+     if(is.null(offset)) { 
           offset <- Matrix(0, nrow = nrow(y), ncol = ncol(y), sparse = TRUE)
           }
+     formula_offset <- numeric(nrow(y))
+     if(!is.null(model.offset(model.frame(formula, data = as.data.frame(data))))) { 
+          formula_offset <- model.offset(model.frame(formula, data = as.data.frame(data)))
+          }
+     
      if(control$trace > 0)
           message("Commencing model fitting...")
      
@@ -2415,7 +2452,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     tidbits_data$dispparam <- new_fit_CBFM_ptest$dispparam[j]
                     tidbits_data$powerparam <- new_fit_CBFM_ptest$powerparam[j]
                     tidbits_data$estep_weights <- as.vector(getweights[,j])
-                    tidbits_data$offset <- offset[,j]
+                    tidbits_data$offset <- offset[,j] + formula_offset
                     if(sum(which_B_used) == 1) {
                          tidbits_data$mean_basis_effects <- c(new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]])
                          tidbits_data$other_centered_basis_effects_mat <- new_fit_CBFM_ptest$basis_effects_mat - matrix(tidbits_data$mean_basis_effects, nrow = num_spp, ncol = num_basisfns, byrow = TRUE)
@@ -2494,6 +2531,8 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      
                ##-------------------------
                ## Update coefficients related to covariate model matrix X, and other nuisance parameters, one response at a time
+               #' new_offset contains the explicit offset argument, while formula_offset contains the offset from the formula, and this has to be included manually to the linear predictor 
+               #' The point is that with both new_offset and formula_offset, there will *always* be an offset included, meaning fit0$offset will never be NULL
                ##-------------------------
                update_Xcoefsspp_fn <- function(j) {
                     tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " ") ) )
@@ -2508,7 +2547,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
                                           method = control$gam_method, family = family, select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("binomial")) {
                          tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula), collapse = " ") ) )
@@ -2521,7 +2560,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data, size = use_size), offset = new_offset, knots = knots, 
                                           method = control$gam_method, family = family, select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("negative.binomial")) {
                          if(control$ridge > 0)
@@ -2531,7 +2570,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
                                           method = control$gam_method, family = nb(), select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("Beta")) {
                          if(control$ridge > 0)
@@ -2541,7 +2580,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
                                           method = control$gam_method, family = betar(link = "logit"), select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("tweedie")) {
                          if(control$ridge > 0)
@@ -2551,7 +2590,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               fit0 <- gam(tmp_formula, data = data.frame(response = y[,j], data), offset = new_offset, knots = knots, 
                                           method = control$gam_method, family = tw(link = "log"), select = select, gamma = full_gamma[j])
                          fit0$logLik <- as.vector(logLik(fit0))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("zipoisson")) { # M-step
                          tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
@@ -2576,7 +2615,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
                          
                          fit0$logLik <- sum(.dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("zinegative.binomial")) { # M-step
                          tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
@@ -2600,7 +2639,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                                                             gamma = full_zigamma[j]))
 
                          fit0$logLik <- sum(.dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE)))
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("ztpoisson")) {
                          Hmat <- diag(control$ridge+1e-15, nrow = num_X+1)
@@ -2613,7 +2652,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, knots = knots, method = control$gam_method, 
                                           family = ziplss(), select = select, gamma = full_gamma[j])
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset 
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])                               
                          }
@@ -2627,7 +2666,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               if(inner_inner_counter > 20)
                                    break;
 
-                              initw <- dnbinom(0, mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset)), size = 1/new_fit_CBFM_ptest$dispparam[j])
+                              initw <- dnbinom(0, 
+                                               mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset + formula_offset)), 
+                                               size = 1/new_fit_CBFM_ptest$dispparam[j])
                               initw <- initw / (1 - initw + 1e-4)
                               initw[initw > 0.1/1e-4] <- 0.1/1e-4
                               initw <- initw[find_nonzeros]
@@ -2650,7 +2691,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               if(inherits(fit0, "try-error"))
                                    break;
                               
-                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(X[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + new_offset[find_nonzeros]), size = fit0$family$getTheta(TRUE), log = TRUE) 
+                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], 
+                                                           mu = exp(X[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + new_offset[find_nonzeros] + formula_offset[find_nonzeros]), 
+                                                           size = fit0$family$getTheta(TRUE), log = TRUE) 
                               new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)]) 
                               inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                               cw_inner_logL <- new_inner_logL
@@ -2660,7 +2703,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               }
                          
                          fit0$logLik <- new_inner_logL
-                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset
+                         fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
 
                     
@@ -2829,6 +2872,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(control$trace == 1)
                message("Updating covariance matrices for basis functions, Sigma, if required.")
           
+          
+          
+          
+          
           if(which_B_used[1]) {
                estimate_lambda_not_Sigma <- as.numeric(G_control$structure[1] %in% c("identity", "homogeneous"))
                
@@ -2961,7 +3008,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
 
      
      ##----------------
-     ## Do final fit -- just of coefficients and dispersion/power parameters only. 
+     ## Do final fit -- just for coefficients and dispersion/power parameters only. 
      ##----------------
      if(diff < control$tol)
           converged <- TRUE
