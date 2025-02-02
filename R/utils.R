@@ -107,14 +107,27 @@
 
                
 ## E-step functions for zero-inflated distributions -- calculate the posterior probability of being in the zero-inflation component/posterior probability of observing a zero
-.estep_fn <- function(family, cwfit, y, X, B, ziX = NULL) {
+.estep_fn <- function(family,
+                      cwfit,
+                      y,
+                      X,
+                      B,
+                      offset,
+                      formula_offset,
+                      ziX = NULL,
+                      zioffset = NULL) {
+
    num_units <- nrow(y)
    num_spp <- ncol(y)
    out <- Matrix::Matrix(0, nrow = num_units, ncol = num_spp, sparse = TRUE)
    
    if(family$family %in% c("zipoisson","zinegative.binomial")) {
-                fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat))
-                zeroinfl_prob <- plogis(tcrossprod(ziX, cwfit$zibetas))
+                fitvals <- exp(tcrossprod(X, cwfit$betas) + tcrossprod(B, cwfit$basis_effects_mat) + offset + formula_offset)
+                zieta <- tcrossprod(ziX, cwfit$zibetas)
+                if(!is.null(zioffset))
+                    zieta <- zieta + zioffset
+                zeroinfl_prob <- plogis(zieta)
+                rm(zieta)
                 
                 for(j in 1:num_spp) {
                         sel_zerospp <- which(y[,j] == 0)
