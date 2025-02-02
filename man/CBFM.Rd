@@ -59,7 +59,7 @@ CBFM(
 
 \item{B_spacetime}{An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.}
 
-\item{offset}{A matrix of offset terms.}
+\item{offset}{A matrix of offset terms to applied in association with the \code{formula} argument.}
 
 \item{ncores}{To speed up fitting, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.}
 

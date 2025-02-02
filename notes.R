@@ -102,6 +102,7 @@ fitcbfm_nooffset <- CBFM(y = simy$y,
 
 
 fitcbfm_offset1$betas - fitcbfm_offset2$betas
+fitcbfm_nooffset$betas - fitcbfm_offset2$betas
 
 
 ##------------------------------
