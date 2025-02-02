@@ -1957,12 +1957,15 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      ## If required, form covariate model matrix for zero-inflation component
      if(is.null(ziformula)) {
           ziX <- NULL          
+          zioffset <- NULL
           }
      if(!is.null(ziformula)) {
           ziformula <- .check_X_formula(formula = ziformula, data = as.data.frame(data))          
           tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse = " ") ) )
           nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), knots = ziknots, fit = TRUE, control = list(maxit = 1))
+
           ziX <- model.matrix(nullfit)
+          zioffset <- model.offset(model.frame(nullfit))
           rm(tmp_formula, nullfit)
           rownames(ziX) <- rownames(y)
           }
@@ -2439,7 +2442,15 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                ## For zero-inflated distributions, E-step + updating zero-inflation probabilities for distributions that require it. 
                ## Otherwise, effectively do nothing
                ##-------------------------
-               getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX) # Posterior probabilities of zero-inflation
+               getweights <- .estep_fn(family = family,
+                                       cwfit = new_fit_CBFM_ptest,
+                                       y = y,
+                                       X = X,
+                                       offset = offset,
+                                       formula_offset = formula_offset,
+                                       B = B,
+                                       ziX = ziX,
+                                       zioffset = zioffset) # Posterior probabilities of zero-inflation
 
                ##-------------------------
                ## Update smoothing coefficients for all basis functions, one species at a time
@@ -2816,6 +2827,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                                                        B = get(three_B_options[j1]), 
                                                        X = X, 
                                                        ziX = ziX, 
+                                                       zioffset = zioffset,
                                                        y_vec = as.vector(y), 
                                                        linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), 
                                                        dispparam = new_fit_CBFM_ptest$dispparam, 
@@ -2871,6 +2883,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                                                                B = get(three_B_options[j1]), 
                                                                X = X, 
                                                                ziX = ziX, 
+                                                               zioffset = zioffset,
                                                                y_vec = as.vector(y), 
                                                                linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), 
                                                                dispparam = new_fit_CBFM_ptest$dispparam, 
@@ -2971,7 +2984,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      cw_inner_params <- cw_params
      
      while(inner_err > control$tol & final_counter <= control$final_maxit) {
-          getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX)
+          getweights <- .estep_fn(family = family, cwfit = new_fit_CBFM_ptest, y = y, X = X, B = B, ziX = ziX, zioffset = zioffset)
 
           all_update_coefs <- foreach(j = 1:num_spp, .export = c("tidbits_data")) %dopar% update_basiscoefsspp_cmpfn(j = j)
           for(j in 1:num_spp) {
@@ -3152,7 +3165,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
      if(!(family$family %in% c("zipoisson","zinegative.binomial","ztpoisson","ztnegative.binomial"))) 
           out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictors)
      if(family$family %in% c("zipoisson","zinegative.binomial")) {
-          zeroinfl_prob <- plogis(tcrossprod(ziX, out_CBFM$zibetas))
+          zieta <- tcrossprod(ziX, out_CBFM$zibetas)
+          if(!is.null(zieta))
+               zieta <- zieta + zioffset
+          zeroinfl_prob <- plogis(zieta)
+          rm(zieta)
           out_CBFM$fitted <- family$linkinv(out_CBFM$linear_predictors) * (1-zeroinfl_prob)
           rm(zeroinfl_prob)
           }
@@ -3319,8 +3336,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                message("Calculating (components of) the covariance (standard error) matrix...")
           
           zieta <- NULL
-          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
+          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                zieta <- tcrossprod(ziX, out_CBFM$zibetas)
+               if(!is.null(zioffset))
+                    zieta <- zieta + zioffset
                }
           
           weights_mat <- .neghessfamily(family = family, eta = out_CBFM$linear_predictors, y = y, 
