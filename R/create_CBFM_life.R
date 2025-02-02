@@ -275,7 +275,8 @@
 #' @importFrom tweedie rtweedie
 #' @md
 
-create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
+create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, data,
+                             B_space = NULL, B_time = NULL, B_spacetime = NULL,
                              offset = NULL, zioffset = NULL,
                              betas, zibetas = NULL, basis_effects_mat = NULL, 
                              Sigma = list(space = NULL, time = NULL, spacetime = NULL), 
