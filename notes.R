@@ -37,7 +37,7 @@ registerDoParallel(cores = detectCores()-2)
 #' This is a just a general testing function
 ##------------------------------
 set.seed(022025)
-num_sites <- 500 # 500 (units) sites 
+num_sites <- 1000 # Number of sites
 num_spp <- 10 # Number of species
 num_X <- 4 # Number of regression slopes
  
@@ -72,37 +72,45 @@ simy <- create_CBFM_life(family = binomial(),
 
 
 #' ## Fit different flavors of CBFMs
-fitcbfm_offset1 <- CBFM(y = simy$y, 
+fitcbfm_offset1 <- CBFM(y = simy$y[1:500,], 
                       formula = ~ temp + depth + chla + O2, 
-                      data = dat,
-                      offset = matrix(log(dat$areaswept), nrow = nrow(simy$y), ncol = ncol(simy$y), byrow = FALSE),
-                      B_space = basisfunctions, 
+                      data = dat[1:500,],
+                      offset = matrix(log(dat$areaswept)[1:500], nrow = nrow(simy$y[1:500,]), ncol = ncol(simy$y), byrow = FALSE),
+                      B_space = basisfunctions[1:500,], 
                       family = binomial(), 
                       control = list(trace = 1), 
                       G_control = list(rank = 2),
                       Sigma_control = list(rank = 2))
 
-fitcbfm_offset2 <- CBFM(y = simy$y, 
-                        formula = ~ temp + depth + chla + O2 + offset(log(dat$areaswept)), 
-                        data = dat,
-                        B_space = basisfunctions, 
+fitcbfm_offset2 <- CBFM(y = simy$y[1:500,], 
+                        formula = ~ temp + depth + chla + O2 + offset(log(areaswept)), 
+                        data = dat[1:500,],
+                        B_space = basisfunctions[1:500,], 
                         family = binomial(), 
                         control = list(trace = 1), 
                         G_control = list(rank = 2),
                         Sigma_control = list(rank = 2))
 
-fitcbfm_nooffset <- CBFM(y = simy$y, 
+fitcbfm_nooffset <- CBFM(y = simy$y[1:500,], 
                         formula = ~ temp + depth + chla + O2, 
-                        data = dat,
-                        B_space = basisfunctions, 
+                        data = dat[1:500,],
+                        B_space = basisfunctions[1:500,], 
                         family = binomial(), 
                         control = list(trace = 1), 
                         G_control = list(rank = 2),
                         Sigma_control = list(rank = 2))
 
+
+fitcbfm_offset1
+fitcbfm_offset2
 
 fitcbfm_offset1$betas - fitcbfm_offset2$betas
 fitcbfm_nooffset$betas - fitcbfm_offset2$betas
+
+#' Should be the same; for the first model predict function does not know about the offset, but the second model does since offset is included in formula
+plot(plogis(predict(fitcbfm_offset1, newdata = dat[501:1000,]) + matrix(log(dat$areaswept)[501:1000], nrow = 500, ncol = 10, byrow = FALSE)),
+     predict(fitcbfm_offset2, newdata = dat[501:1000,], type = "response")) 
+
 
 
 ##------------------------------

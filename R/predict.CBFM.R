@@ -88,7 +88,7 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
      if(!is.null(ncores))
           registerDoParallel(cores = ncores)
         
-     ## Construct X and ziX
+     ## Construct X and ziX, and offsets
      if(!is.null(manualX)) {
           new_X <- manualX
           warning("manualX has been supplied. This overrides the creation of a model matrix based on object$formula and/or newdata.")
@@ -104,7 +104,11 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
           }
         if(ncol(new_X) != ncol(object$betas))
                 stop("Something went wrong! The number of columns in constructed model matrix should match the number of columns in object$betas.")
-     
+     if(is.null(newdata))
+          formula_offset <- model.offset(model.frame(object$formula, data = object$data))
+     if(!is.null(newdata))
+          formula_offset <- model.offset(model.frame(object$formula, data = data.frame(newdata)))
+
      if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) & !is.null(manualziX))
           stop("manualziX should only be supplied for zero-inflated CBFMs.")
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
@@ -123,6 +127,11 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                }
           if(ncol(new_ziX) != ncol(object$zibetas))
                stop("Something went wrong! The number of columns in constructed model matrix should match the number of columns in object$zibetas.")
+          
+          if(is.null(newdata))
+               ziformula_offset <- model.offset(model.frame(object$ziformula, data = object$data))
+          if(!is.null(newdata))
+               ziformula_offset <- model.offset(model.frame(object$ziformula, data = data.frame(newdata)))
           }
      
           
@@ -170,10 +179,14 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
           stop("Standard errors can not be calculated since the covariance matrix estimate was not detected to be available in object.") 
 
      ptpred <- tcrossprod(new_X, object$betas) + tcrossprod(new_B, object$basis_effects_mat)
+     if(!is.null(formula_offset))
+          ptpred <- ptpred + formula_offset
      ptpred <- as.matrix(ptpred)
      colnames(ptpred) <- rownames(object$betas)          
      if(object$family$family[1] %in% c("zipoisson", "zinegative.binomial")) {
           ziptpred <- tcrossprod(new_ziX, object$zibetas) 
+          if(!is.null(ziformula_offset))
+               ziptpred <- ziptpred + ziformula_offset
           ziptpred <- as.matrix(ziptpred)
           colnames(ziptpred) <- rownames(object$zibetas)          
           }
@@ -213,6 +226,8 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                     basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
               
                     linpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                    if(!is.null(formula_offset))
+                         linpred <- linpred + formula_offset
                     return(as.matrix(linpred))
                     }
                     
@@ -282,7 +297,11 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                          basiseff_sim <- parameters_sim[,(ncol(object$zibetas)+num_X+1):ncol(parameters_sim), drop=FALSE]
                          
                          ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                         if(!is.null(formula_offset))
+                              ptpred <- ptpred + formula_offset
                          ziptpred <- tcrossprod(new_ziX, zibetas_sim) 
+                         if(!is.null(ziformula_offset))
+                              ziptpred <- ziptpred + ziformula_offset
                          if(type == "link")
                               return(as.matrix(ptpred))
                          if(type == "zilink")
@@ -302,6 +321,8 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                          basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
                         
                          ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                         if(!is.null(formula_offset))
+                              ptpred <- ptpred + formula_offset
                          ptpred <- exp(ptpred) / (1-exp(-exp(ptpred)))
                          return(as.matrix(ptpred))
                          }
@@ -314,7 +335,9 @@ predict.CBFM <- function(object, newdata = NULL, manualX = NULL, manualziX = NUL
                          betas_sim <- parameters_sim[,1:num_X, drop=FALSE]
                          basiseff_sim <- parameters_sim[,-(1:num_X), drop=FALSE]
                         
-                         ptpred <- as.matrix(tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim))
+                         ptpred <- tcrossprod(new_X, betas_sim) + tcrossprod(new_B, basiseff_sim)
+                         if(!is.null(formula_offset))
+                              ptpred <- ptpred + formula_offset
                          ptpred <- exp(ptpred) / (1-dnbinom(0, mu = exp(ptpred), size = matrix(1/object$dispparam, nrow(new_X), num_spp, byrow = TRUE)))
                          return(as.matrix(ptpred))
                          }
