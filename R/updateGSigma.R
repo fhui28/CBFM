@@ -3,7 +3,7 @@
 
 #' @noRd
 
-.update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,  
+.update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, zioffset = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,
                         trial_size, family, G_control, use_rank_element, return_correlation) {
      
      num_spp <- nrow(basis_effects_mat)
@@ -37,7 +37,10 @@
      if(G_control$method %in% c("REML","ML")) {
           zieta <- NULL
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
-               zieta <- as.vector(tcrossprod(ziX, zibetas))
+               zieta <- tcrossprod(ziX, zibetas)
+               if(!is.null(zioffset))
+                    zieta <- zieta + zioffset
+               zieta <- as.vector(zieta)
                }
           
           ## Note weights are on a per-species basis i.e., site runs faster than species
@@ -232,7 +235,7 @@
 
 #' @noRd
 
-.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas, 
+.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, zioffset = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,
                             trial_size, family, Sigma_control, estimate_lambda, which_B) {
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
@@ -260,7 +263,10 @@
      if(Sigma_control$method %in% c("REML","ML")) { 
           zieta <- NULL
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
-               zieta <- as.vector(tcrossprod(ziX, zibetas))
+               zieta <- tcrossprod(ziX, zibetas)
+               if(!is.null(zioffset))
+                    zieta <- zieta + zioffset
+               zieta <- as.vector(zieta)
                }
           ## Note weights are on a per-species basis i.e., site runs faster than species
           weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
