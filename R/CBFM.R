@@ -2016,7 +2016,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                if(family$family %in% c("tweedie"))
                     cw_family <- Tweedie(p = 1.6, link = "log")
                
-               use_size <- NULL
+               use_size <- 0
                if(family$family %in% c("binomial")) {
                     tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula),collapse = " ") ) )
                     use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)
@@ -2561,7 +2561,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          if(family$family == "tweedie")
                               cw_family <- tw(link = "log")
                          
-                         use_size <- NULL
+                         use_size <- 0
                          if(family$family %in% c("binomial")) {
                               tmp_formula <- as.formula(paste("cbind(response, size - response)", paste(as.character(formula), collapse = " ") ) )
                               use_size <- .ifelse_size(trial_size = trial_size, trial_size_length = trial_size_length, j = j, num_units = num_units)

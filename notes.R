@@ -257,14 +257,14 @@ function() {
 
 
 function() {
-     y = simy$y[,1,drop=FALSE]
-     formula = ~ chla + O2
-     data = dat
+     y = matrix(dat_train$y)
+     formula = ~ fac_ord
+     data = dat_train
      ziformula <- NULL
-     B_space = basisfunctions
+     B_space = MM_train
      B_time = NULL
-     B_spacetime = MM_tensorprod
-     family = binomial() 
+     B_spacetime = NULL
+     family = gaussian() 
      ncores = 8
      control = list(trace = 1)
      offset = NULL
@@ -280,8 +280,8 @@ function() {
      ziselect = FALSE
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     G_control = list(rank = c(5,"full"), structure = c("unstructured", "homogeneous"))
-     Sigma_control = list(rank = c(5,1), custom_spacetime = Sigma_tensorprod)
+     G_control = list(structure = c("homogeneous"))
+     Sigma_control = list(custom_space = Sigma)
      k_check_control = list(subsample = 5000, n.rep = 400)
      }
 
