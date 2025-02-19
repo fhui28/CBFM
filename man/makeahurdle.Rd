@@ -81,7 +81,7 @@ spp_intercepts_ztp <- runif(num_spp, -2, 0)
 
 # Simulate spatial coordinates and environmental covariate components
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4)) 
+X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
 mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 
@@ -259,7 +259,7 @@ spp_dispersion_ztnb <- runif(num_spp, 0, 5)
 
 # Simulate spatial coordinates and environmental covariate components
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4)) 
+X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
 mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 
