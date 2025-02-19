@@ -107,7 +107,7 @@
 #' 
 #' # Simulate spatial coordinates and environmental covariate components
 #' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-#' X <- rmvnorm(num_sites, mean = rep(0,4)) 
+#' X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4)) 
 #' colnames(X) <- c("temp", "depth", "chla", "O2")
 #' dat <- data.frame(xy, X)
 #' useformula <- ~ temp + depth + chla + O2
@@ -288,6 +288,10 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
      tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
      nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
      X <- model.matrix(nullfit)
+     formula_offset <- numeric(nrow(X))
+     if(!is.null(model.offset(model.frame(nullfit))))
+          formula_offset <- model.offset(model.frame(nullfit))
+     
      rm(tmp_formula, nullfit)
      
      if(!is.null(zeroinfl_prob) & !is.null(ziformula))
@@ -301,6 +305,9 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
           tmp_formula <- as.formula(paste("response", paste(as.character(ziformula),collapse = " ") ) )
           nullfit <- gam(tmp_formula, data = data.frame(data, response = rnorm(nrow(data))), fit = TRUE, control = list(maxit = 1))
           ziX <- model.matrix(nullfit)
+          ziformula_offset <- numeric(nrow(ziX))
+          if(!is.null(model.offset(model.frame(nullfit))))
+               ziformula_offset <- model.offset(model.frame(nullfit))
           rm(tmp_formula, nullfit)
           }
 
@@ -354,15 +361,13 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
      true_eta <- tcrossprod(X, betas) + true_eta_B
      if(!is.null(offset))
           true_eta <- true_eta + offset
-     if(!is.null(model.offset(model.frame(formula, data = as.data.frame(data)))))
-          true_eta <- true_eta + model.offset(model.frame(formula, data = as.data.frame(data)))
+     true_eta <- true_eta + formula_offset
      if(!is.null(ziformula)) {
           true_zieta <- tcrossprod(ziX, zibetas)
           if(!is.null(zioffset))
                true_zieta <- true_zieta + zioffset
-          
-          if(!is.null(model.offset(model.frame(ziformula, data = as.data.frame(data)))))
-               true_zieta <- true_zieta + model.offset(model.frame(ziformula, data = as.data.frame(data)))
+     
+          true_zieta <- true_zieta + ziformula_offset
           }
      
      sim_y <- matrix(NA, nrow = num_units, ncol = num_spp, dimnames = list(units = paste0("unit", 1:num_units), response = paste0("spp", 1:num_spp)))
@@ -437,15 +442,12 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                     true_eta <- tcrossprod(X, betas) + true_eta_B
                     if(!is.null(offset))
                          true_eta <- true_eta + offset
-                    if(!is.null(model.offset(model.frame(formula, data = as.data.frame(data)))))
-                         true_eta <- true_eta + model.offset(model.frame(formula, data = as.data.frame(data)))
+                    true_eta <- true_eta + formula_offset
                     if(!is.null(ziformula)) {
                          true_zieta <- tcrossprod(ziX, zibetas)
                          if(!is.null(zioffset))
                               true_zieta <- true_zieta + zioffset
-                         
-                         if(!is.null(model.offset(model.frame(ziformula, data = as.data.frame(data)))))
-                              true_zieta <- true_zieta + model.offset(model.frame(ziformula, data = as.data.frame(data)))
+                         true_zieta <- true_zieta + ziformula_offset
                          }
                     }
                

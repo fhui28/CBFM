@@ -394,7 +394,7 @@ spp_intercepts <- runif(num_spp, -2, 0)
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4)) 
+X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4)) 
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
 mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 
@@ -1113,7 +1113,7 @@ spp_intercepts <- runif(num_spp, -2, 0)
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4)) 
+X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
 
@@ -1419,7 +1419,7 @@ spp_intercepts <- runif(num_spp, -2, 0)
 # when the same sites are repeatedly visited
 # We will also use this information in examples below
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- rmvnorm(num_sites, mean = rep(0,4)) 
+X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, time = sort(runif(1000, 0, 10)) , X)
 mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 

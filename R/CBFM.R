@@ -474,7 +474,7 @@
 #' # Simulate spatial coordinates and environmental covariate components
 #' # We will use this information in later examples as well
 #' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-#' X <- rmvnorm(num_sites, mean = rep(0,4)) 
+#' X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4)) 
 #' colnames(X) <- c("temp", "depth", "chla", "O2")
 #' dat <- data.frame(xy, X)
 #' mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) %>% 
@@ -1194,7 +1194,7 @@
 #' # Simulate spatial coordinates and environmental covariate components
 #' # We will use this information in later examples as well
 #' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-#' X <- rmvnorm(num_sites, mean = rep(0,4)) 
+#' X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
 #' colnames(X) <- c("temp", "depth", "chla", "O2")
 #' dat <- data.frame(xy, X)
 #' 
@@ -1500,7 +1500,7 @@
 #' # when the same sites are repeatedly visited
 #' # We will also use this information in examples below
 #' xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-#' X <- rmvnorm(num_sites, mean = rep(0,4)) 
+#' X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
 #' colnames(X) <- c("temp", "depth", "chla", "O2")
 #' dat <- data.frame(xy, time = sort(runif(1000, 0, 10)) , X)
 #' mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) %>% 
@@ -1838,7 +1838,8 @@
 
 CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NULL, B_spacetime = NULL, 
      offset = NULL, ncores = NULL, family = stats::gaussian(), trial_size = 1, dofit = TRUE, stderrors = TRUE, 
-     select = FALSE, gamma = 1, knots = NULL, ziselect = FALSE, zigamma = 1, ziknots = NULL,
+     select = FALSE, gamma = 1, knots = NULL, 
+     ziselect = FALSE, zigamma = 1, ziknots = NULL,
      nonzeromean_B_space = FALSE, nonzeromean_B_time = FALSE, nonzeromean_B_spacetime = FALSE,
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL, 
                          custom_space_lambdas = NULL, custom_time_lambdas = NULL, custom_spacetime_lambdas = NULL),
@@ -2240,7 +2241,6 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                start_params$zibetas <- NULL
           }
-     rm(all_start_fits)
      
      
      if(which_B_used[1]) {
@@ -2352,9 +2352,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           offset <- Matrix(0, nrow = nrow(y), ncol = ncol(y), sparse = TRUE)
           }
      formula_offset <- numeric(nrow(y))
-     if(!is.null(model.offset(model.frame(formula, data = as.data.frame(data))))) { 
-          formula_offset <- model.offset(model.frame(formula, data = as.data.frame(data)))
-          }
+     if(!is.null(model.offset(model.frame(all_start_fits[[1]]))))
+          formula_offset <- model.offset(model.frame(all_start_fits[[1]]))
+     rm(all_start_fits)
      
      if(control$trace > 0)
           message("Commencing model fitting...")
