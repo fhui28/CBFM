@@ -270,6 +270,7 @@ function() {
      offset = NULL
      gamma = 1
      zigamma = 1
+     knots = NULL
      trial_size = 1
      nonzeromean_B_space = FALSE
      nonzeromean_B_time = FALSE

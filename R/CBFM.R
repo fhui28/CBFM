@@ -2789,7 +2789,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[, three_num_B[1]*(j1>1) + three_num_B[2]*(j1>2) + 1:three_num_B[j1], drop = FALSE])) 
                     
                     new_nonzeromean_current <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
-                    assign(new_fit_CBFM_ptest[[ three_mean_options[j1] ]], new_nonzeromean_current)
+                    assign(three_mean_options[j1], new_nonzeromean_current)
                     rm(rhs, MM, onemIq, new_nonzeromean_current)
                     }
                }
