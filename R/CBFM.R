@@ -2129,7 +2129,12 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     cw_offset <- numeric(num_units)
                tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data),1:10),], off = c(cw_offset, numeric(10))) # Append some zeros speeds ziplss up a heck of a lot!
                
-               fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, method = control$gam_method, family = ziplss(), knots = knots, gamma = full_gamma[j])
+               fit0 <- gam(list(tmp_formula, ~1), 
+                           data = tmp_dat, 
+                           method = control$gam_method, 
+                           family = ziplss(), 
+                           knots = knots, 
+                           gamma = full_gamma[j])
                if(!inherits(fit0, "try-error")) {
                     MM <- model.matrix(fit0)
                     MM <- MM[1:(nrow(MM)-10),,drop=FALSE]
@@ -2157,8 +2162,14 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                w2[which(y[,j]==0)] <- 0
                w <- c(w1, w2)
                rm(w2) ## This way of constructing the weights and GAM set up is the *only* one I have constructed so far that ensures MM = X
-               fit0 <- gam(tmp_formula, data = data.frame(response = c(y[,j], numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                               weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j])
+               fit0 <- gam(tmp_formula, 
+                           data = data.frame(response = c(y[,j], numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                           weights = w,
+                           offset = cw_offset[c(1:num_units, 1:num_units)], 
+                           knots = knots, 
+                           method = control$gam_method, 
+                           family = nb(), 
+                           gamma = full_gamma[j])
                MM <- predict.gam(fit0, newdata = data, type = "lpmatrix")
                cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
                if(!is.null(model.offset(model.frame(fit0))))
@@ -2181,8 +2192,14 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                     w2[find_nonzeros] <- initw
                     w <- c(w1, w2)
                     rm(w2) 
-                    fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                    weights = w, offset = cw_offset[c(1:num_units, 1:num_units)], knots = knots, method = control$gam_method, family = nb(), gamma = full_gamma[j]), silent = TRUE)
+                    fit0 <- try(gam(tmp_formula, 
+                                    data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                    weights = w, 
+                                    offset = cw_offset[c(1:num_units, 1:num_units)], 
+                                    knots = knots, 
+                                    method = control$gam_method, 
+                                    family = nb(), 
+                                    gamma = full_gamma[j]), silent = TRUE)
                     if(inherits(fit0, "try-error"))
                          break;
                     cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
@@ -2352,8 +2369,11 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           offset <- Matrix(0, nrow = nrow(y), ncol = ncol(y), sparse = TRUE)
           }
      formula_offset <- numeric(nrow(y))
-     if(!is.null(model.offset(model.frame(all_start_fits[[1]]))))
+     if(!is.null(model.offset(model.frame(all_start_fits[[1]])))) {
           formula_offset <- model.offset(model.frame(all_start_fits[[1]]))
+          if(family$family %in% c("ztpoisson", "ztnegative.binomial"))
+               formula_offset <- formula_offset[1:num_units]
+          }
      rm(all_start_fits)
      
      if(control$trace > 0)
@@ -2646,11 +2666,22 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data), 1:10),], off = c(new_offset, numeric(10))) # Append some zeros avoids a non-convergence problem in mgcv
                          tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " "), "+ offset(off)" ) )
                          if(control$ridge > 0)
-                              fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, knots = knots, method = control$gam_method, 
-                                          H = Hmat, family = ziplss(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(list(tmp_formula, ~1), 
+                                          data = tmp_dat, 
+                                          knots = knots, 
+                                          method = control$gam_method, 
+                                          H = Hmat, 
+                                          family = ziplss(),
+                                          select = select, 
+                                          gamma = full_gamma[j])
                          if(control$ridge == 0)
-                              fit0 <- gam(list(tmp_formula, ~1), data = tmp_dat, knots = knots, method = control$gam_method, 
-                                          family = ziplss(), select = select, gamma = full_gamma[j])
+                              fit0 <- gam(list(tmp_formula, ~1), 
+                                          data = tmp_dat, 
+                                          knots = knots, 
+                                          method = control$gam_method, 
+                                          family = ziplss(), 
+                                          select = select, 
+                                          gamma = full_gamma[j])
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
@@ -2679,14 +2710,27 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                               w <- c(w1, w2)
                               rm(w2)
                               if(control$ridge > 0) {
-                                   fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                                   offset = new_offset[c(1:num_units,1:num_units)], knots = knots, method = control$gam_method, 
-                                                   weights = w, H = Hmat, family = nb(), select = select, gamma = full_gamma[j]), silent = TRUE)
+                                   fit0 <- try(gam(tmp_formula, 
+                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                                   offset = new_offset[c(1:num_units,1:num_units)], 
+                                                   knots = knots, 
+                                                   method = control$gam_method, 
+                                                   weights = w, 
+                                                   H = Hmat, 
+                                                   family = nb(), 
+                                                   select = select, 
+                                                   gamma = full_gamma[j]), silent = TRUE)
                                    }
                               if(control$ridge == 0) {
-                                   fit0 <- try(gam(tmp_formula, data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                                   offset = new_offset[c(1:num_units,1:num_units)], knots = knots, method = control$gam_method,
-                                                   weights = w, family = nb(), select = select, gamma = full_gamma[j]), silent = TRUE)
+                                   fit0 <- try(gam(tmp_formula, 
+                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                                   offset = new_offset[c(1:num_units,1:num_units)], 
+                                                   knots = knots, 
+                                                   method = control$gam_method,
+                                                   weights = w, 
+                                                   family = nb(), 
+                                                   select = select, 
+                                                   gamma = full_gamma[j]), silent = TRUE)
                                    }
                               if(inherits(fit0, "try-error"))
                                    break;

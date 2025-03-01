@@ -232,9 +232,9 @@ function() {
      family =  stats::binomial() 
      B_space = train_basisfunctions
      B_time = NULL
+     B_spacetime = NULL
      knots = NULL
      ziknots = NULL
-     B_spacetime = NULL
      offset = NULL
      ncores = NULL
      gamma = 1
@@ -250,9 +250,10 @@ function() {
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      control = list(trace = 1)
+     k_check_control = list(subsample = 5000, n.rep = 400)
+     
      G_control = list(rank = c(5), structure = c("unstructured"))
      Sigma_control = list(rank = c(5))
-     k_check_control = list(subsample = 5000, n.rep = 400)
      }
 
 
