@@ -2241,8 +2241,10 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                start_params$dispparam <- rep(1, num_spp)          
           if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
                     start_params$dispparam <- 0.5 * colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
-          if(family$family[1] %in% c("negative.binomial")) 
-               start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/theta.mm(y = y[,j], mu = exp(X%*%start_params$betas[j,] + B%*%start_params$basis_effects_mat[j,]), dfr = num_units - num_X - num_basisfns))
+          if(family$family[1] %in% c("negative.binomial")) {
+               start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/theta.mm(y = y[,j], mu = exp(X%*%start_params$betas[j,] + B%*%start_params$basis_effects_mat[j,]), dfr = num_units - num_X - num_basisfns, limit = 1e5))
+               #start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/all_start_fits[[j]]$family$getTheta(TRUE))
+               }
           if(family$family[1] %in% c("ztnegative.binomial", "zinegative.binomial"))
                start_params$dispparam <- rep(0.2, num_spp)
           if(family$family[1] %in% c("Beta")) 
@@ -2369,6 +2371,9 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
           offset <- Matrix(0, nrow = nrow(y), ncol = ncol(y), sparse = TRUE)
           }
      formula_offset <- numeric(nrow(y))
+     
+     if(!exists("all_start_fits"))
+          all_start_fits <- foreach(j = 1:2) %dopar% initfit_fn(j = j, formula = formula) #' Run this a second time to get offsets (if starting values were supplied above, then all_start_fits does not exist)
      if(!is.null(model.offset(model.frame(all_start_fits[[1]])))) {
           formula_offset <- model.offset(model.frame(all_start_fits[[1]]))
           if(family$family %in% c("ztpoisson", "ztnegative.binomial"))
@@ -2539,7 +2544,7 @@ CBFM <- function(y, formula, ziformula = NULL, data, B_space = NULL, B_time = NU
                          if(length(control$subsequent_betas_dampen) == 1)
                               tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen 
                          if(length(control$subsequent_betas_dampen) == num_spp)
-                              tidbits_data$Xbeta <- tidbits_data$Xbeta * matrix(control$subsequent_betas_dampen, nrow = num_units, ncol = num_spp, byrow = TRUE)
+                              tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen[j]
                          
                          CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                          new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
