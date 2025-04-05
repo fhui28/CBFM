@@ -50,7 +50,7 @@ X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rlnorm(n = num_sites, meanlog = 
 colnames(X) <- c("temp", "depth", "chla", "O2", "areaswept")
 dat <- data.frame(xy, X)
 useformula <- ~ temp + depth + chla + O2 + offset(log(areaswept))
-
++
 # Set up spatial basis functions for CBFM 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>%
@@ -225,14 +225,23 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 #' Custom testing
 ##----------------------------------
 function() {
-     y = simy_train
-     formula <- useformula
+     y = Y[sel_training_units,c(1,5), drop=FALSE]
+     formula = 
+          ~ offset(log(AREA_SWEPT_EST)) + 
+          SOURCE + 
+          s(BOTTEMP_DOPGLO_monthly_MEAN, bs="tp", m=2, k=5) +
+          s(BOTSALIN_DOPGLO_monthly_MEAN, bs="tp", m=2, k=5) +
+          s(logDEPTH_1km, bs="tp", m=2, k=5) +
+          s(logTideVel_max, bs="tp", m=2, k=5) +
+          s(logBPI_1km, bs="tp", m=2, k=5) +
+          s(logCOMPLEX_1km, bs="tp", m=2, k=5) +
+          s(GRAIN_1km, bs="tp", m=2, k=5)
      ziformula <- NULL
-     data = dat_train
-     family =  stats::binomial() 
-     B_space = train_basisfunctions
+     data = X[sel_training_units,]
+     family =  CBFM::nb2() 
+     B_space = NULL
      B_time = NULL
-     B_spacetime = NULL
+     B_spacetime = MM_train_year_gp
      knots = NULL
      ziknots = NULL
      offset = NULL
@@ -247,13 +256,18 @@ function() {
      stderrors = TRUE
      select = FALSE
      ziselect = FALSE
-     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+     start_params = list(betas = (sapply(GAMs_simple_yeargp_ident[c(1,5)], coef)[1:33,]*0.1) %>% t,
+                         dispparam = 1/sapply(GAMs_simple_yeargp_ident[c(1,5)], function(x) x$family$getTheta(TRUE)))
+     #start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     control = list(trace = 1)
+     control = list(trace = 1, maxit=2, final_maxit=100, initial_betas_dampen = c(1, 1)) 
+     G_control = list(rank = c("full"), structure = c("identity"))
+     Sigma_control = list(rank = c("full"), 
+                          custom_spacetime = Sigma_year_gp, 
+                          control = list(trace = 1))     
      k_check_control = list(subsample = 5000, n.rep = 400)
      
-     G_control = list(rank = c(5), structure = c("unstructured"))
-     Sigma_control = list(rank = c(5))
+     
      }
 
 
