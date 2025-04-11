@@ -41,7 +41,7 @@ A list with the following items:
 Calculates observational unit-specific scores and corresponding species-specific loadings from a fitted \code{CBFM} object, potentially at new values of the basis functions. which in turn can be used as a means of spatio-temporal ordination.
 }
 \details{
-For a CBFM, one way of performing spatio-temporal ordination is as follows. For observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, recall that for the purposes of this package, the CBFM is defined by the mean model:
+For a CBFM, one way of performing spatio-temporal ordination is as follows. For observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, recall for the purposes of this package, the CBFM is defined by the mean model:
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 

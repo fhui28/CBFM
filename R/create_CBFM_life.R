@@ -22,7 +22,7 @@
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as the simulated response matrix is to be.
 #' @param dispparam A vector of species-specific dispersion parameters, to be used for distributions that require one.  
 #' @param powerparam A vector of species-specific power parameters, to be used for distributions that require one. 
-#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note that \code{ziformula} is supplied, then this argument is ignored.
+#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note \code{ziformula} is supplied, then this argument is ignored.
 #' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
 #' @param only_y If \code{TRUE}, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if \code{FALSE}, then additional information about is returned.
 #' 
@@ -68,7 +68,7 @@
 #' \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 #' }
 #' 
-#' Note that with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration. 
+#' Note with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration.
 #' }
 #' 
 #' @return 
@@ -329,7 +329,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
      if(!is.null(basis_effects_mat)) {
           message("Because basis_effects_mat is supplied, inputs for Sigma and G are ignored.")
           if(ncol(B) != ncol(basis_effects_mat))
-               stop("The number of columns in cbind(B_space, B_time, B_spacetime) must match that the number of columns in basis_effects_mat.")
+               stop("The number of columns in cbind(B_space, B_time, B_spacetime) must match the number of columns in basis_effects_mat.")
           }
      
      

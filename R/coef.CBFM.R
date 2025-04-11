@@ -15,7 +15,7 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. 
 #' 
-#' This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting that this may included the estimated smoothing coefficients if any smoothers were included. For zero-inflated distributions, it will also return the estimated coefficients associated with modeling the probability of zero-inflation, noting that this may included the estimated smoothing coefficients if any smoothers were included.
+#' This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting this may include the estimated smoothing coefficients if any smoothers were included. For zero-inflated distributions, it will also return the estimated coefficients associated with modeling the probability of zero-inflation, noting this may include the estimated smoothing coefficients if any smoothers were included.
 #' 
 #' This function does \emph{not} return the estimated regression coefficients associated with the basis functions i.e., the \eqn{\hat{a}_j}'s. These can be obtained from \code{object$basis_effects_mat}.
 #'

@@ -14,7 +14,7 @@
 #' @param ... Not used.
 #' 
 #' @details 
-#' For a CBFM, one way of performing spatio-temporal ordination is as follows. For observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, recall that for the purposes of this package, the CBFM is defined by the mean model:
+#' For a CBFM, one way of performing spatio-temporal ordination is as follows. For observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, recall for the purposes of this package, the CBFM is defined by the mean model:
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'

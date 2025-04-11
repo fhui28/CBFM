@@ -12,7 +12,7 @@
 #' @param ... Not used.
 #'
 #' @details 
-#' Currently, the function returns estimated species-specific regression coefficients, including those associated with modeling the probability of zero-inflation if appropriate. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is *heavily* adapted from that of [mgcv::summary.gam()]; we refer the reader to their help file as well as Wood (2017) for more details on these tests, with any mistakes/issues to be blamed on me (sorry!) and not on Simon Wood who maintains \code{mgcv} splendidly.  
+#' Currently, the function returns estimated species-specific regression coefficients, including those associated with modeling the probability of zero-inflation if appropriate. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is *heavily* adapted from [mgcv::summary.gam()]; we refer the reader to their help file as well as Wood (2017) for more details on these tests, with any mistakes/issues to be blamed on me (sorry!) and not on Simon Wood who maintains \code{mgcv} splendidly.
 #' 
 #' As discussed in [CBFM()], all tests are based on the Bayesian posterior covariance matrix of the coefficients. Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
 #' 
@@ -39,7 +39,7 @@
 #' }
 #'
 #' @details # Warning
-#' Note that if the model matrix created includes smoothing terms as in a generalized additive model or GAM, the Wald P-values and corresponding Wald confidence intervals are approximate and neglect corresponding smoothing parameter uncertainty; please see [mgcv::summary.gam()] for more details. 
+#' Note if the model matrix created includes smoothing terms as in a generalized additive model or GAM, the Wald P-values and corresponding Wald confidence intervals are approximate and neglect corresponding smoothing parameter uncertainty; please see [mgcv::summary.gam()] for more details.
 #' 
 #' The current summary function is pretty basic (apologies!), and in the future we hope to add some useful information to the summary output. 
 #' 
@@ -65,7 +65,7 @@
 #' @md
 
 # This version is heavily based on and inspired a lot more by the summary.gam function...acknowledgements go to Simon Wood for his mgcv package.
-# Interesting note that in simulations, most of the time, the results from this are not too far from (but very slightly more conservative than) just ad-hoc applying summary.gam to the last iteration of the PQL estimation algorithm in CBFM! 
+# Interestingly, note in simulations, most of the time, the results from this are not too far from (but very slightly more conservative than) just ad-hoc applying summary.gam to the last iteration of the PQL estimation algorithm in CBFM!
 summary.CBFM <- function(object, coverage = 0.95, digits = max(3L, getOption("digits") - 3L), ncores = NULL, ...) {
      if(!inherits(object, "CBFM")) 
           stop("`object' is not of class \"CBFM\"")

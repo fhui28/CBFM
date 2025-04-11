@@ -5,7 +5,7 @@
      }
           
 
-## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
+## Function to trick mgcv and subsequently gratia so the right standard errors are obtained, along with everything else, when applying gratia::parametric_effects
 .calc_parametric_effects <- function(j, object) {
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      nulldat <- data.frame(response = object$y[,j], object$data)
@@ -50,7 +50,7 @@
      }
 
 
-## Function to trick mgcv and subsequently gratia so that the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
+## Function to trick mgcv and subsequently gratia so the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
 .calc_smooth_estimates <- function(j, object) {
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      nulldat <- data.frame(response = object$y[,j], object$data)
@@ -143,7 +143,7 @@
    }
 
 
-## Get the full S matrix from GAMs. Relies on the fact that gam always move the parametric terms first
+## Get the full S matrix from GAMs. Relies on the fact gam always move the parametric terms first
 .get_bigS <- function(fit_gam, num_X) {
    # if(class(fit_gam)[1] == "gamlss")
    #    fit_gam <- getSmo(fit_gam)
@@ -283,17 +283,6 @@
 
      return(res)
      }
-
-
-## Tries chol2inv then, which will fail for singular matrices. If it does fail then go to use .pinv. 
-## This was originally used over just .pinv as it is more scalable and for positive definite matrices is marginally more accurate [difference is very very small though]. However since July 2022, it is no longer used and .pinv is now used instead, because .choltheninv has the problem that for positive-semidefinite matrices, if you apply it twice then it may not return the original matrix [it does .pinv in the first inverse then does chol2inv in the second inverse]
-# .cholthenpinv <- function(V) {
-#    out <- try(chol2inv(chol(V)), silent = TRUE)
-#    if(inherits(out, "try-error"))
-#       out <- .pinv(V = V, M = ncol(V))
-#    
-#    return(out)
-#    }
 
 
 

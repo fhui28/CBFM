@@ -10,7 +10,7 @@
 #' @param ... Not used.
 #'
 #' @details 
-#' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula}, the function directly returns what is available from \code{object$pen.edf}. Similarly, for any smoothing terms included in the model as part of \code{object$ziformula} for modeling the probability of zero-inflation, the function directly returns what is available from \code{object$zipen.edf}. Note that as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate. 
+#' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula}, the function directly returns what is available from \code{object$pen.edf}. Similarly, for any smoothing terms included in the model as part of \code{object$ziformula} for modeling the probability of zero-inflation, the function directly returns what is available from \code{object$zipen.edf}. Note as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate.
 #' 
 #' For the EDF associated with the spatial and/or temporal basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. 
 #'  
@@ -209,7 +209,7 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
      ## Now the EDF
      ##------------------
      # Estimated degrees of freedom. Actually EDF is calculated for all coefficients, but here we only make available those for basis functions 
-     # In additional simulations we found that the EDFs calculated for the terms in formula are typically *very* close to those from edf and the last update using GAM in the PQL estimation algorithm. 
+     # In additional simulations we found the EDFs calculated for the terms in formula are typically *very* close to those from edf and the last update using GAM in the PQL estimation algorithm.
      edfs <- diag(bigV %*% bigXBWXB)
      names(edfs) <- colnames(bigV)
      if(object$num_B == 0)

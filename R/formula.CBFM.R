@@ -9,7 +9,7 @@
 #' @param ... Not used in this case.
 #'
 #' @details 
-#' This function works in a similar manner to functions such as [stats::formula.lm()] and [mgcv::formula.gam()]. Recall that in the main CBFM fitting function, the argument \code{formula} is a symbolic description of the model matrix of covariates to be created, while for zero-inflated distributions \code{ziformula} is a symbolic description of the model matrix to be created for the zero-inflation component.
+#' This function works in a similar manner to functions such as [stats::formula.lm()] and [mgcv::formula.gam()]. Recall in the main CBFM fitting function, the argument \code{formula} is a symbolic description of the model matrix of covariates to be created, while for zero-inflated distributions \code{ziformula} is a symbolic description of the model matrix to be created for the zero-inflation component.
 #' 
 #' Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] for more details. 
 #' 

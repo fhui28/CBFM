@@ -139,7 +139,7 @@ plot.CBFM <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c("Resid
                 stop("which_species should be a vector of integers ranging from 1 to the number of species.")
      
         if(any(which_plot > 5))
-                stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots that this function currently offers.")
+                stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots this function currently offers.")
      
      
         # Form plot titles
@@ -281,7 +281,7 @@ plot.CBFM_hurdle <- function(x, which_plot = 1:5, type = "dunnsmyth", titles = c
                 stop("which_species should be a vector of integers ranging from 1 to the number of species.")
      
         if(any(which_plot > 5))
-                stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots that this function currently offers.")
+                stop("which_plot should be a vector of integers ranging from 1 to 5. There are only five possible plots this function currently offers.")
      
      
         # Form plot titles

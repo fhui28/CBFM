@@ -20,7 +20,7 @@ A matrix resulting from the tensor product, with the number of columns equal to 
 A simple function used to calculate the tensor product of two matrices.
 }
 \details{
-For the purposes of this package, this function may be used for constructing a matrix basis functions that is formed from the tensor product of two individual basis functions. A prime example of this is the construction of \code{B_spacetime} for use in the main function \code{\link[=CBFM]{CBFM()}}, where the spatio-temporal basis functions may be formed as a tensor product of spatial and temporal basis functions.
+For the purposes of this package, this function may be used for constructing a matrix basis functions formed from the tensor product of two individual basis functions. A prime example of this is the construction of \code{B_spacetime} for use in the main function \code{\link[=CBFM]{CBFM()}}, where the spatio-temporal basis functions may be formed as a tensor product of spatial and temporal basis functions.
 
 The tensor product is formed by multiplying the first column of \code{B2} with \code{B1}, then the second column of \code{B2} with \code{B1}, and so on, working through all the columns of \code{B2}.
 }
@@ -35,7 +35,7 @@ No attempt is made by the function to made the resulting matrix sparse, unless t
 
 }
 \seealso{
-\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, with one example that using a tensor product formed set of basis functions.
+\code{\link[=CBFM]{CBFM()}} for fitting CBFMs, with one example using a tensor product.
 }
 \author{
 Francis K.C. Hui \href{mailto:fhui28@gmail.com}{fhui28@gmail.com}, Chris Haak

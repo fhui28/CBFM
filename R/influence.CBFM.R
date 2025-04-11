@@ -10,7 +10,7 @@
 #' @param ... Not used.
 #'
 #' @details 
-#' This is a relatively basic function that calculates the so-called "hat values" and an approximate Cook's distance. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic that measures the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM. 
+#' This is a relatively basic function that calculates the so-called "hat values" and an approximate Cook's distance. Classically, hat values are used to identify potentially high-leverage observations, and Cook's distance is a well-known regression-deletion diagnostic measuring the overall influence of a point on the fit of a model; we refer the reader to [stats::influence.measures()] for more information and reference pertaining to its use in standard linear and other regression models. Because both concepts of both can be (sort of) carried over to a generalized additive model or GAM e.g., see [mgcv::influence.gam()], then analogous diagnostics can be produced for a CBFM.
 #' 
 #' All measures are obtained on a *per-species basis*. This makes sense since the influence/leverage of a unit e.g., space-time coordinate, will differ for different species and their relationships to the measured covariates. 
 #' 

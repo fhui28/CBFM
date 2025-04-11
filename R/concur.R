@@ -12,9 +12,9 @@
 #' @details 
 #' As explained in [mgcv::concurvity()], the concurvity can be viewed as a generalization of multicollinearity sometimes/often seen in parametric regression models, where smooth terms in a model could be approximated by one or more of the other smooth terms in the model. Like collinearity, concurvity **may** lead to issues in terms of interpretation of response-covariate relationship, and potentially make estimates unstable with potentially inflated standard errors. It is important to emphasize the "**may**": depending on the scientific question/s of interest and the type/s of inference the user is interested in, concurvity like collinearity may or may not be an issue.    
 #' 
-#' Concurvity is something that is perhaps particularly worth keeping in mind in the context of CBFMs: many of the measured covariates included are likely to be spatially and/or temporally indexed, in which case their inclusion (whether as a smooth or parametric) maybe exhibit concurvity with the "smooths" resulting from the spatial and/or temporal basis functions also included to account for residual spatio-temporal correlations both between- and within-species. Again however, we stress the **perhaps**, as extreme concurvity may be something to think/worry about but otherwise it may not be something to stress over depending on the goal of the CBFM. Concurvity is also closely related (I suspect?!) to the issue of spatial confounding (Hodges et al., 2010, Hanks et al., 2015; Lany et al., 2020) 
+#' Concurvity is something perhaps particularly worth keeping in mind in the context of CBFMs: many of the measured covariates included are likely to be spatially and/or temporally indexed, in which case their inclusion (whether as a smooth or parametric) maybe exhibit concurvity with the "smooths" resulting from the spatial and/or temporal basis functions also included to account for residual spatio-temporal correlations both between- and within-species. Again however, we stress the **perhaps**, as extreme concurvity may be something to think/worry about but otherwise it may not be something to stress over depending on the goal of the CBFM. Concurvity is also closely related (I suspect?!) to the issue of spatial confounding (Hodges et al., 2010, Hanks et al., 2015; Lany et al., 2020)
 #' 
-#' For each species, this function presents two measures of concurvity, bounded between zero and one (zero indicating no problem and one indicating a total lack of identifiability in the CBFM), which are based on those found in [mgcv::concurvity()]. Both are based on something of the form \eqn{\|g\|^2 / \|f\|^2}, where \eqn{\|\cdot\|^2} is the squared norm, \eqn{f} is the smooth term of focus, and \eqn{g} is the "component" of that smooth which can be represented by other remaining terms in the model. The two measures specifically are 
+#' For each species, this function presents two measures of concurvity, bounded between zero and one (zero indicating no problem and one indicating a total lack of identifiability in the CBFM), which are based on those found in [mgcv::concurvity()]. Both are based on something of the form \eqn{\|g\|^2 / \|f\|^2}, where \eqn{\|\cdot\|^2} is the squared norm, \eqn{f} is the smooth term of focus, and \eqn{g} is the "component" of the smooth which can be represented by other remaining terms in the model. The two measures specifically are
 #' 1. \code{Observed}, which is based on the corresponding linear predictors and their Euclidean norm. Basically, it is a measure of how well the linear predictor for a specific covariate can be represented by a linear predictor formed from the other terms in the model. According to [mgcv::concurvity()], the measure can be a bit over-optimistic about the potential for a problem in some cases. 
 #' 2. \code{Estimate}, which is based on the the covariate only and its representation in terms of the other terms in the model. Basically, it is a measure of how well a specific covariate can be represented by the other terms in the model (in terms of breaking things down to basis functions). According to [mgcv::concurvity()], it does not suffer from the pessimism or potential for over-optimism than the first measure.
 #' 
@@ -26,7 +26,7 @@
 #' 
 #' @details # Warning
 #' 
-#' This function currently does not work well with factor variables. However it should be kept in mind that concurvity and collinearity with factor variables is generally more challenging to diagnose and deal with. 
+#' This function currently does not work well with factor variables. However it should be kept in mind concurvity and collinearity with factor variables is generally more challenging to diagnose and deal with.
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 
@@ -214,7 +214,7 @@ concur <- function(object, zi = FALSE, ...) {
           
           for(k1 in 1:num_spp) { 
                # Observed 
-               # Consider a QR decompostion [everything else, covariate] = Q R = Q [R_everythingelse, R_covariate]. Thus covariate = Q R_covariate = Q_everythingelse*R_everythingelse + Q_covariate*R covariate. The first part lies entirely in the space of one or more other covariates in the model. The remainder part that is completely within the covariate's own space. 
+               # Consider a QR decompostion [everything else, covariate] = Q R = Q [R_everythingelse, R_covariate]. Thus covariate = Q R_covariate = Q_everythingelse*R_everythingelse + Q_covariate*R covariate. The first part lies entirely in the space of one or more other covariates in the model. The remainder part completely within the covariate's own space.
                # Numerator is ||Q_everything*R_everythingelse %*% beta ||^2 
                # Denominator is ||X%*%beta||^2 for that covariate
                sel_betas <- object$betas[k1, start[k0]:stop[k0]]
