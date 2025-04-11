@@ -3,7 +3,7 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Takes a fitted \code{CBFM} object calculates the residual between-species correlation matrix due to (all) the spatial and/temporal basis functions, along with corresponding uncertainty intervals if desired (via a simulation-based approach). Similar to [predict.CBFM()], this correlation matrix can be calculated based on a different sets of basis functions to those used to actually fit the model. Additionally, the user can supplied two sets of spatial and/or temporal basis functions, in which case the function calculates cross-correlations (between and within species) between these two sets of basis functions. 
+#' Takes a fitted \code{CBFM} object calculates the residual between-species correlation matrix due to (all) the spatial and/temporal basis functions, along with corresponding uncertainty intervals if desired (via a simulation-based approach; see Hui et al., 2023). Similar to [predict.CBFM()], this correlation matrix can be calculated based on a different sets of basis functions to those used to actually fit the model. Additionally, the user can supplied two sets of spatial and/or temporal basis functions, in which case the function calculates cross-correlations (between and within species) between these two sets of basis functions. 
 #' 
 #' 
 #' @param object An object of class \code{CBFM}.
@@ -26,7 +26,7 @@
 #' 
 #' where \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit \eqn{i}, and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. So for example, users may choose to use the form \eqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_{i,space}^\top a_{j,space} + b_{i,time}^\top a_{j,time},} where \eqn{b_i = (b_{i,space}, b_{i,time})} and \eqn{a_j = (a_{j,space}, a_{j,time})}; see also the help file for [CBFM()] for more information.
 #' 
-#' One (although by no means the only, see the warning below) approach to thinking about the residual spatio-temporal covariance and hence correlation between two species \eqn{j} and \eqn{j'}, is based on examining the components \eqn{b_i^\top a_j} and \eqn{b_i^\top\beta_{j'}} across the observational units. A point estimate for this residual correlation can be constructed, along with a corresponding uncertainty interval by simulation if desired. For the latter, species-specific coefficients corresponding to the basis functions i.e., \eqn{\beta_j}, are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see [CBFM()] and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}) after which uncertainty intervals can be constructed by taking sample quantiles.
+#' One (although by no means the only, see the warning below) approach to thinking about the residual spatio-temporal covariance and hence correlation between two species \eqn{j} and \eqn{j'}, is based on examining the components \eqn{b_i^\top a_j} and \eqn{b_i^\top\beta_{j'}} across the observational units (Hui et al., 2023). A point estimate for this residual correlation can be constructed, along with a corresponding uncertainty interval by simulation if desired. For the latter, species-specific coefficients corresponding to the basis functions i.e., \eqn{\beta_j}, are sampled from their approximate large sample normal distribution (i.e., basically a Gaussian approximation to the posterior distribution of the parameters; see [CBFM()] and the section on estimation and inference), which are then used to calculate the correlations. This sampling and calculation is then performed a large number of times (as governed by \code{num_sims}) after which uncertainty intervals can be constructed by taking sample quantiles.
 #' 
 #' Note because this function calculates correlations as based on component of the linear predictor \eqn{b_i^\top a_j}, then it can not be applied to  \code{CBFM_hurdle} object (which by construction contains two linear predictors, so the user has to decide which component of the hurdle model they are interested in).
 #' 
@@ -53,9 +53,11 @@
 #' 
 #' 
 #' @references
-#' Niku, J., Warton, D. I., Hui, F. K., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological and Environmental Statistics, 22, 498-522.
+#' Hui, F. K. C., Warton, D. I., Foster, S. D., & Haak, C. R. (2023). Spatiotemporal joint species distribution modelling: A basis function approach. Methods in Ecology and Evolution, 14(8), 2150-2164.
 #' 
-#' Niku, J., Hui, F. K., Taskinen, S., and Warton, D. I. (2019). gllvm: Fast analysis of multivariate abundance data with generalized linear latent variable models in r. Methods in Ecology and Evolution, 10, 2173-2182.
+#' Niku, J., Warton, D. I., Hui, F. K. C., and Taskinen, S. (2017). Generalized linear latent variable models for multivariate count and biomass data in ecology. Journal of Agricultural, Biological and Environmental Statistics, 22, 498-522.
+#' 
+#' Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2019). gllvm: Fast analysis of multivariate abundance data with generalized linear latent variable models in r. Methods in Ecology and Evolution, 10, 2173-2182.
 #' 
 #' Ovaskainen, O., Tikhonov, G., Norberg, A., Guillaume Blanchet, F., Duan, L., Dunson, D., and Abrego, N. (2017). How to make more out of community data? A conceptual framework and its implementation as models and software. Ecology letters, 20, 561-576.
 #' 

@@ -3,7 +3,7 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' For each species, partition the variance of the linear predictor from a fitted \code{CBFM} object into components associated with (groups of) the covariates, and the basis function included.
+#' For each species, partition the variance of the linear predictor from a fitted \code{CBFM} object into components associated with (groups of) the covariates, and the basis function included; see Hui et al., (2023) for more details.
 #' 
 #' @param object An object of class \code{CBFM}.
 #' @param groupX A vector of group indicator variables, which allows the variance partitioning to be done for groups of covariates (including the intercept) i.e., calculating how much of the total variation does a certain subset of the covariates explain. The length of \code{groupX} must be equal to \code{ncol(object$betas)}. Defaults to \code{NULL}, in which case all the covariates are treated as a single group.
@@ -15,7 +15,7 @@
 #'
 #' where \eqn{g(.)} is a known link function, \eqn{x_i^\top\beta_j} is the component of the linear predictor due to the explained covariates (however they end up being included in the CBFM fit), and \eqn{b_i^\top a_j} is the component due to the inclusion of basis functions noting it may include spatial, temporal, and/or spatio-temporal basis functions. Note for zero-inflated distributions, this \eqn{\mu_{ij}} is the mean of the count component i.e., the variance partitioning does not take into account/is not applied to covariates used in modeling the probability of zero-inflation.
 #'     
-#' For each species, variation partitioning is performed by calculating the variance due to each component in \eqn{\eta_{ij}}, and then rescaling them to ensure they sum to one. The general details of this type of variation partitioning is given in Ovaskainen et al., (2017) and Bjork et al. (2018) among others for latent variables models. Note the variance due the basis functions is itself broken up into components depending on what basis functions are included in the model. For example, if a fitted \code{CBFM} object included basis functions for \code{B_space} and \code{B_space} (but not \code{B_spacetime}), then the variance is partitioned into separate components for the spatial and temporal basis functions.
+#' For each species, variation partitioning is performed by calculating the variance due to each component in \eqn{\eta_{ij}}, and then rescaling them to ensure they sum to one. The general details of this type of variation partitioning is given in Ovaskainen et al., (2017) and Bjork et al. (2018) among others for latent variables models. Note the variance due the basis functions is itself broken up into components depending on what basis functions are included in the model. For example, if a fitted \code{CBFM} object included basis functions for \code{B_space} and \code{B_space} (but not \code{B_spacetime}), then the variance is partitioned into separate components for the spatial and temporal basis functions (Hui et al., 2023)
 #'
 #' If \code{groupX} is supplied, the variance due to the included covariates is done based on subsets of covariates (including the intercept) as identified by \code{groupX}, and then rescaled correspondingly. This is useful if one was to, for example, quantify the proportion of variation in each species which is explained by each specific environmental covariate and there are multiple terms associated with each covariate e.g., due to polynomial or smoothing terms.  
 #'
@@ -40,6 +40,8 @@
 #' 
 #' @references 
 #' Bjork, J. R., Hui, F. K. C., O'Hara, R. B., and Montoya, J. M. (2018). Uncovering the drivers of host-associated microbiota with joint species distribution modelling. Molecular Ecology, 27, 2714-2724.
+#' 
+#' Hui, F. K. C., Warton, D. I., Foster, S. D., & Haak, C. R. (2023). Spatiotemporal joint species distribution modelling: A basis function approach. Methods in Ecology and Evolution, 14(8), 2150-2164.
 #' 
 #' Ovaskainen, O., Tikhonov, G., Norberg, A., Guillaume Blanchet, F., Duan, L., Dunson, D., and Abrego, N. (2017). How to make more out of community data? A conceptual framework and its implementation as models and software. Ecology Letters, 20, 561-576.
 #' 

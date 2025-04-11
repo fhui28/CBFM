@@ -38,7 +38,7 @@ A list with the following items:
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
 
-Calculates observational unit-specific scores and corresponding species-specific loadings from a fitted \code{CBFM} object, potentially at new values of the basis functions. which in turn can be used as a means of spatio-temporal ordination.
+Calculates observational unit-specific scores and corresponding species-specific loadings from a fitted \code{CBFM} object, potentially at new values of the basis functions. which in turn can be used as a means of spatio-temporal ordination; see Hui et al., (2023) for more details.
 }
 \details{
 For a CBFM, one way of performing spatio-temporal ordination is as follows. For observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, recall for the purposes of this package, the CBFM is defined by the mean model:
@@ -47,7 +47,7 @@ For a CBFM, one way of performing spatio-temporal ordination is as follows. For 
 
 where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial and/or temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}.
 
-Consider now the estimates values of \eqn{b_i^\top a_j} and construct an \eqn{N \times m} matrix of estimated linear predictors with this. We can then construct an ordination from this matrix, albeit in a bit of an ad-hoc manner, by performing a singular value decomposition to obtain matrices of left and and right singular vectors, along with a diagonal matrix of singular values in descending order. The left singular vectors correspond to observational unit-specific scores (similar to latent variables from an latent variable model; see for example Hui et al., 2015, Warton et al., 2015, Niku et al., 2019, van der Veen, 2021) while the right singular vectors correspond to the corresponding species-specific loadings (similar to latent variables from an latent variable model). By taking only the first \code{num_comp} of the left and right singular vectors and scaling according to the singular values, we can then use these as a means of spatial and/or temporal ordination.
+Consider now the estimates values of \eqn{b_i^\top a_j} and construct an \eqn{N \times m} matrix of estimated linear predictors with this. We can then construct an ordination from this matrix, albeit in a bit of an ad-hoc manner, by performing a singular value decomposition to obtain matrices of left and and right singular vectors, along with a diagonal matrix of singular values in descending order. The left singular vectors correspond to observational unit-specific scores (similar to latent variables from an latent variable model; see for example Hui et al., 2015, Warton et al., 2015, Niku et al., 2019, van der Veen, 2021) while the right singular vectors correspond to the corresponding species-specific loadings (similar to latent variables from an latent variable model). By taking only the first \code{num_comp} of the left and right singular vectors and scaling according to the singular values, we can then use these as a means of spatial and/or temporal ordination (Hui et al., 2023)
 
 The scores and loadings and thus ordinations can also be constructed at a new set of observational units. This is achieved by supplying the values of \code{new_B_space/new_B_time/new_B_spacetime} as appropriate, similar to how \code{\link[=predict.CBFM]{predict.CBFM()}} functions. Ordinations at new observational units are often desired for spatial temporal ordinations e.g., if the ordination is to be constructed and visualized on a grid of spatial locations, and potentially over time.
 
@@ -136,6 +136,8 @@ theme_bw()
 }
 \references{
 Hui, F. K. C., Taskinen, S., Pledger, S., Foster, S. D., and Warton, D. I. (2015). Model‐based approaches to unconstrained ordination. Methods in Ecology and Evolution, 6, 399-411.
+
+Hui, F. K. C., Warton, D. I., Foster, S. D., & Haak, C. R. (2023). Spatiotemporal joint species distribution modelling: A basis function approach. Methods in Ecology and Evolution, 14(8), 2150-2164.
 
 Niku, J., Hui, F. K. C., Taskinen, S., and Warton, D. I. (2019). gllvm: Fast analysis of multivariate abundance data with generalized linear latent variable models in R. Methods in Ecology and Evolution, 10, 2173-2182.
 
