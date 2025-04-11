@@ -291,14 +291,14 @@
      if(is.null(control$initial_betas_dampen))
           control$initial_betas_dampen <- 1
      if(!is.null(control$initial_betas_dampen)) {
-        if(!(length(control$initial_betas_dampen) %in% c(1, num_spp)))
-            stop("control$initial_betas_dampen should either be a scalar or a vector equal to the number of species i.e., ncol(y).")
+        if(!(length(control$initial_betas_dampen) %in% c(1)))
+            stop("control$initial_betas_dampen should either be a scalar.") # or a vector equal to the number of species i.e., ncol(y).
         }
      if(is.null(control$subsequent_betas_dampen))
           control$subsequent_betas_dampen <- 0.25
      if(!is.null(control$subsequent_betas_dampen)) {
-        if(!(length(control$subsequent_betas_dampen) %in% c(1, num_spp)))
-            stop("control$subsequent_betas_dampen should either be a scalar or a vector equal to the number of species i.e., ncol(y).")
+        if(!(length(control$subsequent_betas_dampen) %in% c(1)))
+            stop("control$subsequent_betas_dampen should either be a scalar.") #or a vector equal to the number of species i.e., ncol(y).
         }
      
      if(nonzeromean_B_space == TRUE & which_B_used[1] == 0)
