@@ -312,8 +312,12 @@
           control$convergence_type <- "parameters_MSE"
      if(is.null(control$gam_method))
           control$gam_method <- "REML"
+     if(is.null(control$initial_ridge))
+          control$initial_ridge <- 0
      if(is.null(control$ridge))
           control$ridge <- 0
+     if(is.null(control$initial_ziridge))
+          control$initial_ziridge <- 0
      if(is.null(control$ziridge))
           control$ziridge <- 0
      if(is.null(control$trace))
