@@ -272,15 +272,15 @@ function() {
 
 
 function() {
-     y = matrix(dat_train$y)
-     formula = ~ fac_ord
+     y = simy_train
+     formula = useformula
      data = dat_train
      ziformula <- NULL
-     B_space = MM_train
+     B_space = train_basisfunctions
      B_time = NULL
      B_spacetime = NULL
-     family = gaussian() 
-     ncores = 8
+     family = nb2() 
+     ncores = detectCores() - 2
      control = list(trace = 1)
      offset = NULL
      gamma = 1
@@ -296,9 +296,11 @@ function() {
      ziselect = FALSE
      start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     G_control = list(structure = c("homogeneous"))
-     Sigma_control = list(custom_space = Sigma)
+     G_control = list()
+     Sigma_control = list()
      k_check_control = list(subsample = 5000, n.rep = 400)
+     
+     
      }
 
 
