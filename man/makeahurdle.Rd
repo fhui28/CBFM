@@ -106,10 +106,11 @@ simy_pa <- matrix(rbinom(num_sites * num_spp, size = 1,
 prob = plogis(eta)), nrow = num_sites)
 
 # Now simulate spatial count data from a truncated Poisson distribution
+# Note the use of sapply as ztpR behaves oddly when using vectorized arugments
 eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts_ztp,spp_slopes_ztp)) + 
 tcrossprod(true_lvs_ztp, spp_loadings_ztp)
 ztpR <- trun.r(par = 0, family = "PO", type = "left") 
-simy_ztp <- matrix(ztpR(num_sites * num_spp, mu = exp(eta)), nrow = num_sites)
+simy_ztp <- matrix(sapply(1:(num_sites*num_spp), function(x) ztpR(1, mu = exp(eta[x]))), nrow = num_sites)
 
 # Spatial multivariate count data from a hurdle Poisson model is then the product of the two
 simy <- simy_pa *  simy_ztp
