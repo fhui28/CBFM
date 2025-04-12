@@ -104,7 +104,7 @@
 #' as.matrix
 #' 
 #' # Simulate latent variable components
-#' true_lvs <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
+#' true_lvs_pa <- grf(grid = cbind(xy$x, xy$y), nsim = 2, cov.model = "exponential",
 #' cov.pars = c(1, 2))$data %>%
 #'      as.matrix
 #' spp_loadings_pa <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp)

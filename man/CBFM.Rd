@@ -35,7 +35,7 @@ CBFM(
   control = list(maxit = 100, inner_maxit = 1, optim_lower = -50, optim_upper = 50,
     convergence_type = "parameters_MSE", tol = 1e-04, final_maxit = 100,
     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, gam_method = "REML", seed =
-    NULL, ridge = 0, ziridge = 0, trace = 0),
+    NULL, initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0, trace = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "REML", trace = 0,
     custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
   G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95,
@@ -118,7 +118,9 @@ Although the first option is employed as a default, the second and third choices
 Note this argument \emph{only} comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. }
 \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in \code{\link[mgcv:gam]{mgcv::gam()}} for the available options. In fact, note \code{\link[mgcv:gam]{mgcv::gam()}} defaults to using "GCV.Cp", which is based on generalized cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
+\item{initial_ridge: }{A ridge parameter that can be included to act as a ridge penalty when using CBFM's default approach to constructing initial/starting values of the regression coefficients related to the covariates. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{formula} and \code{data} arguments. \emph{Currently, no check is made to ensure the length is compatible with this!}}
 \item{ridge: }{A ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{formula} and \code{data} arguments. \emph{Currently, no check is made to ensure the length is compatible with this!}}
+\item{initial_ziridge: }{A ridge parameter that can be included to act as a ridge penalty when using CBFM's default approach to constructing initial/starting values of the regression coefficients related to the covariates for modeling the zero-inflation probabilities. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{ziformula} and \code{data} arguments. \emph{Currently, no check is made to ensure the length is compatible with this!}}
 \item{ziridge: }{A ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates for modeling the zero-inflation probabilities. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{ziformula} and \code{data} arguments. \emph{Currently, no check is made to ensure the length is compatible with this!}}
 \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
 }}
@@ -1086,9 +1088,6 @@ geom_abline(intercept = 0, slope = 1, linetype = 2) +
 labs(x = "Stacked SDM", y = "CBFM", main = "Deviance") +
 theme_bw()
 
-rm(list = ls())
-
-
 
 ##------------------------------
 ## **Example 1h: Repeat Example 1a but illustrate applications to zero-truncated count data** 
@@ -1101,16 +1100,20 @@ gen.trun(0, family = "NBI")
 set.seed(2021)
 num_sites <- 1000 # 500 (units) sites for training set + 500 sites for testing.
 num_spp <- 50 # Number of species
-num_X <- 4 # Number of regression slope
+num_X <- 4 # Number of regression slopes
+
 spp_slopes <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
-spp_intercepts <- runif(num_spp, -2, 0)
+spp_intercepts <- runif(num_spp, -1, 1)
 
 # Simulate spatial coordinates and environmental covariate components
 # We will use this information in later examples as well
 xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
-X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4))
+X <- mvtnorm::rmvnorm(num_sites, mean = rep(0,4)) 
 colnames(X) <- c("temp", "depth", "chla", "O2")
 dat <- data.frame(xy, X)
+mm <- model.matrix(~ temp + depth + chla + O2 - 1, data = dat) \%>\% 
+scale \%>\% 
+as.matrix
 
 # Simulate latent variable component
 # We will use this information in later examples as well
@@ -1120,15 +1123,16 @@ cov.pars = c(1, 2))$data \%>\%
 spp_loadings <- matrix(runif(num_spp * 2, -1, 1), nrow = num_spp) 
 set.seed(NULL)
 
-# Simulate spatial multivariate abundance data (presence-absence)
-# We will use this information in later examples as well
+# Simulate spatial multivariate abundance data
+# Note the double loop is needed as rNBItr behaves oddly when using vectorized arugments
 eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts,spp_slopes)) + 
 tcrossprod(true_lvs, spp_loadings)
-
 spp_dispersion <- runif(num_spp)
-# Simulate spatial multivariate abundance data
-simy <- matrix(rNBItr(num_sites * num_spp, mu = exp(eta), sigma = 
-matrix(spp_dispersion, num_sites, num_spp, byrow = TRUE)), num_sites, num_spp)
+simy <- eta*0 
+for(i in 1:num_sites) {
+     for(j in 1:num_spp) {
+          simy[i,j] <- rNBItr(1, mu = exp(eta[i,j]), sigma = spp_dispersion[j])
+     } }
 
 # Form training and test sets
 dat_train <- dat[1:500,]
