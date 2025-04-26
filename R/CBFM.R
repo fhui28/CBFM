@@ -526,7 +526,7 @@
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
 #' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train,,
-#' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
+#' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1, initial_ridge = 0.2))
 #' toc <- proc.time()
 #' toc - tic
 #' 
@@ -1876,6 +1876,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      initfit_fn <- function(j, formula) {
           tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
           Hmat <- diag(control$initial_ridge+1e-15, nrow = num_X)
+          if(formula == ~1)
+               Hmat <- diag(control$initial_ridge+1e-15, nrow = 1)
           
                     
           if(family$family %in% c("binomial","gaussian","poisson","Gamma","negative.binomial","Beta","tweedie")) {

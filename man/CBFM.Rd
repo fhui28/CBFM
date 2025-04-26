@@ -443,7 +443,7 @@ as.matrix \%>\%
 tic <- proc.time()
 useformula <- ~ temp + depth + chla + O2
 fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train,,
-B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
+B_space = train_basisfunctions, family = binomial(), control = list(trace = 1, initial_ridge = 0.2))
 toc <- proc.time()
 toc - tic
 
