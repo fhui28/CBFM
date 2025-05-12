@@ -354,8 +354,6 @@
 #' 3) \code{bottomright}, which is a matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.
 #' 
 #' Please use the [summary.CBFM()] function to obtain standard errors and confidence interval limits in a (slightly) more user-friendly form.}
-
-#' \item{time_taken: }{The time taken to run the PQL estimation algorithm, in seconds. This is calculated simply using differences in calls of [base::proc.time()].}
 #' 
 #' 
 #' @details # Warning
@@ -2428,8 +2426,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      ##----------------
      ## Run PQL algorithm
      ##----------------
-     tic <- proc.time()
-     counter <- 0
+     counter <- 0 
      diff <- 10
      converged <- FALSE
      
@@ -3129,7 +3126,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           cw_logLik <- new_logLik
           counter <- counter + 1
           }
-     toc <- proc.time()
      gc()
 
      
@@ -3636,7 +3632,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           out_CBFM[["mean_B_spacetime"]] <- NULL
           
      
-     out_CBFM$time_taken <- toc[3] - tic[3] 
      class(out_CBFM) <- "CBFM"
      return(out_CBFM)
      }
