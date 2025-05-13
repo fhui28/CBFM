@@ -26,7 +26,7 @@ library(ROCR)
 library(sp)
 library(geoR)
 library(tidyverse)
-library(ggmatplot)
+#library(ggmatplot)
 library(doParallel)
 library(foreach)
 registerDoParallel(cores = detectCores()-2)
@@ -49,8 +49,8 @@ xy <- data.frame(x = runif(num_sites, 0, 5), y = runif(num_sites, 0, 5))
 X <- cbind(rmvnorm(num_sites, mean = rep(0,4)), rlnorm(n = num_sites, meanlog = 2, sdlog = 2))
 colnames(X) <- c("temp", "depth", "chla", "O2", "areaswept")
 dat <- data.frame(xy, X)
-useformula <- ~ temp + depth + chla + O2 + offset(log(areaswept))
-+
+useformula <- ~ temp + depth + chla + O2 
+
 # Set up spatial basis functions for CBFM 
 num_basisfunctions <- 25 # Number of spatial basis functions to use
 basisfunctions <- mrts(dat[,c("x","y")], num_basisfunctions) %>%
@@ -61,7 +61,7 @@ true_Sigma_space <- rWishart(1, num_basisfunctions+1, diag(x = 0.1, nrow = num_b
 true_G_space <- rWishart(1, num_spp+1, diag(x = 0.1, nrow = num_spp))[,,1] %>%
 cov2cor
 
-simy <- create_CBFM_life(family = binomial(), 
+simy <- create_CBFM_life(family = nb2(), 
                          formula = useformula, 
                          data = dat,
                          B_space = basisfunctions, 
@@ -281,7 +281,7 @@ function() {
      B_spacetime = NULL
      family = nb2() 
      ncores = detectCores() - 2
-     control = list(trace = 1)
+     control = list(trace = 1, initial_ridge = 0.5)
      offset = NULL
      gamma = 1
      zigamma = 1

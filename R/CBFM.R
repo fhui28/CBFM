@@ -1873,9 +1873,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
      initfit_fn <- function(j, formula) {
           tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
-          Hmat <- diag(control$initial_ridge+1e-15, nrow = num_X)
+          Hmat <- diag(x = control$initial_ridge+1e-15, nrow = num_X)
           if(formula == ~1)
-               Hmat <- diag(control$initial_ridge+1e-15, nrow = 1)
+               control$initial_ridge <- 0 #' There is a bug with mgcv in the intercept-only model when H is supplied e.g., for nb()
           
                     
           if(family$family %in% c("binomial","gaussian","poisson","Gamma","negative.binomial","Beta","tweedie")) {
@@ -2026,7 +2026,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
                     inner_inner_counter <- inner_inner_counter + 1
-                    #print(new_inner_logL)
                     }
                
                fit0$logLik <- new_inner_logL
@@ -2141,7 +2140,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
                     inner_inner_counter <- inner_inner_counter + 1
-                    #print(new_inner_logL)
                     }
                
                fit0$logLik <- new_inner_logL
@@ -2272,7 +2270,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
                     inner_inner_counter <- inner_inner_counter + 1
-                    #print(new_inner_logL)
                     }
                
                fit0$logLik <- new_inner_logL
