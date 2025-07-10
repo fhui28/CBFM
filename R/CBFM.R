@@ -92,7 +92,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
-#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.*} 
+#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing. Also, please avoid using rank = \"full\" when deploying the simple method as most likely will not work.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -119,7 +119,7 @@
 
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
-#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing.*} 
+#' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing. Also, please avoid using rank = \"full\" when deploying the simple method as most likely will not work.*} 
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -523,8 +523,8 @@
 #' # Fit CBFM 
 #' tic <- proc.time()
 #' useformula <- ~ temp + depth + chla + O2
-#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train,,
-#' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1, initial_ridge = 0.2))
+#' fitcbfm <- CBFM(y = simy_train, formula = useformula, data = dat_train,
+#' B_space = train_basisfunctions, family = binomial(), control = list(trace = 1))
 #' toc <- proc.time()
 #' toc - tic
 #' 
