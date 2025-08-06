@@ -10,10 +10,10 @@ The main manuscript introducing CBFMs as a method is available at [here](https:/
 
 # Installation
 
-Currently, `CBFM` is available and can be installed from github with the help of `devtools` package using:
+Currently, `CBFM` is available and can be installed from github with the help of `pak` package using:
 
 ```         
-devtools::install_github("fhui28/CBFM")
+pak::pkg_install("fhui28/CBFM")
 ```
 
 Alternatively, or if the above does not work, you may download a (supposedly) stable release of `CBFM` by choosing the latest release on the right hand side of this Github webpage, and install it manually on your machine.
@@ -34,4 +34,4 @@ If you find something that looks like a bug/issue, please let us know report it,
 
 Thanks heaps!
 
-Finally, please note Github issues is a place to post any bugs/issues/unusual behavior in relation to the package. **Please try to refrain from posting any feature requests of general statistical modeling questions**. They will very likely be ignored and/or deleted without prior consent. You are probably better off emailing one of the package maintainers instead. Much appreciated!
+Finally, please note Github issues is a place to post any bugs/issues/unusual behavior in relation to the package. *If you have any feature requests of general statistical modeling questions, you are probably better off emailing one of the package maintainers instead.* Much appreciated!
