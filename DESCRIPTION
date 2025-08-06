@@ -1,13 +1,13 @@
 Type: Package
 Package: CBFM
-Title: Community-level Basis Function Modeling (CBFM)
+Title: Community-Level Basis Function Modeling (CBFM)
 Version: 0.1
 Date: 2025-09-01
 Authors@R: c(
     person("Francis K.C.", "Hui", , "fhui28@gmail.com", role = c("aut", "cre")),
     person("Chris", "Haak", role = "aut")
   )
-Maintainer: Francis Hui <fhui28@gmail.com>
+Maintainer: Francis K.C. Hui <fhui28@gmail.com>
 Description: Spatio-temporal joint species distribution modeling via
     community-level basis functions.  CBFMs are built on the idea of
     fixed-rank kriging (FRK), where spatial and/or temporally indexed
@@ -55,6 +55,7 @@ Suggests:
     gamlss,
     geoR,
     Hmsc,
+    knitr, 
     mvabund,
     mvtnorm,
     pscl,
