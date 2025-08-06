@@ -1,21 +1,31 @@
-Package: CBFM
 Type: Package
+Package: CBFM
 Title: Community-level Basis Function Modeling (CBFM)
 Version: 0.1
 Date: 2024-12-01
-Authors@R: c(person(given = "Francis K.C.",
-                    family = "Hui", 
-                    role = c("aut", "cre"), 
-                    email = "fhui28@gmail.com"),
-             person(given = "Chris", 
-                    family = "Haak", 
-                    role = "aut"))
+Authors@R: c(
+    person("Francis K.C.", "Hui", , "fhui28@gmail.com", role = c("aut", "cre")),
+    person("Chris", "Haak", role = "aut")
+  )
 Maintainer: Francis Hui <fhui28@gmail.com>
-Description: Spatio-temporal joint species distribution modeling via community-level basis functions. 
-    CBFMs are built on the idea of fixed-rank kriging (FRK), where spatial and/or temporally indexed basis functions are included to account for spatio-temporal correlations within and between species. 
-    The approach provides an alternative to the popular and powerful latent variable approach for joint species distribution modeling in community ecology, with the main advantage being that CBFMs can be computationally more efficient and scalable to fit. 
-    This is because, by using a basis function approach, CBFMs can be set up as a type of generalized additive model (GAM), from which we can leverage from existing methods developed for GAMs.
+Description: Spatio-temporal joint species distribution modeling via
+    community-level basis functions.  CBFMs are built on the idea of
+    fixed-rank kriging (FRK), where spatial and/or temporally indexed
+    basis functions are included to account for spatio-temporal
+    correlations within and between species.  The approach provides an
+    alternative to the popular and powerful latent variable approach for
+    joint species distribution modeling in community ecology, with the
+    main advantage being that CBFMs can be computationally more efficient
+    and scalable to fit.  This is because, by using a basis function
+    approach, CBFMs can be set up as a type of generalized additive model
+    (GAM), from which we can leverage from existing methods developed for
+    GAMs.
 License: GPL-2
+URL: https://github.com/fhui28/CBFM
+BugReports: https://github.com/fhui28/CBFM/issues
+Depends: 
+    R (>= 4.1.0),
+    TMB
 Imports: 
     abind,
     compiler,
@@ -36,14 +46,8 @@ Imports:
     stats,
     tdigest,
     tweedie,
-Depends: R (>= 4.1.0), TMB
-Encoding: UTF-8
-RoxygenNote: 7.3.2
-NeedsCompilation: no
-URL: https://github.com/fhui28/CBFM
-BugReports: https://github.com/fhui28/CBFM/issues
+    utils
 Suggests:
-    spelling, 
     autoFRK,
     corrplot,
     devtools,
@@ -51,16 +55,20 @@ Suggests:
     gamlss,
     geoR,
     Hmsc,
-    knitr,
     mvabund,
     mvtnorm,
     pscl,
-    rmarkdown,
     ROCR,
     sp,
-    tidyverse,
-    statmod
-VignetteBuilder: knitr
-Roxygen: list(markdown = FALSE)
-RdMacros: lifecycle
+    spelling,
+    statmod,
+    tidyverse
+VignetteBuilder: 
+    knitr
+RdMacros: 
+    lifecycle
+Encoding: UTF-8
 Language: en-US
+NeedsCompilation: no
+Roxygen: list(markdown = FALSE)
+RoxygenNote: 7.3.2

@@ -9,3 +9,4 @@
 ^.github
 ^paper$
 DiscussionwithChris_CBFMmultipleSigmamatrices.pdf
+^dev$
