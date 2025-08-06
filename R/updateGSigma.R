@@ -347,11 +347,16 @@
                             expx <- mgcv::notExp(x)
                             out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
                             out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_space))$mod
-                            return(out)
+                            return(as.vector(-out))
                             }
                         
-                        update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                        new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                        #update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                        #new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                        update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                                               fn = fn, 
+                                               control = list(trace = 0, maxit = 1000), 
+                                               method = "BFGS")
+                        new_lambda <- 1/mgcv::notExp(update_lambda$par)
                         }
                     if(is.list(Sigma_control[["custom_space"]])) {
                          fn_lambda <- function(x) { 
@@ -364,7 +369,10 @@
                               out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_space))$mod
                               return(as.vector(-out))
                               }
-                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                                                fn = fn_lambda, 
+                                                control = list(trace = 0, maxit = 1000), 
+                                                method = "BFGS")
                          #update_lambda <- nlminb(start = mgcv::notLog(1/lambdas), objective = fn_lambda, control = list(trace = 0, maxit = 1000))
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
@@ -377,11 +385,16 @@
                               expx <- mgcv::notExp(x)
                               out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
                               out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_time))$mod
-                              return(out)
+                              return(as.vector(-out))
                               }
                     
-                         update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                         new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         #update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                         #new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                                                fn = fn, 
+                                                control = list(trace = 0, maxit = 1000), 
+                                                method = "BFGS")
+                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     if(is.list(Sigma_control[["custom_time"]])) {
                          
@@ -395,7 +408,10 @@
                               out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_time))$mod
                               return(as.vector(-out))
                               }
-                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                                                fn = fn_lambda, 
+                                                control = list(trace = 0, maxit = 1000), 
+                                                method = "BFGS")
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
@@ -407,11 +423,16 @@
                               expx <- mgcv::notExp(x)
                               out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
                               out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_spacetime))$mod
-                              return(out)
+                              return(as.vector(-out))
                               }
                          
-                         update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                         new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         #update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
+                         #new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                                                fn = fn, 
+                                                control = list(trace = 0, maxit = 1000), 
+                                                method = "BFGS")
+                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     if(is.list(Sigma_control[["custom_spacetime"]])) {
                          
@@ -426,7 +447,10 @@
                               return(as.vector(-out))
                               }
                          
-                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), fn = fn_lambda, control = list(trace = 0, maxit = 1000), method = "BFGS")
+                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                                                fn = fn_lambda, 
+                                                control = list(trace = 0, maxit = 1000),
+                                                method = "BFGS")
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
