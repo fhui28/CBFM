@@ -225,23 +225,30 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 #' Custom testing
 ##----------------------------------
 function() {
-     y = Y[sel_training_units,c(1,5), drop=FALSE]
-     formula = 
-          ~ offset(log(AREA_SWEPT_EST)) + 
-          SOURCE + 
-          s(BOTTEMP_DOPGLO_monthly_MEAN, bs="tp", m=2, k=5) +
-          s(BOTSALIN_DOPGLO_monthly_MEAN, bs="tp", m=2, k=5) +
-          s(logDEPTH_1km, bs="tp", m=2, k=5) +
-          s(logTideVel_max, bs="tp", m=2, k=5) +
-          s(logBPI_1km, bs="tp", m=2, k=5) +
-          s(logCOMPLEX_1km, bs="tp", m=2, k=5) +
-          s(GRAIN_1km, bs="tp", m=2, k=5)
-     ziformula <- NULL
+     y = Y[sel_training_units, test_spp, drop = FALSE]
      data = X[sel_training_units,]
-     family =  CBFM::nb2() 
-     B_space = NULL
-     B_time = NULL
-     B_spacetime = MM_train_year_gp
+     formula = ~ #s(BOTTEMP_DOPGLO_12month_MAX, m=2, k=5) + 
+          #s(BOTTEMP_DOPGLO_12month_MIN, m=2, k=5) + 
+          s(BOTSALIN_DOPGLO_12month_MEAN, m=2, k=5) + 
+          s(logSTRESS_Q95_YEAR, m=2, k=5) + 
+          s(BOTVEL_DOP_Q95, m=2, k=5) + 
+          s(TideVel_max, m=2, k=5) + 
+          s(DEPTH_1km, m=2, k=5) + 
+          s(logCOMPLEX_1km, m=2, k=5) + 
+          #s(logBPI_1km, m=2, k=5) + 
+          s(GRAIN_1km, m=2, k=5)
+     B_space = MM_train_source_by
+     B_time = MM_train_space
+     ncores = 5
+     family = nb2() 
+     control = list(trace = 1, tol = 1e-5, initial_betas_dampen = 0.25, subsequent_betas_dampen = 0.25)
+     G_control = list(rank = c("full","full"), 
+                      structure = c("unstructured","unstructured"))
+     Sigma_control = list(rank = c("full","full"), 
+                          custom_space = Sigma_source_by,
+                          custom_time = Sigma_space)
+     ziformula <- NULL
+     B_spacetime = NULL
      knots = NULL
      ziknots = NULL
      offset = NULL
@@ -256,15 +263,8 @@ function() {
      stderrors = TRUE
      select = FALSE
      ziselect = FALSE
-     start_params = list(betas = (sapply(GAMs_simple_yeargp_ident[c(1,5)], coef)[1:33,]*0.1) %>% t,
-                         dispparam = 1/sapply(GAMs_simple_yeargp_ident[c(1,5)], function(x) x$family$getTheta(TRUE)))
-     #start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
+     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
-     control = list(trace = 1, maxit=2, final_maxit=100, initial_betas_dampen = c(1, 1)) 
-     G_control = list(rank = c("full"), structure = c("identity"))
-     Sigma_control = list(rank = c("full"), 
-                          custom_spacetime = Sigma_year_gp, 
-                          control = list(trace = 1))     
      k_check_control = list(subsample = 5000, n.rep = 400)
      
      
