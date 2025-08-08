@@ -12,3 +12,4 @@ DiscussionwithChris_CBFMmultipleSigmamatrices.pdf
 ^dev$
 ^revdep$
 ^cran-comments\.md$
+^CRAN-SUBMISSION$
