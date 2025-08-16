@@ -242,7 +242,7 @@ function() {
      gamma = 1
      zigamma = 1
      trial_size = 1
-     nonzeromean_B_space = FALSE
+     nonzeromean_B_space = TRUE
      nonzeromean_B_time = FALSE
      nonzeromean_B_spacetime = FALSE
      dofit = TRUE
