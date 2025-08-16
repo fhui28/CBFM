@@ -2967,13 +2967,14 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     rhs <- as.vector(t(new_fit_CBFM_ptest$basis_effects_mat[, three_num_B[1]*(j1>1) + three_num_B[2]*(j1>2) + 1:three_num_B[j1], drop = FALSE])) 
                     
                     new_nonzeromean_current <- as.vector(Matrix::solve(a = MM %*% onemIq, b = MM %*% rhs))
-                    assign(three_mean_options[j1], new_nonzeromean_current)
+                    new_fit_CBFM_ptest[[ three_mean_options[j1] ]] <- new_nonzeromean_current
                     rm(rhs, MM, onemIq, new_nonzeromean_current)
                     }
                }
           
           rm(three_nonzeromean_options, three_mean_options, three_LoadingnuggetSigma_options, three_LoadingnuggetG_options, three_num_B)
-               
+
+                         
           ##-------------------------
           ## Update between spp correlation matrix G. First assume unstructured, then cov2cor, then update loading and nugget. 
           ##-------------------------
