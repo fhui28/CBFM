@@ -1,12 +1,5 @@
 ## See github issues for outstanding things to do!!!
 
-## GENERAL APPROACH TO MODIFYING PACKAGE
-## 1. Do all changes
-## 2. Delete all Rd files in man (but not figures!), the NAMESPACE file, and any compiled C++ files
-## 3. Check package
-##4. Build (optional)
-## 5. Push to github
-
 #Removed from DESCRIPTION since we now turn off compilation of the TMB C++ files [learning from how James Thorson does it with VAST!]
 LinkingTo: 
     TMB,
@@ -227,28 +220,21 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 function() {
      y = Y[sel_training_units, test_spp, drop = FALSE]
      data = X[sel_training_units,]
-     formula = ~ #s(BOTTEMP_DOPGLO_12month_MAX, m=2, k=5) + 
-          #s(BOTTEMP_DOPGLO_12month_MIN, m=2, k=5) + 
-          s(BOTSALIN_DOPGLO_12month_MEAN, m=2, k=5) + 
-          s(logSTRESS_Q95_YEAR, m=2, k=5) + 
-          s(BOTVEL_DOP_Q95, m=2, k=5) + 
-          s(TideVel_max, m=2, k=5) + 
-          s(DEPTH_1km, m=2, k=5) + 
-          s(logCOMPLEX_1km, m=2, k=5) + 
-          #s(logBPI_1km, m=2, k=5) + 
-          s(GRAIN_1km, m=2, k=5)
-     B_space = MM_train_source_by
-     B_time = MM_train_space
-     ncores = 5
-     family = nb2() 
-     control = list(trace = 1, tol = 1e-5, initial_betas_dampen = 0.25, subsequent_betas_dampen = 0.25)
-     G_control = list(rank = c("full","full"), 
-                      structure = c("unstructured","unstructured"))
-     Sigma_control = list(rank = c("full","full"), 
-                          custom_space = Sigma_source_by,
-                          custom_time = Sigma_space)
+     formula = ~ offset(log(AREA_SWEPT_EST)) +
+          s(BOTTEMP_DOPGLO_monthly_MEAN, bs="tp", m=2, k=4) +
+          s(BOTSALIN_DOPGLO_monthly_MEAN, bs="tp", m=2, k=4) 
      ziformula <- NULL
+     B_space = MM_train_source_reseas
+     B_time = NULL
      B_spacetime = NULL
+     ncores = 8
+     family = nb2() 
+     start_params = list(custom_space_lambdas = 1e-1)
+     control = list(initial_ridge = 0.1,
+                    #ridge = 0.00001,
+                    trace = 1) #, initial_betas_dampen = c(#G_control = list(rank = c("full"), structure = c("homogeneous")),
+     G_control = list(rank = c("full"), structure = c("identity")) #custom_time = G_phylo),
+     Sigma_control = list(rank = c("full"), custom_space = Sigma_source_reseas)
      knots = NULL
      ziknots = NULL
      offset = NULL
@@ -263,11 +249,9 @@ function() {
      stderrors = TRUE
      select = FALSE
      ziselect = FALSE
-     start_params = list(betas = NULL, zibetas = NULL, basis_effects_mat = NULL, dispparam = NULL, powerparam = NULL)
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      k_check_control = list(subsample = 5000, n.rep = 400)
-     
-     
+
      }
 
 
@@ -302,8 +286,6 @@ function() {
      
      
      }
-
-
 
 function() {
      Sigmainv = new_LoadingnuggetSigma_spacetime$invcov
