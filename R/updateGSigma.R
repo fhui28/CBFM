@@ -3,8 +3,9 @@
 
 #' @noRd
 
-.update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, zioffset = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,
-                        trial_size, family, G_control, use_rank_element, return_correlation) {
+.update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, zioffset = NULL, 
+                         y_vec, linpred_vec, dispparam, powerparam, zibetas,
+                         trial_size, family, G_control, use_rank_element, return_correlation) {
      
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
@@ -235,8 +236,9 @@
 
 #' @noRd
 
-.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, zioffset = NULL, y_vec, linpred_vec, dispparam, powerparam, zibetas,
-                            trial_size, family, Sigma_control, estimate_lambda, which_B) {
+.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, zioffset = NULL, 
+                             y_vec, linpred_vec, dispparam, powerparam, zibetas,
+                             trial_size, family, Sigma_control, estimate_lambda, which_B) {
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
@@ -343,10 +345,11 @@
                     if(is.matrix(Sigma_control[["custom_space"]])) {
                         Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
                         trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
+                        KronGinvSigmainv <- kronecker(Ginv, Sigmainv_space)
                         fn <- function(x) { 
                             expx <- mgcv::notExp(x)
                             out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                            out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_space))$mod
+                            out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
                             return(as.vector(-out))
                             }
                         
@@ -381,10 +384,11 @@
                     if(is.matrix(Sigma_control[["custom_time"]])) {
                          Sigmainv_time <- .pinv(Sigma_control[["custom_time"]])
                          trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
+                         KronGinvSigmainv <- kronecker(Ginv, Sigmainv_time)
                          fn <- function(x) { 
                               expx <- mgcv::notExp(x)
                               out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                              out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_time))$mod
+                              out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
                               return(as.vector(-out))
                               }
                     
@@ -419,10 +423,11 @@
                     if(is.matrix(Sigma_control[["custom_spacetime"]])) {
                          Sigmainv_spacetime <- .pinv(Sigma_control[["custom_spacetime"]])
                          trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
+                         KronGinvSigmainv <- kronecker(Ginv, Sigmainv_spacetime)
                          fn <- function(x) { 
                               expx <- mgcv::notExp(x)
                               out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                              out <- out - 0.5*determinant(BtKB + expx*kronecker(Ginv, Sigmainv_spacetime))$mod
+                              out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
                               return(as.vector(-out))
                               }
                          
@@ -508,7 +513,8 @@
      if(estimate_lambda_not_Sigma) {
           if(which_B == 1) {
                if(is.matrix(Sigma_control[["custom_space"]]))
-                    out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
+                                cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
                if(is.list(Sigma_control[["custom_space"]]))
                out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
                            invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / Sigma[x])) )
@@ -516,7 +522,8 @@
                }
           if(which_B == 2) {
                if(is.matrix(Sigma_control[["custom_time"]]))
-                    out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
+                                cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
                if(is.list(Sigma_control[["custom_time"]]))
                     out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
                                 invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / Sigma[x])) )
@@ -524,7 +531,8 @@
                }
           if(which_B == 3) {
                if(is.matrix(Sigma_control[["custom_spacetime"]]))
-                    out <- list(Loading = NULL, nugget = NULL, cov = Sigma_control[["custom_spacetime"]] * Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
+                                cov = Sigma_control[["custom_spacetime"]] * Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
                if(is.list(Sigma_control[["custom_spacetime"]]))
                     out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
                                 invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / Sigma[x])) )

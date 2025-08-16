@@ -2332,7 +2332,12 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(!is.null(Sigma_control[["custom_space"]])) { 
                if(is.matrix(Sigma_control[["custom_space"]])) {
                     start_params$Sigma_space <- NULL
-                    new_LoadingnuggetSigma_space <- list(invcov = .pinv(V = Sigma_control[["custom_space"]]), cov = Sigma_control[["custom_space"]])
+                    if(!is.null(start_params$custom_space_lambdas))
+                         new_LoadingnuggetSigma_space <- list(lambdas = start_params$custom_space_lambdas) 
+                    if(is.null(start_params$custom_space_lambdas))
+                         new_LoadingnuggetSigma_space <- list(lambdas = 10) #' This is an arbitrary starting value!
+                    new_LoadingnuggetSigma_space$invcov <- .pinv(Sigma_control[["custom_space"]])
+                    new_LoadingnuggetSigma_space$cov <- Sigma_control[["custom_space"]]
                     }
                if(is.list(Sigma_control[["custom_space"]])) {
                     start_params$Sigma_space <- NULL
@@ -2363,7 +2368,12 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(!is.null(Sigma_control[["custom_time"]])) { 
                if(is.matrix(Sigma_control[["custom_time"]])) {
                     start_params$Sigma_time <- NULL
-                    new_LoadingnuggetSigma_time <- list(invcov = .pinv(V = Sigma_control[["custom_time"]]), cov = Sigma_control[["custom_time"]])
+                    if(!is.null(start_params$custom_time_lambdas))
+                         new_LoadingnuggetSigma_time <- list(lambdas = start_params$custom_time_lambdas) 
+                    if(is.null(start_params$custom_time_lambdas))
+                         new_LoadingnuggetSigma_time <- list(lambdas = 10) #' This is an arbitrary starting value!
+                    new_LoadingnuggetSigma_time$invcov <- .pinv(Sigma_control[["custom_time"]])
+                    new_LoadingnuggetSigma_time$cov <- Sigma_control[["custom_time"]]
                     }
                if(is.list(Sigma_control[["custom_time"]])) {
                     start_params$Sigma_time <- NULL
@@ -2394,7 +2404,12 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(!is.null(Sigma_control[["custom_spacetime"]])) { 
                if(is.matrix(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
-                    new_LoadingnuggetSigma_spacetime <- list(invcov = .pinv(Sigma_control[["custom_spacetime"]]), cov = Sigma_control[["custom_spacetime"]]) 
+                    if(!is.null(start_params$custom_spacetime_lambdas))
+                         new_LoadingnuggetSigma_spacetime <- list(lambdas = start_params$custom_spacetime_lambdas) 
+                    if(is.null(start_params$custom_spacetime_lambdas))
+                         new_LoadingnuggetSigma_spacetime <- list(lambdas = 10) #' This is an arbitrary starting value!
+                    new_LoadingnuggetSigma_spacetime$invcov <- .pinv(Sigma_control[["custom_spacetime"]])
+                    new_LoadingnuggetSigma_spacetime$cov <- Sigma_control[["custom_spacetime"]]
                     }
                if(is.list(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
