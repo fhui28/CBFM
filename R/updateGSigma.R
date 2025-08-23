@@ -342,24 +342,31 @@
                #' 2. When there are multiple lambdas, then the covariance matrix of the B's generalizes the form on the RHS of the above as = G \otimes (\sum_r (lambda_r x Sigma_r)^{-1})^{-1} = G \otimes (\sum_r Sigma_r^{-1}/lambda_r)^{-1}. This form is chosen to be consistent with how GAMs in mgcv set up their tensor product penalties.  
                
                if(which_B == 1) {
+                    if(any(Sigma_control$upper_space_lambdas > 1e8))
+                         Sigma_control$upper_space_lambdas[which(Sigma_control$upper_space_lambdas > 1e8)] <- 1e8
+                    if(any(Sigma_control$lower_space_lambdas < 1e-8))
+                         Sigma_control$lower_space_lambdas[which(Sigma_control$lower_space_lambdas < 1e-8)] <- 1e-8
+                    
                     if(is.matrix(Sigma_control[["custom_space"]])) {
                         Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
                         trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
                         KronGinvSigmainv <- kronecker(Ginv, Sigmainv_space)
-                        fn <- function(x) { 
+                        fn <- function(x) {
                             expx <- mgcv::notExp(x)
                             out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
                             out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
                             return(as.vector(-out))
                             }
                         
-                        #update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                        #new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
-                        update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
-                                               fn = fn, 
-                                               control = list(trace = 0, maxit = 1000), 
-                                               method = "BFGS")
-                        new_lambda <- 1/mgcv::notExp(update_lambda$par)
+                        update_lambda <- stats::optimise(f = fn, 
+                                                         interval = c(mgcv::notLog(1/Sigma_control$upper_space_lambdas), mgcv::notLog(1/Sigma_control$lower_space_lambdas)), 
+                                                         maximum = FALSE)
+                        new_lambda <- 1/mgcv::notExp(update_lambda$m)
+                        # update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                        #                        fn = fn, 
+                        #                        control = list(trace = 0, maxit = 1000), 
+                        #                        method = "BFGS")
+                        # new_lambda <- 1/mgcv::notExp(update_lambda$par)
                         }
                     if(is.list(Sigma_control[["custom_space"]])) {
                          fn_lambda <- function(x) { 
@@ -375,12 +382,19 @@
                          update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
                                                 fn = fn_lambda, 
                                                 control = list(trace = 0, maxit = 1000), 
-                                                method = "BFGS")
+                                                method = "L-BFGS-B",
+                                                lower = mgcv::notLog(1/Sigma_control$upper_space_lambdas), 
+                                                upper = mgcv::notLog(1/Sigma_control$lower_space_lambdas))
                          #update_lambda <- nlminb(start = mgcv::notLog(1/lambdas), objective = fn_lambda, control = list(trace = 0, maxit = 1000))
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
                if(which_B == 2) {
+                    if(any(Sigma_control$upper_time_lambdas > 1e8))
+                         Sigma_control$upper_time_lambdas[which(Sigma_control$upper_time_lambdas > 1e8)] <- 1e8
+                    if(any(Sigma_control$lower_time_lambdas < 1e-8))
+                         Sigma_control$lower_time_lambdas[which(Sigma_control$lower_time_lambdas < 1e-8)] <- 1e-8
+                    
                     if(is.matrix(Sigma_control[["custom_time"]])) {
                          Sigmainv_time <- .pinv(Sigma_control[["custom_time"]])
                          trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
@@ -392,16 +406,17 @@
                               return(as.vector(-out))
                               }
                     
-                         #update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                         #new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
-                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
-                                                fn = fn, 
-                                                control = list(trace = 0, maxit = 1000), 
-                                                method = "BFGS")
-                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
+                         update_lambda <- stats::optimise(f = fn, 
+                                                          interval = c(mgcv::notLog(1/Sigma_control$upper_time_lambdas), mgcv::notLog(1/Sigma_control$lower_time_lambdas)), 
+                                                          maximum = FALSE)
+                         new_lambda <- 1/mgcv::notExp(update_lambda$m)
+                         # update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                         #                        fn = fn, 
+                         #                        control = list(trace = 0, maxit = 1000), 
+                         #                        method = "BFGS")
+                         # new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     if(is.list(Sigma_control[["custom_time"]])) {
-                         
                          fn_lambda <- function(x) { 
                               expx <- mgcv::notExp(x)
                               Sigmainv_time <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_time"]][[j2]]) * expx[j2])) 
@@ -415,11 +430,18 @@
                          update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
                                                 fn = fn_lambda, 
                                                 control = list(trace = 0, maxit = 1000), 
-                                                method = "BFGS")
+                                                method = "L-BFGS-B",
+                                                lower = mgcv::notLog(1/Sigma_control$upper_time_lambdas), 
+                                                upper = mgcv::notLog(1/Sigma_control$lower_time_lambdas))
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }
                if(which_B == 3) {
+                    if(any(Sigma_control$upper_spacetime_lambdas > 1e8))
+                         Sigma_control$upper_spacetime_lambdas[which(Sigma_control$upper_spacetime_lambdas > 1e8)] <- 1e8
+                    if(any(Sigma_control$lower_spacetime_lambdas < 1e-8))
+                         Sigma_control$lower_spacetime_lambdas[which(Sigma_control$lower_spacetime_lambdas < 1e-8)] <- 1e-8
+                    
                     if(is.matrix(Sigma_control[["custom_spacetime"]])) {
                          Sigmainv_spacetime <- .pinv(Sigma_control[["custom_spacetime"]])
                          trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
@@ -431,16 +453,17 @@
                               return(as.vector(-out))
                               }
                          
-                         #update_lambda <- stats::optimise(f = fn, interval = c(-500,500), maximum = TRUE)
-                         #new_lambda <- 1/mgcv::notExp(update_lambda$maximum)
-                         update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
-                                                fn = fn, 
-                                                control = list(trace = 0, maxit = 1000), 
-                                                method = "BFGS")
-                         new_lambda <- 1/mgcv::notExp(update_lambda$par)
+                         update_lambda <- stats::optimise(f = fn, 
+                                                          interval = c(mgcv::notLog(1/Sigma_control$upper_spacetime_lambdas), mgcv::notLog(1/Sigma_control$lower_spacetime_lambdas)), 
+                                                          maximum = FALSE)
+                         new_lambda <- 1/mgcv::notExp(update_lambda$m)
+                         # update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
+                         #                        fn = fn, 
+                         #                        control = list(trace = 0, maxit = 1000), 
+                         #                        method = "BFGS")
+                         # new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     if(is.list(Sigma_control[["custom_spacetime"]])) {
-                         
                          fn_lambda <- function(x) { 
                               expx <- mgcv::notExp(x)
                               Sigmainv_spacetime <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]]) * expx[j2])) 
@@ -455,7 +478,9 @@
                          update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
                                                 fn = fn_lambda, 
                                                 control = list(trace = 0, maxit = 1000),
-                                                method = "BFGS")
+                                                method = "L-BFGS-B",
+                                                lower = mgcv::notLog(1/Sigma_control$upper_spacetime_lambdas), 
+                                                upper = mgcv::notLog(1/Sigma_control$lower_spacetime_lambdas))
                          new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     }

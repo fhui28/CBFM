@@ -80,7 +80,6 @@
 #' \item{ziridge: }{A ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates for modeling the zero-inflation probabilities. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{ziformula} and \code{data} arguments. *Currently, no check is made to ensure the length is compatible with this!*}
 
 #' \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the outer algorithm will be printed. }
-
 #' }
 #' @param Sigma_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the community-level covariance matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \describe{
@@ -127,7 +126,13 @@
 
 #' \item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
 
-#' \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+#' \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}\
+
+#' \item{lower_space_lambdas/upper_space_lambdas: }{Not used and can be safely ignored.}
+
+#' \item{lower_time_lambdas/upper_time_lambdas: }{Not used and can be safely ignored.}
+
+#' \item{lower_spacetime_lambdas/upper_spacetime_lambdas: }{Not used and can be safely ignored.}
 #' }
 
 #' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
@@ -1714,7 +1719,10 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                 trace = 0),
                  Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, 
                                       method = "REML", trace = 0, 
-                                      custom_space = NULL, custom_time = NULL, custom_spactime = NULL), 
+                                      custom_space = NULL, custom_time = NULL, custom_spactime = NULL,
+                                      lower_space_lambdas = NULL, upper_space_lambdas = NULL,
+                                      lower_time_lambdas = NULL, upper_time_lambdas = NULL,
+                                      lower_spacetime_lambdas = NULL, upper_spacetime_lambdas = NULL), 
                  G_control = list(rank = 5, structure = "unstructured", 
                                   nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, 
                                   tol = 1e-4, method = "REML", trace = 0, 
@@ -3050,7 +3058,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     estimate_lambda_not_Sigma <- as.numeric(G_control$structure[sum(which_B_used[1:j1])] %in% c("identity", "homogeneous"))
                     
                     if(is.null(Sigma_control[[ three_custom_options[j1] ]]) | estimate_lambda_not_Sigma == 1) {
-                         
                          centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[, three_num_B[1]*(j1>1) + three_num_B[2]*(j1>2) + 1:three_num_B[j1], drop = FALSE] + .Machine$double.eps
                          if(c(nonzeromean_B_space, nonzeromean_B_time, nonzeromean_B_spacetime)[j1])
                               centered_BF_mat <- centered_BF_mat - matrix(new_fit_CBFM_ptest[[ three_mean_options[j1] ]], nrow = num_spp, ncol = three_num_B[j1], byrow = TRUE)

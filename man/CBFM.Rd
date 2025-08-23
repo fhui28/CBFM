@@ -37,7 +37,9 @@ CBFM(
     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, gam_method = "REML", seed =
     NULL, initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0, trace = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "REML", trace = 0,
-    custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
+    custom_space = NULL, custom_time = NULL, custom_spactime = NULL, lower_space_lambdas
+    = NULL, upper_space_lambdas = NULL, lower_time_lambdas = NULL, upper_time_lambdas =
+    NULL, lower_spacetime_lambdas = NULL, upper_spacetime_lambdas = NULL),
   G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95,
     by = 0.05), maxit = 100, tol = 1e-04, method = "REML", trace = 0, custom_space =
     NULL, custom_time = NULL, custom_spactime = NULL),
@@ -155,7 +157,10 @@ Finally. note if a particular element in \code{G_control$structure} is set to "i
 \item{trace: }{If set to \code{TRUE} or \code{1}, then information at each iteration step of the inner algorithm will be printed.}
 \item{custom_space: }{A custom, pre-specified baseline between-species correlation matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
 \item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
-\item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+\item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}\
+\item{lower_space_lambdas/upper_space_lambdas: }{Not used and can be safely ignored.}
+\item{lower_time_lambdas/upper_time_lambdas: }{Not used and can be safely ignored.}
+\item{lower_spacetime_lambdas/upper_spacetime_lambdas: }{Not used and can be safely ignored.}
 }}
 
 \item{k_check_control}{A list of parameters for controlling \code{\link[mgcv:k.check]{mgcv::k.check()}} when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see \code{\link[mgcv:k.check]{mgcv::k.check()}} for more details on how this test works. This should be a list with the following two arguments:

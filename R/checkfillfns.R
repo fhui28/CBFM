@@ -397,7 +397,10 @@
     }
      
 
-.fill_Sigma_control <- function(control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns, G_control) {
+.fill_Sigma_control <- function(control, 
+                                which_B_used, 
+                                num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns, 
+                                G_control) {
     if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
@@ -485,7 +488,20 @@
 
      control$method <- match.arg(control$method, choices = c("REML","simple","ML"))
      #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
-
+     
+     if(is.null(control$lower_space_lambdas))
+          control$lower_space_lambdas <- 0
+     if(is.null(control$upper_space_lambdas))
+          control$upper_space_lambdas <- Inf
+     if(is.null(control$lower_time_lambdas))
+          control$lower_time_lambdas <- 0
+     if(is.null(control$upper_time_lambdas))
+          control$upper_time_lambdas <- Inf
+     if(is.null(control$lower_spacetime_lambdas))
+          control$lower_spacetime_lambdas <- 0
+     if(is.null(control$upper_spacetime_lambdas))
+          control$upper_spacetime_lambdas <- Inf
+     
      return(control)
      }
      
