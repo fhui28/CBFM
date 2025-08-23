@@ -220,21 +220,19 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 function() {
      y = Y[sel_training_units, test_spp, drop = FALSE]
      data = X[sel_training_units,]
-     formula = ~ offset(log(AREA_SWEPT_EST)) +
-          s(BOTTEMP_DOPGLO_monthly_MEAN, bs="tp", m=2, k=4) +
-          s(BOTSALIN_DOPGLO_monthly_MEAN, bs="tp", m=2, k=4) 
+     formula = myformula 
      ziformula <- NULL
      B_space = MM_train_source_reseas
-     B_time = NULL
+     B_time = MM_train_year
      B_spacetime = NULL
-     ncores = 8
+     ncores = detectCores() - 4
      family = nb2() 
-     start_params = list(custom_space_lambdas = 1e-1)
+     start_params = list(custom_space_lambdas = 1e-6)
      control = list(initial_ridge = 0.1,
-                    #ridge = 0.00001,
-                    trace = 1) #, initial_betas_dampen = c(#G_control = list(rank = c("full"), structure = c("homogeneous")),
-     G_control = list(rank = c("full"), structure = c("identity")) #custom_time = G_phylo),
-     Sigma_control = list(rank = c("full"), custom_space = Sigma_source_reseas)
+                    trace = 1,
+                    final_maxit = 1)
+     G_control = list(rank = c("full","full"), structure = c("identity","identity"))
+     Sigma_control = list(rank = c("full", "full"), custom_space = Sigma_source_reseas, custom_time = Sigma_year, upper_space_lambdas = 1e-3)
      knots = NULL
      ziknots = NULL
      offset = NULL
