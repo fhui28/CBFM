@@ -218,29 +218,36 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 #' Custom testing
 ##----------------------------------
 function() {
-     y = Y[sel_training_units, test_spp, drop = FALSE]
+     y = Y[sel_training_units, 1:4, drop = FALSE]
      data = X[sel_training_units,]
      formula = myformula 
      ziformula <- NULL
-     B_space = MM_train_source_reseas
+     B_space = MM_train_source_byt2
      B_time = MM_train_year
-     B_spacetime = NULL
+     B_spacetime = MM_train_space_by
      ncores = detectCores() - 4
      family = nb2() 
-     start_params = list(custom_space_lambdas = 1e-6)
-     control = list(initial_ridge = 0.1,
-                    trace = 1,
+     start_params = list(custom_space_lambdas = rep(1e-4, length(Sigma_source_byt2)),
+                         custom_time_lambdas = rep(1e-4, length(Sigma_year)),
+                         custom_spacetime_lambdas = rep(1e-4, length(Sigma_space_by)))
+     control = list(trace = 1,
                     final_maxit = 1)
-     G_control = list(rank = c("full","full"), structure = c("identity","identity"))
-     Sigma_control = list(rank = c("full", "full"), custom_space = Sigma_source_reseas, custom_time = Sigma_year, upper_space_lambdas = 1e-3)
+     G_control = list(rank = c("full","full","full"),
+                      structure = c("homogeneous","identity","homogeneous"))
+     Sigma_control = list(rank = c("full", "full","full"),
+                          custom_space = Sigma_source_byt2,
+                          custom_time = Sigma_year,
+                          custom_spacetime = Sigma_space_by,
+                          upper_space_lambdas = 1e-3,
+                          upper_time_lambdas = 1e-3,
+                          upper_spacetime_lambdas = 1e-2)
      knots = NULL
      ziknots = NULL
      offset = NULL
-     ncores = NULL
      gamma = 1
      zigamma = 1
      trial_size = 1
-     nonzeromean_B_space = TRUE
+     nonzeromean_B_space = FALSE
      nonzeromean_B_time = FALSE
      nonzeromean_B_spacetime = FALSE
      dofit = TRUE

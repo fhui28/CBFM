@@ -2708,7 +2708,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          rm(cw_family)
                          }
-     
                     if(family$family %in% c("zipoisson")) { # M-step
                          tmp_ziformula <- as.formula(paste("taus", paste(as.character(ziformula), collapse = " ") ) )
                          ziHmat <- diag(control$ziridge+1e-15, nrow = ncol(ziX))
