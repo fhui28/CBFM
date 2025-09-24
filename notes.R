@@ -218,29 +218,22 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 #' Custom testing
 ##----------------------------------
 function() {
-     y = Y[sel_training_units, 1:4, drop = FALSE]
+     y = Y[sel_training_units, test_spp, drop = FALSE]
      data = X[sel_training_units,]
      formula = myformula 
      ziformula <- NULL
-     B_space = MM_train_source_byt2
+     B_space = MM_train_source_reseas
      B_time = MM_train_year
-     B_spacetime = MM_train_space_by
+     B_spacetime = NULL
      ncores = detectCores() - 4
-     family = nb2() 
-     start_params = list(custom_space_lambdas = rep(1e-4, length(Sigma_source_byt2)),
-                         custom_time_lambdas = rep(1e-4, length(Sigma_year)),
-                         custom_spacetime_lambdas = rep(1e-4, length(Sigma_space_by)))
-     control = list(trace = 1,
-                    final_maxit = 1)
-     G_control = list(rank = c("full","full","full"),
-                      structure = c("homogeneous","identity","homogeneous"))
-     Sigma_control = list(rank = c("full", "full","full"),
-                          custom_space = Sigma_source_byt2,
-                          custom_time = Sigma_year,
-                          custom_spacetime = Sigma_space_by,
-                          upper_space_lambdas = 1e-3,
-                          upper_time_lambdas = 1e-3,
-                          upper_spacetime_lambdas = 1e-2)
+     family = ztnb2() 
+     start_params = NULL
+     control = list(trace = 1, initial_betas_dampen = 0.5)
+     G_control = list(rank = c("full","full"),
+                      structure = c("identity","identity"))
+     Sigma_control = list(rank = c("full", "full"),
+                          custom_space = Sigma_source_reseas,
+                          custom_time = Sigma_year)
      knots = NULL
      ziknots = NULL
      offset = NULL
@@ -256,7 +249,6 @@ function() {
      ziselect = FALSE
      TMB_directories = list(cpp = system.file("executables", package = "CBFM"), compile = system.file("executables", package = "CBFM"))
      k_check_control = list(subsample = 5000, n.rep = 400)
-
      }
 
 

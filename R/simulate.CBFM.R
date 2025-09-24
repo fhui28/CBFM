@@ -169,27 +169,26 @@ simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, condit
      ##-------------------
      ## Simulate response matrices
      ##-------------------
-     out <- replicate(nsim, create_CBFM_life(
-          family = true_model$family, 
-          formula = true_model$formula, 
-          ziformula = true_model$ziformula,
-          data = true_model$data, 
-          B_space = true_model$B_space, 
-          B_time = true_model$B_time, 
-          B_spacetime = true_model$B_spacetime, 
-          #offset = true_model$offset,
-          betas = true_model$betas,
-          zibetas = true_model$zibetas,
-          basis_effects_mat = true_model$basis_effects_mat,
-          Sigma = true_model$Sigma,
-          G = true_model$G,
-          trial_size = true_model$trial_size,
-          dispparam = true_model$dispparam, 
-          powerparam = true_model$dispparam, 
-          max_resp = max_resp,
-          only_y = TRUE)
-          )
-    
+     out <- replicate(nsim, create_CBFM_life(family = true_model$family, 
+                                             formula = true_model$formula, 
+                                             ziformula = true_model$ziformula,
+                                             data = true_model$data, 
+                                             B_space = true_model$B_space, 
+                                             B_time = true_model$B_time, 
+                                             B_spacetime = true_model$B_spacetime, 
+                                             #offset = true_model$offset,
+                                             betas = true_model$betas,
+                                             zibetas = true_model$zibetas,
+                                             basis_effects_mat = true_model$basis_effects_mat,
+                                             Sigma = true_model$Sigma,
+                                             G = true_model$G,
+                                             trial_size = true_model$trial_size,
+                                             dispparam = true_model$dispparam, 
+                                             powerparam = true_model$dispparam, 
+                                             max_resp = max_resp,
+                                             only_y = TRUE)
+                      )
+     
     return(out)
     }
 
