@@ -1879,7 +1879,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      ## Obtain starting values -- No selection is attempted here  
      ##----------------
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
-     initfit_fn <- function(j, formula) {
+     initfit_fn <- function(j, formula, control) {
           tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
           Hmat <- diag(x = control$initial_ridge+1e-15, nrow = num_X)
           if(formula == ~1)
@@ -2198,12 +2198,12 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                find_nonzeros <- which(y[,j] > 0) # This automatically excludes NA values
                init_lambda <- mean(y[,j], na.rm = TRUE)
                initw <- dnbinom(0, mu = init_lambda, size = 1/0.2) / (1-dnbinom(0, mu = init_lambda, size = 1/0.2))
-               w1 <- c(rep(1,num_units))
+               w1 <- rep(1,num_units)
                w1[which(y[,j]==0)] <- 0
-               w2 <- rep(initw, num_units)
-               w2[which(y[,j]==0)] <- 0
+               w2 <- numeric(num_units)
+               w2[find_nonzeros] <- initw
                w <- c(w1, w2)
-               rm(w2) ## This way of constructing the weights and GAM set up is the *only* one I have constructed so far that ensures MM = X
+               rm(w2)
 
                if(all(control$initial_ridge == 0))
                     fit0 <- gam(tmp_formula, 
@@ -2235,14 +2235,16 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                inner_err <- Inf
                inner_inner_counter <- 0
                while(inner_err > 1e-4) { 
-                    if(inner_inner_counter > 20)
+                    if(inner_inner_counter > 50)
                          break;
                     
                     cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
-                    initw <- dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) + 1e-4)
-                    initw[initw > 0.1/1e-4] <- 0.1/1e-4
+                    initw <- dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) + 1e-6)
+                    w1 <- rep(1,num_units)
+                    w1[which(y[,j]==0)] <- 0
+                    #initw[initw > 0.1/1e-6] <- 0.1/1e-6
                     w2 <- numeric(num_units)
                     w2[find_nonzeros] <- initw
                     w <- c(w1, w2)
@@ -2296,7 +2298,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(control$trace > 0)
                message("Calculating starting values...")
           
-          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = formula)              
+          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = formula, control = control)              
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
           start_params$betas <- start_params$betas * control$initial_betas_dampen # Should be OK even if control$initial_betas_dampen is vector equal to number of species
           gc()
@@ -2457,7 +2459,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      formula_offset <- numeric(nrow(y))
      
      if(!exists("all_start_fits"))
-          all_start_fits <- foreach(j = 1:2) %dopar% initfit_fn(j = j, formula = formula) #' Run this a second time to get offsets (if starting values were supplied above, then all_start_fits does not exist)
+          all_start_fits <- foreach(j = 1:2) %dopar% initfit_fn(j = j, formula = formula, control = control) #' Run this a second time to get offsets (if starting values were supplied above, then all_start_fits does not exist)
      if(!is.null(model.offset(model.frame(all_start_fits[[1]])))) {
           formula_offset <- model.offset(model.frame(all_start_fits[[1]]))
           if(family$family %in% c("ztpoisson", "ztnegative.binomial"))
@@ -2834,15 +2836,15 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          inner_inner_counter <- 0
                          cw_inner_logL <- -Inf
                          
-                         while(inner_err > 1e-3) {
-                              if(inner_inner_counter > 20)
+                         while(inner_err > 1e-4) {
+                              if(inner_inner_counter > 50)
                                    break;
 
                               initw <- dnbinom(0, 
                                                mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset + formula_offset)), 
                                                size = 1/new_fit_CBFM_ptest$dispparam[j])
-                              initw <- initw / (1 - initw + 1e-4)
-                              initw[initw > 0.1/1e-4] <- 0.1/1e-4
+                              initw <- initw / (1 - initw + 1e-6)
+                              #initw[initw > 0.1/1e-6] <- 0.1/1e-6
                               initw <- initw[find_nonzeros]
                               w1 <- rep(1, num_units)
                               w1[which(y[,j]==0)] <- 0
@@ -3259,7 +3261,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      
      
      # Calculate deviance, null deviance etc...note deviance calculation **excludes** the quadratic term in the PQL
-     nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = ~ 1)
+     nulldeviance <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = ~ 1, control = control)
      nulldeviance_perspp <- sapply(nulldeviance, function(x) -2*x$logLik)
      nulldeviance <- sum(sapply(nulldeviance, function(x) -2*x$logLik))
      rm(initfit_fn)
