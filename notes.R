@@ -226,7 +226,7 @@ function() {
      B_time = MM_train_year
      B_spacetime = NULL
      ncores = detectCores() - 4
-     family = ztnb2() 
+     family = binomial() 
      start_params = NULL
      control = list(trace = 1, initial_betas_dampen = 0.5)
      G_control = list(rank = c("full","full"),
