@@ -145,9 +145,6 @@
 
 ## Get the full S matrix from GAMs. Relies on the fact gam always move the parametric terms first
 .get_bigS <- function(fit_gam, num_X) {
-   # if(class(fit_gam)[1] == "gamlss")
-   #    fit_gam <- getSmo(fit_gam)
-     
    bigS <- Matrix::Matrix(0, num_X, num_X, sparse = TRUE)
    num_smooth_terms <- length(fit_gam$smooth)
    if(num_smooth_terms == 0)
