@@ -32,8 +32,6 @@ Imports:
     compiler,
     doParallel,
     foreach,
-    gamlss.dist,
-    gamlss.tr,
     graphics,
     gratia,
     grDevices,
