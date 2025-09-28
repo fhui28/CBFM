@@ -69,7 +69,7 @@
 #' @examples
 #' \dontrun{
 #' library(autoFRK)
-#' library(gamlss.tr)
+#' library(actuar)
 #' library(FRK)
 #' library(MASS)
 #' library(mvtnorm)
@@ -121,12 +121,9 @@
 #' prob = plogis(eta)), nrow = num_sites)
 #' 
 #' # Now simulate spatial count data from a truncated Poisson distribution
-#' # Note the use of sapply as ztpR behaves oddly when using vectorized arugments
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts_ztp,spp_slopes_ztp)) + 
 #' tcrossprod(true_lvs_ztp, spp_loadings_ztp)
-#' ztpR <- trun.r(par = 0, family = "PO", type = "left") 
-#' simy_ztp <- matrix(sapply(1:(num_sites*num_spp), 
-#' function(x) ztpR(1, mu = exp(eta[x]))), nrow = num_sites)
+#' simy_ztp <- matrix(rztpois(num_sites * num_spp, lambda = exp(eta)), nrow = num_sites)
 #' 
 #' # Spatial multivariate count data from a hurdle Poisson model is then the product of the two
 #' simy <- simy_pa *  simy_ztp
@@ -139,7 +136,7 @@
 #' 
 #' # Delete the "component" responses and present you only observe the final response
 #' rm(eta, simy_pa, simy_ztp, X, mm, spp_loadings_pa, spp_loadings_ztp, true_lvs_pa, true_lvs_ztp, 
-#' xy, simy, dat, ztpR)
+#' xy, simy, dat)
 #' 
 #' 
 #' 
@@ -303,8 +300,13 @@
 #' # Now simulate spatial count data from a truncated NB distribution
 #' eta <- tcrossprod(cbind(1,mm), cbind(spp_intercepts_ztnb,spp_slopes_ztnb)) + 
 #' tcrossprod(true_lvs_ztnb, spp_loadings_ztnb)
-#' ztNBR <- trun.r(par = 0, family = "NBI", type = "left") 
-#' simy_ztnb <- matrix(ztNBR(num_sites * num_spp, mu = exp(eta)), nrow = num_sites)
+#' make_probs <- exp(eta) * matrix(spp_dispersion_ztnb, nrow = num_sites, ncol = num_spp, 
+#' byrow = TRUE) + 1
+#' make_probs <- 1/make_probs
+#' simy_ztnb <- matrix(rztnbinom(num_sites * num_spp, prob = make_probs, 
+#' size = matrix(1/spp_dispersion_ztnb, nrow = num_sites, ncol = num_spp, byrow = TRUE)), 
+#' nrow = num_sites)
+#' rm(make_probs)
 #' 
 #' # Spatial multivariate count data from a hurdle NB model is then the product of the two
 #' simy <- simy_pa *  simy_ztnb
@@ -317,7 +319,7 @@
 #' 
 #' # Delete the "component" responses and present you only observe the final response
 #' rm(eta, simy_pa, simy_ztnb, X, mm, spp_loadings_pa, spp_loadings_ztnb, true_lvs_pa, true_lvs_ztnb, 
-#' xy, simy, dat, ztNBR)
+#' xy, simy, dat)
 #' 
 #' 
 #' 

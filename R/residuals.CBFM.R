@@ -209,7 +209,7 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                                          prob = make_probs[which(object$y>0)], 
                                          size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
                   b <- actuar::pztnbinom(object$y[which(object$y>0)], 
-                                         mu = make_probs[which(object$y>0)], 
+                                         prob = make_probs[which(object$y>0)], 
                                          size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
                   out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
