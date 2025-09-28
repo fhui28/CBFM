@@ -101,8 +101,7 @@
 #' @aliases residuals.CBFM residuals.CBFM_hurdle
 #' @export
 #' 
-#' @importFrom gamlss.dist NBI
-#' @importFrom gamlss.tr trun.p
+#' @importFrom actuar pztpois pztnbinom
 #' @importFrom stats runif qnorm pbeta pbinom pgamma plogis pnorm ppois pnbinom
 #' @importFrom tweedie ptweedie 
 #' @md
@@ -197,17 +196,21 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
                                   )
                      }
           if(object$family$family[1] %in% c("ztpoisson")) {
-                  tmp_trun <- trun.p(par = 0, family = "PO", type = "left")
                   out <- matrix(NA, nrow = num_units, ncol = num_spp)
-                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]))
-                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]))
+                  a <- actuar::pztpois((object$y-1)[which(object$y>0)], lambda = exp(object$linear_predictors[which(object$y>0)]))
+                  b <- actuar::pztpois(object$y[which(object$y>0)], lambda = exp(object$linear_predictors[which(object$y>0)]))
                   out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
           if(object$family$family[1] %in% c("ztnegative.binomial")) {
-                  tmp_trun <- trun.p(par = 0, family = "NBI", type = "left")
                   out <- matrix(NA, nrow = num_units, ncol = num_spp)
-                  a <- tmp_trun((object$y-1)[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]), sigma = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
-                  b <- tmp_trun(object$y[which(object$y>0)], mu = exp(object$linear_predictors[which(object$y>0)]), sigma = matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
+                  make_probs <- matrix(object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)*exp(object$linear_predictors) + 1
+                  make_probs <- 1/make_probs
+                  a <- actuar::pztnbinom((object$y-1)[which(object$y>0)], 
+                                         prob = make_probs[which(object$y>0)], 
+                                         size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
+                  b <- actuar::pztnbinom(object$y[which(object$y>0)], 
+                                         mu = make_probs[which(object$y>0)], 
+                                         size = matrix(1/object$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE)[which(object$y>0)])
                   out[which(object$y>0)] <- runif(length(a), min = a, max = b)
                   }
                 
