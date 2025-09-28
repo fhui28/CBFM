@@ -28,6 +28,7 @@ Depends:
     TMB
 Imports: 
     abind,
+    actuar,
     compiler,
     doParallel,
     foreach,

@@ -268,8 +268,7 @@
 #' 
 #' @export
 #' @import Matrix
-#' @importFrom gamlss.dist PO dPO pPO qPO rPO NBI dNBI pNBI qNBI rNBI
-#' @importFrom gamlss.tr trun.r
+#' @importFrom actuar rztpois rztnbinom
 #' @importFrom mgcv gam model.matrix.gam
 #' @importFrom stats model.frame model.offset rbeta rbinom rgamma rnorm rnbinom rpois plogis
 #' @importFrom tweedie rtweedie
@@ -407,16 +406,23 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                 }
            
           if(family$family == "ztpoisson") {
-                ztpR <- trun.r(par = 0, family = PO()$family[1], type = "left") 
-                sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])+1e-12) 
+                sim_y[,j] <- actuar::rztpois(num_units, lambda = exp(true_eta[,j])+1e-12) 
                 }
            if(family$family == "ztnegative.binomial") {
-                ztnbR <- trun.r(par = 0, family = NBI()$family[1], type = "left") 
-                sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j])+1e-12, sigma = dispparam[j]) 
+                make_probs <- 1/(1 + dispparam[j]*exp(true_eta[,j]) + 1e-12)
+                sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, size = 1/dispparam[j]) 
+                rm(make_probs)
                 }
           }
 
-     if(family$family %in% c("poisson", "negative.binomial", "tweedie", "Gamma", "zipoisson", "zinegative.binomial", "ztpoisson", "ztnegative.binomial")) {
+     if(family$family %in% c("poisson", 
+                             "negative.binomial", 
+                             "tweedie", 
+                             "Gamma",
+                             "zipoisson", 
+                             "zinegative.binomial", 
+                             "ztpoisson", 
+                             "ztnegative.binomial")) {
           inner_counter <- 0
           while(any(sim_y > max_resp) & inner_counter < 10) {
                if(basismat_notsupplied) {
@@ -451,8 +457,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                          }
                     }
                
-               for(j in 1:num_spp)
-                    {
+               for(j in 1:num_spp) {
                     if(family$family == "beta")
                             sim_y[,j] <- rbeta(num_units, shape1 = plogis(true_eta[,j])*dispparam[j], shape2 = (1-plogis(true_eta[,j]))*dispparam[j])
                     if(family$family == "binomial")
@@ -488,15 +493,21 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                          }
 
                     if(family$family == "ztpoisson")
-                            sim_y[,j] <- ztpR(num_units, mu = exp(true_eta[,j])+1e-12) 
-                    if(family$family == "ztnegative.binomial")
-                            sim_y[,j] <- ztnbR(num_units, mu = exp(true_eta[,j])+1e-12, sigma = dispparam[j]) 
+                            sim_y[,j] <- actuar::rztpois(num_units, lambda = exp(true_eta[,j])+1e-12) 
+                    if(family$family == "ztnegative.binomial") {
+                         make_probs <- 1/(1 + dispparam[j]*exp(true_eta[,j]) + 1e-12)
+                         sim_y[,j] <- actuar::rztnbinom(num_units, mu = exp(true_eta[,j])+1e-12, sigma = dispparam[j]) 
+                         rm(make_probs)                         
+                         }
                     }
                inner_counter <- inner_counter + 1
                }
           }
           
-     out <- list(y = sim_y, basis_effects_mat = basis_effects_mat, linear_predictors = true_eta, linear_predictors_B = true_eta_B)
+     out <- list(y = sim_y, 
+                 basis_effects_mat = basis_effects_mat, 
+                 linear_predictors = true_eta, 
+                 linear_predictors_B = true_eta_B)
      
      if(only_y)
           out <- sim_y
