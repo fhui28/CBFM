@@ -410,7 +410,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                 sim_y[,j] <- actuar::rztpois(num_units, lambda = exp(true_eta[,j])+1e-12) 
                 }
            if(family$family == "ztnegative.binomial") {
-                make_probs <- 1/(1 + dispparam[j]*exp(true_eta[,j]) + 1e-12)
+                make_probs <- 1/dispparam[j]/(exp(true_eta[,j]) + 1e-12 + 1/dispparam[j])
                 sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, size = 1/dispparam[j]) 
                 rm(make_probs)
                 }
@@ -496,9 +496,9 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                     if(family$family == "ztpoisson")
                             sim_y[,j] <- actuar::rztpois(num_units, lambda = exp(true_eta[,j])+1e-12) 
                     if(family$family == "ztnegative.binomial") {
-                         make_probs <- 1/(1 + dispparam[j]*exp(true_eta[,j]) + 1e-12)
-                         sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, size = 1/dispparam[j]) 
-                         rm(make_probs)                         
+                         make_probs <- 1/dispparam[j]/(exp(true_eta[,j]) + 1e-12 + 1/dispparam[j])
+                         sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, size = 1/dispparam[j])
+                         rm(make_probs)
                          }
                     }
                inner_counter <- inner_counter + 1
