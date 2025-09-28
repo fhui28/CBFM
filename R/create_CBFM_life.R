@@ -244,6 +244,7 @@
 #' # This can be achieved by combining the mechanisms for presence-absence and zero-trun. NB
 #' spp_slopes_ztnb <- matrix(runif(num_spp * num_X, -1, 1), nrow = num_spp)
 #' spp_intercepts_ztnb <- runif(num_spp, -2, 0)
+#' spp_dispersion <- runif(num_spp, 0, 5)
 #' 
 #' true_Sigma_space_ztnb <- rWishart(1, num_basisfunctions+1, 
 #' diag(x = 0.1, nrow = num_basisfunctions-1))[,,1]/10
@@ -496,7 +497,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                             sim_y[,j] <- actuar::rztpois(num_units, lambda = exp(true_eta[,j])+1e-12) 
                     if(family$family == "ztnegative.binomial") {
                          make_probs <- 1/(1 + dispparam[j]*exp(true_eta[,j]) + 1e-12)
-                         sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, sigma = 1/dispparam[j]) 
+                         sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, size = 1/dispparam[j]) 
                          rm(make_probs)                         
                          }
                     }
