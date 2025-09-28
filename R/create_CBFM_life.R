@@ -496,7 +496,7 @@ create_CBFM_life <- function(family = binomial(), formula, ziformula = NULL, dat
                             sim_y[,j] <- actuar::rztpois(num_units, lambda = exp(true_eta[,j])+1e-12) 
                     if(family$family == "ztnegative.binomial") {
                          make_probs <- 1/(1 + dispparam[j]*exp(true_eta[,j]) + 1e-12)
-                         sim_y[,j] <- actuar::rztnbinom(num_units, mu = exp(true_eta[,j])+1e-12, sigma = dispparam[j]) 
+                         sim_y[,j] <- actuar::rztnbinom(num_units, prob = make_probs, sigma = 1/dispparam[j]) 
                          rm(make_probs)                         
                          }
                     }
