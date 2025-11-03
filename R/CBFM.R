@@ -2907,14 +2907,30 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               if(inherits(fit0, "try-error"))
                                    break;
                               
-                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], 
-                                                           mu = exp(X[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + new_offset[find_nonzeros] + formula_offset[find_nonzeros]), 
-                                                           size = fit0$family$getTheta(TRUE), log = TRUE) 
-                              new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)]) 
+                              
+                              #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
+                              update_interceptdispparam_fn <- function(pars) {
+                                   intercept <- pars[1]
+                                   log_dispparam <- pars[2]
+                                   mu_tmp <- exp(intercept + X[find_nonzeros,-1,drop=FALSE] %*% fit0$coefficients[-1] + new_offset[find_nonzeros] + formula_offset[find_nonzeros])
+                                   
+                                   logL_tmp <- .dztnbinom(y[find_nonzeros,j], 
+                                                          mu = mu_tmp, 
+                                                          size = exp(-log_dispparam), 
+                                                          log = TRUE)
+                                   return(-sum(new_inner_logL[is.finite(new_inner_logL)]))
+                                   } 
+                              
+                              opt_res <- nlminb(start = c(fit0$coefficients[1], log(1/fit0$family$getTheta(TRUE))),
+                                                objective = update_interceptdispparam_fn,
+                                                control = list(eval.max = 1000, iter.max = 1000))
+                              fit0$coefficients[1] <- opt_res$par[1]
+
+                              new_inner_logL <- -opt_res$objective 
                               inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                               cw_inner_logL <- new_inner_logL
                               new_fit_CBFM_ptest$betas[j,] <- fit0$coefficients
-                              new_fit_CBFM_ptest$dispparam[j] <- 1/fit0$family$getTheta(TRUE)
+                              new_fit_CBFM_ptest$dispparam[j] <- exp(-opt_res$par[2])
                               inner_inner_counter <- inner_inner_counter + 1
                               }
                          
@@ -2930,8 +2946,10 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                 S = .get_bigS(fit_gam = fit0, num_X = num_X))
                     if(family$family %in% c("gaussian","Gamma"))                        
                          out$dispparam <- fit0$sig2
-                    if(family$family %in% c("negative.binomial","zinegative.binomial","ztnegative.binomial"))                        
+                    if(family$family %in% c("negative.binomial","zinegative.binomial"))                        
                          out$dispparam <- 1/fit0$family$getTheta(TRUE)
+                    if(family$family %in% c("ztnegative.binomial"))                        
+                         out$dispparam <- exp(-opt_res$par[2])
                     if(family$family == "Beta")                        
                          out$dispparam <- exp(fit0$family$getTheta(TRUE))
                     if(family$family == "tweedie") {                        
