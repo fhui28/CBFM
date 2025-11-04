@@ -149,7 +149,7 @@
    num_smooth_terms <- length(fit_gam$smooth)
    if(num_smooth_terms == 0)
       return(bigS)
-          
+   
    num_Smatrices_per_smooth <- lapply(fit_gam$smooth, function(x) length(x$S)) # The sum of this should equal length(fit_gam$sp), or equivalently fit_gam$smooth[[num_smooth_terms]]$last.sp
    sp_index <- split(1:fit_gam$smooth[[num_smooth_terms]]$last.sp, rep(1:num_smooth_terms, num_Smatrices_per_smooth)) # Because fs, te, and ti smooths have multiple S and smoothing parameters, then this tells you how many and indexes the S/sp's within each smooth term. This is very similar to extracting first.sp and last.sp from each smooth
    rm(num_Smatrices_per_smooth)
@@ -172,8 +172,12 @@
       return(out)
       })
    subS <- Matrix::bdiag(subS)
-   bigS[-(1:num_parametric_cols), -(1:num_parametric_cols)] <- subS
-          
+   
+   if(num_parametric_cols > 0)
+     bigS[-(1:num_parametric_cols), -(1:num_parametric_cols)] <- subS
+   if(num_parametric_cols == 0)
+        bigS <- subS
+   
    return(bigS)
    }
    
