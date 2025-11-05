@@ -2485,7 +2485,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           }
      start_params$logLik <- -Inf
      
-     
      ##----------------
      ## Run PQL algorithm
      ##----------------
@@ -2671,7 +2670,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                gradient = CBFM_objs$gr, 
                                                lower = tidbits_constraints$lower, 
                                                upper = tidbits_constraints$upper, 
-                                               control = list(iter.max = 500, eval.max = 1000)), 
+                                               control = list(iter.max = 1000, eval.max = 1000)), 
                                         silent = TRUE) #' Note choices in control here are pretty arbitrary!
                     
                     # Dampen Xbeta component and run it again...it is kind of ad-hoc but has been shown to be helpful especially with GAM fits to extremely overdispersed counts 
@@ -2684,7 +2683,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                          new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
                               lower = tidbits_constraints$lower, upper = tidbits_constraints$upper, 
-                              control = list(iter.max = 500, eval.max = 1000)), silent = TRUE)
+                              control = list(iter.max = 1000, eval.max = 1000)), silent = TRUE)
                          }
                     if(inherits(new_fit_CBFM, "try-error")) {
                          new_fit_CBFM <- list(par = tidbits_parameters$basis_effects)
@@ -3300,7 +3299,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      all_ziS <- sapply(all_update_coefs, function(x) x$ziS)
      all_k_check <- foreach(j = 1:num_spp) %dopar% k.check(all_update_coefs[[j]]$fit, subsample = k_check_control$subsample, n.rep = k_check_control$n.rep)
      names(all_k_check) <- colnames(y)
-     if(family$family[1] %in% c("zipoisson", "zinegative.binomiak", "ztpoisson","ztnegative.binomial"))
+     if(family$family[1] %in% c("zipoisson", "zinegative.binomial", "ztpoisson","ztnegative.binomial"))
           warning("k_check may not be terrible or not available for zero-inflated and zero-truncated distributions. Please take any results given here with a big grain of salt!")
      invisible(capture.output( all_vcomp <- lapply(1:num_spp, function(j) {
           if(class(all_update_coefs[[j]]$fit)[1] == "gam")
