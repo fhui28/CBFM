@@ -69,7 +69,7 @@
 
 #' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalized cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
-#' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which be default should not be the case.}
+#' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which only occurs for a subset of parameters even when starting parameters are not supplied and \code{CBFM} tries to generate its own starting values.}
 
 #' \item{initial_ridge: }{A ridge parameter that can be included to act as a ridge penalty when using CBFM's default approach to constructing initial/starting values of the regression coefficients related to the covariates. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{formula} and \code{data} arguments. *Currently, no check is made to ensure the length is compatible with this!*}
 
@@ -100,6 +100,12 @@
 #' \item{custom_time: }{A custom, pre-specified community-level covariance matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 
 #' \item{custom_spacetime: }{A custom, pre-specified community-level covariance matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+
+#' \item{lower_space_lambdas/upper_space_lambdas: }{Can be safely ignored for almost all applications.}
+
+#' \item{lower_time_lambdas/upper_time_lambdas: }{Can be safely ignored for almost all applications.}
+
+#' \item{lower_spacetime_lambdas/upper_spacetime_lambdas: }{Can be safely ignored for almost all applications.}
 #' }
 #' @param G_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \describe{
@@ -127,12 +133,6 @@
 #' \item{custom_time: }{A custom, pre-specified between-species correlation matrix matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding \code{rank} and \code{structure} (as above) still has to be supplied, even though it is not used.}
 
 #' \item{custom_spacetime: }{A custom, pre-specified between-species correlation matrix matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}\
-
-#' \item{lower_space_lambdas/upper_space_lambdas: }{Not used and can be safely ignored.}
-
-#' \item{lower_time_lambdas/upper_time_lambdas: }{Not used and can be safely ignored.}
-
-#' \item{lower_spacetime_lambdas/upper_spacetime_lambdas: }{Not used and can be safely ignored.}
 #' }
 
 #' @param k_check_control A list of parameters for controlling [mgcv::k.check()] when it is applied to CBFMs involving smoothing terms for the measured covariates i.e., when smoothing terms are involved in \code{formula}. Please see [mgcv::k.check()] for more details on how this test works. This should be a list with the following two arguments:
