@@ -2328,29 +2328,50 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      if(is.null(start_params$dispparam)) {
           if(family$family[1] %in% c("poisson","binomial","zipoisson","ztpoisson"))                        
                start_params$dispparam <- rep(1, num_spp)          
-          if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
-                    start_params$dispparam <- 0.5 * colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
-          if(family$family[1] %in% c("negative.binomial")) {
-               start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/theta.mm(y = y[,j], 
-                                                                                    mu = exp(X%*%start_params$betas[j,] + B%*%start_params$basis_effects_mat[j,]), 
-                                                                                    dfr = num_units - num_X - num_basisfns, 
-                                                                                    limit = 1e2)) + 1e-5
-               #start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/all_start_fits[[j]]$family$getTheta(TRUE))
-               }
-          if(family$family[1] %in% c("ztnegative.binomial", "zinegative.binomial"))
-               start_params$dispparam <- rep(0.2, num_spp)
-          if(family$family[1] %in% c("Beta")) 
-               start_params$dispparam <- rep(0.5, num_spp)          
+          
+          if(!exists(all_start_fits)) {
+               if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
+                    start_params$dispparam <- rep(1, num_spp)
+               if(family$family[1] %in% c("negative.binomial", "zinegative.binomial", "ztnegative.binomial"))
+                    start_params$dispparam <- rep(0.2, num_spp)
+               if(family$family[1] %in% c("Beta")) 
+                    start_params$dispparam <- rep(0.5, num_spp)          
+               } 
+          
+          if(exists(all_start_fits)) {
+               if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
+                    start_params$dispparam <- 0.5*colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
+               if(family$family[1] %in% c("negative.binomial"))
+                    start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/theta.mm(y = y[,j], 
+                                                                                         mu = exp(X%*%start_params$betas[j,] + B%*%start_params$basis_effects_mat[j,]), 
+                                                                                         dfr = num_units - num_X - num_basisfns, 
+                                                                                         limit = 1e2)) + 1e-5
+               if(family$family[1] %in% c("zinegative.binomial"))
+                    start_params$dispparam <- sapply(1:num_spp, function(j) 0.5/all_start_fits[[j]]$family$getTheta(TRUE))
+               if(family$family[1] %in% c("ztnegative.binomial"))
+                    start_params$dispparam <- 0.5*sapply(all_start_fits, function(x) x$dispparam) 
+               if(family$family[1] %in% c("Beta")) 
+                    start_params$dispparam <- 0.5*sapply(1:num_spp, function(j) all_start_fits[[j]]$family$getTheta(TRUE))
+               } 
           }
      if(is.null(start_params$powerparam))
           start_params$powerparam <- rep(ifelse(family$family[1] == "tweedie", 1.6, 0), num_spp)
      if(is.null(start_params$zibetas)) {
-          if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
-               start_params$zibetas <- do.call(rbind, lapply(all_start_fits, function(x) x$zicoefficients))
-               start_params$zibetas <- start_params$zibetas * control$initial_betas_dampen 
-               }
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                start_params$zibetas <- NULL
+          
+          if(!exists(all_start_fits)) {
+               if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+                    start_params$zibetas <- matrix(0.1, nrow = num_spp, ncol = ncol(ziX))
+                    }
+               }
+          
+          if(exists(all_start_fits)) {
+               if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
+                    start_params$zibetas <- do.call(rbind, lapply(all_start_fits, function(x) x$zicoefficients))
+                    start_params$zibetas <- start_params$zibetas * control$initial_betas_dampen 
+                    }
+               }
           }
      
      
