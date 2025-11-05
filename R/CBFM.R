@@ -1858,25 +1858,23 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           getDLL <- "cbfm_threeB"
      if(control$trace > 0) {
           message("Compiling TMB C++ file...")
-          }
+     }
      
      file.copy(from = paste0(TMB_directories$cpp, "/", getDLL, ".cpp"), to = paste0(TMB_directories$compile, "/", getDLL, ".cpp"), overwrite = FALSE)
      if(!dofit) {
-         message("CBFM not fitted. Function is terminated after the C++ file in copied into ", TMB_directories$compile)
-         message("Otsukaresama deshita uwu")
-         return()
-         }
-          
+          message("CBFM not fitted. Function is terminated after the C++ file in copied into ", TMB_directories$compile)
+          message("Otsukaresama deshita uwu")
+          return()
+     }
+     
      origwd <- getwd()          
      # Please see https://github.com/kaskr/adcomp/issues/321 for flags argument
      setwd(TMB_directories$compile)
      TMB::compile(paste0(getDLL, ".cpp")) #, flags = "-Wno-ignored-attributes -O2 -mfpmath=sse -msse2 -mstackrealign" 
      dyn.load(paste0(TMB_directories$compile, "/", TMB::dynlib(getDLL)))
      setwd(origwd)
-     
-     
      ##----------------
-     ## Obtain starting values -- No selection is attempted here  
+     ## Obtain starting values -- No selection is attempted here, and it assumes basis_effects_mat is a zero matrix 
      ##----------------
      .check_start_params(start_params = start_params, num_spp = num_spp, num_basisfns = num_basisfns, num_X = num_X)
      initfit_fn <- function(j, formula, control) {
@@ -2229,68 +2227,30 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                w2 <- numeric(num_units)
                w2[find_nonzeros] <- initw
                w <- c(w1, w2)
-               rm(w2, fit0, MM, cw_eta)
+               rm(w2, fit0, cw_eta)
 
-               ## Initial M-step
-               if(all(control$initial_ridge == 0))
-                    fit0 <- gam(tmp_formula, 
-                                data = data.frame(response = c(y[,j], numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                weights = w,
-                                offset = cw_offset[c(1:num_units, 1:num_units)],
-                                knots = knots, 
-                                method = control$gam_method, 
-                                family = nb(), 
-                                gamma = full_gamma[j])
-               if(!all(control$initial_ridge == 0))
-                    fit0 <- gam(tmp_formula, 
-                                data = data.frame(response = c(y[,j], numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                weights = w,
-                                offset = cw_offset[c(1:num_units, 1:num_units)],
-                                knots = knots,
-                                H = Hmat,
-                                method = control$gam_method, 
-                                family = nb(), 
-                                gamma = full_gamma[j])
-               
-               MM <- predict.gam(fit0, newdata = data, type = "lpmatrix")
-               cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
-               if(!is.null(model.offset(model.frame(fit0))))
-                    cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
-               cw_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
-               cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
-               
-               ## EM algorithm
                inner_err <- Inf
                inner_inner_counter <- 0
+               cw_inner_logL <- -Inf
                while(inner_err > 1e-4) { 
                     if(inner_inner_counter > 50)
                          break;
                     
-                    cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
-                    if(!is.null(model.offset(model.frame(fit0))))
-                         cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
-                    initw <- dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) + 1e-6)
-                    w1 <- rep(1,num_units)
-                    w1[which(y[,j]==0)] <- 0
-                    #initw[initw > 0.1/1e-6] <- 0.1/1e-6
-                    w2 <- numeric(num_units)
-                    w2[find_nonzeros] <- initw
-                    w <- c(w1, w2)
-                    rm(w2) 
-                    if(all(control$initial_ridge == 0))
+                    if(all(control$initial_ridge == 0)) {
                          fit0 <- try(gam(tmp_formula, 
-                                         data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                         weights = w, 
+                                         data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                         weights = new_weights, 
                                          offset = cw_offset[c(1:num_units, 1:num_units)], 
                                          knots = knots, 
                                          method = control$gam_method, 
                                          family = nb(), 
                                          gamma = full_gamma[j]), 
                                      silent = TRUE)
-                    if(!all(control$initial_ridge == 0))
+                         }
+                    if(!all(control$initial_ridge == 0)) {
                          fit0 <- try(gam(tmp_formula, 
-                                         data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
-                                         weights = w, 
+                                         data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                         weights = new_weights, 
                                          offset = cw_offset[c(1:num_units, 1:num_units)], 
                                          knots = knots,
                                          H = Hmat,
@@ -2298,15 +2258,46 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                          family = nb(), 
                                          gamma = full_gamma[j]), 
                                      silent = TRUE)
+                         }
                     if(inherits(fit0, "try-error"))
                          break;
+                    
+                    #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
+                    update_interceptdispparam_fn <- function(pars) {
+                         intercept <- pars[1]
+                         log_dispparam <- pars[2]
+                         
+                         eta_tmp <- intercept + MM[find_nonzeros,-1,drop=FALSE] %*% fit0$coefficients[-1]
+                         if(!is.null(model.offset(model.frame(fit0))))
+                              eta_tmp <- eta_tmp + model.offset(model.frame(fit0))[find_nonzeros]
+                         
+                         logL_tmp <- .dztnbinom(y[find_nonzeros,j], 
+                                                mu = exp(eta_tmp), 
+                                                size = exp(-log_dispparam), 
+                                                log = TRUE)
+                         return(-sum(logL_tmp[is.finite(logL_tmp)]))
+                         } 
+                    
+                    opt_res <- nlminb(start = c(fit0$coefficients[1], -log(fit0$family$getTheta(TRUE))),
+                                      objective = update_interceptdispparam_fn)
+                    fit0$coefficients[1] <- opt_res$par[1]
+                    fit0$dispparam <- exp(opt_res$par[2])
+                    
+                    
                     cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
-                    new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
-                    new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
+                    initw <- dnbinom(0, mu = exp(cw_eta), size = 1/fit0$dispparam) / (1-dnbinom(0, mu = exp(cw_eta), size = 1/fit0$dispparam))
+                    w1 <- rep(1,num_units)
+                    w1[which(y[,j]==0)] <- 0
+                    w2 <- numeric(num_units)
+                    w2[find_nonzeros] <- initw
+                    w <- c(w1, w2)
+                    rm(w2) 
                     
-                    inner_err <- abs(new_inner_logL/cw_inner_logL-1)
+                    
+                    new_inner_logL <- -opt_res$objective
+                    inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                     cw_inner_logL <- new_inner_logL
                     inner_inner_counter <- inner_inner_counter + 1
                     }
