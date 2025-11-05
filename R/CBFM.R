@@ -2883,8 +2883,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               initw <- dnbinom(0, 
                                                mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset + formula_offset)), 
                                                size = 1/new_fit_CBFM_ptest$dispparam[j])
-                              initw <- initw / (1 - initw + 1e-6)
-                              #initw[initw > 0.1/1e-6] <- 0.1/1e-6
+                              initw <- initw / (1 - initw)
                               initw <- initw[find_nonzeros]
                               w1 <- rep(1, num_units)
                               w1[which(y[,j]==0)] <- 0
@@ -2892,13 +2891,14 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               w2[find_nonzeros] <- initw
                               w <- c(w1, w2)
                               rm(w2)
+                              
                               if(!all(control$ridge == 0)) {
                                    fit0 <- try(gam(tmp_formula, 
-                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
                                                    offset = new_offset[c(1:num_units,1:num_units)], 
                                                    knots = knots, 
                                                    method = control$gam_method, 
-                                                   weights = w, 
+                                                   weights = new_weights, 
                                                    H = Hmat, 
                                                    family = nb(), 
                                                    select = select, 
@@ -2906,18 +2906,17 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                    }
                               if(all(control$ridge == 0)) {
                                    fit0 <- try(gam(tmp_formula, 
-                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),]), 
+                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
                                                    offset = new_offset[c(1:num_units,1:num_units)], 
                                                    knots = knots, 
                                                    method = control$gam_method,
-                                                   weights = w, 
+                                                   weights = new_weights, 
                                                    family = nb(), 
                                                    select = select, 
                                                    gamma = full_gamma[j]), silent = TRUE)
                                    }
                               if(inherits(fit0, "try-error"))
                                    break;
-                              
                               
                               #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
                               update_interceptdispparam_fn <- function(pars) {
@@ -2929,19 +2928,18 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                           mu = mu_tmp, 
                                                           size = exp(-log_dispparam), 
                                                           log = TRUE)
-                                   return(-sum(new_inner_logL[is.finite(new_inner_logL)]))
+                                   return(-sum(logL_tmp[is.finite(logL_tmp)]))
                                    } 
                               
-                              opt_res <- nlminb(start = c(fit0$coefficients[1], log(1/fit0$family$getTheta(TRUE))),
-                                                objective = update_interceptdispparam_fn,
-                                                control = list(eval.max = 1000, iter.max = 1000))
+                              opt_res <- nlminb(start = c(fit0$coefficients[1], -log(fit0$family$getTheta(TRUE))),
+                                                objective = update_interceptdispparam_fn)
                               fit0$coefficients[1] <- opt_res$par[1]
 
                               new_inner_logL <- -opt_res$objective 
                               inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                               cw_inner_logL <- new_inner_logL
                               new_fit_CBFM_ptest$betas[j,] <- fit0$coefficients
-                              new_fit_CBFM_ptest$dispparam[j] <- exp(-opt_res$par[2])
+                              new_fit_CBFM_ptest$dispparam[j] <- exp(opt_res$par[2])
                               inner_inner_counter <- inner_inner_counter + 1
                               }
                          
@@ -2949,7 +2947,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
 
-                    
                     out <- list(coefficients = fit0$coefficients, 
                                 linear.predictors = fit0$linear.predictors, 
                                 logLik = fit0$logLik, 
@@ -2960,7 +2957,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(family$family %in% c("negative.binomial","zinegative.binomial"))                        
                          out$dispparam <- 1/fit0$family$getTheta(TRUE)
                     if(family$family %in% c("ztnegative.binomial"))                        
-                         out$dispparam <- exp(-opt_res$par[2])
+                         out$dispparam <- exp(opt_res$par[2])
                     if(family$family == "Beta")                        
                          out$dispparam <- exp(fit0$family$getTheta(TRUE))
                     if(family$family == "tweedie") {                        
@@ -2992,7 +2989,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     }
                new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
 
-                              
+
                ##-------------------------
                ## Check whether to finish inner EM algorithm
                ##-------------------------
