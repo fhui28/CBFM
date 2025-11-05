@@ -2329,7 +2329,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(family$family[1] %in% c("poisson","binomial","zipoisson","ztpoisson"))                        
                start_params$dispparam <- rep(1, num_spp)          
           
-          if(!exists(all_start_fits)) {
+          if(!exists("all_start_fits")) {
                if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
                     start_params$dispparam <- rep(1, num_spp)
                if(family$family[1] %in% c("negative.binomial", "zinegative.binomial", "ztnegative.binomial"))
@@ -2338,7 +2338,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     start_params$dispparam <- rep(0.5, num_spp)          
                } 
           
-          if(exists(all_start_fits)) {
+          if(exists("all_start_fits")) {
                if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
                     start_params$dispparam <- 0.5*colMeans((y - tcrossprod(X, start_params$betas) - tcrossprod(B, start_params$basis_effects_mat))^2)
                if(family$family[1] %in% c("negative.binomial"))
@@ -2360,13 +2360,13 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial")))
                start_params$zibetas <- NULL
           
-          if(!exists(all_start_fits)) {
+          if(!exists("all_start_fits")) {
                if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                     start_params$zibetas <- matrix(0.1, nrow = num_spp, ncol = ncol(ziX))
                     }
                }
           
-          if(exists(all_start_fits)) {
+          if(exists("all_start_fits")) {
                if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                     start_params$zibetas <- do.call(rbind, lapply(all_start_fits, function(x) x$zicoefficients))
                     start_params$zibetas <- start_params$zibetas * control$initial_betas_dampen 
