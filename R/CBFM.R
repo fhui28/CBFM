@@ -2210,7 +2210,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                     gamma = full_gamma[j]), 
                                 silent = TRUE)
                
-          
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
@@ -2237,31 +2236,36 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          break;
                     
                     if(all(control$initial_ridge == 0)) {
-                         fit0 <- try(gam(tmp_formula, 
-                                         data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
-                                         weights = new_weights, 
-                                         offset = cw_offset[c(1:num_units, 1:num_units)], 
-                                         knots = knots, 
-                                         method = control$gam_method, 
-                                         family = nb(), 
-                                         gamma = full_gamma[j]), 
-                                     silent = TRUE)
+                         fit0_try <- try(gam(tmp_formula, 
+                                             data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                             weights = new_weights, 
+                                             offset = cw_offset[c(1:num_units, 1:num_units)], 
+                                             knots = knots, 
+                                             method = control$gam_method, 
+                                             family = nb(), 
+                                             gamma = full_gamma[j]), 
+                                         silent = TRUE)
                          }
                     if(!all(control$initial_ridge == 0)) {
-                         fit0 <- try(gam(tmp_formula, 
-                                         data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
-                                         weights = new_weights, 
-                                         offset = cw_offset[c(1:num_units, 1:num_units)], 
-                                         knots = knots,
-                                         H = Hmat,
-                                         method = control$gam_method, 
-                                         family = nb(), 
-                                         gamma = full_gamma[j]), 
-                                     silent = TRUE)
+                         fit0_try <- try(gam(tmp_formula, 
+                                             data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                             weights = new_weights, 
+                                             offset = cw_offset[c(1:num_units, 1:num_units)], 
+                                             knots = knots,
+                                             H = Hmat,
+                                             method = control$gam_method, 
+                                             family = nb(), 
+                                             gamma = full_gamma[j]), 
+                                         silent = TRUE)
                          }
-                    if(inherits(fit0, "try-error"))
+                    if(inherits(fit0_try, "try-error")) {
                          break;
-                    
+                         }
+                    if(!inherits(fit0_try, "try-error")) {
+                         fit0 <- fit0_try
+                         rm(fit0_try)
+                         }
+
                     #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
                     update_interceptdispparam_fn <- function(pars) {
                          intercept <- pars[1]
@@ -2282,8 +2286,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                       objective = update_interceptdispparam_fn)
                     fit0$coefficients[1] <- opt_res$par[1]
                     fit0$dispparam <- exp(opt_res$par[2])
-                    
-                    
+
                     cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
@@ -2318,7 +2321,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(control$trace > 0)
                message("Calculating starting values...")
           
-          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = formula, control = control)              
+          all_start_fits <- foreach(j = 1:num_spp) %dopar% initfit_fn(j = j, formula = formula, control = control) 
+          
           start_params$betas <- do.call(rbind, lapply(all_start_fits, function(x) x$coefficients))
           start_params$betas <- start_params$betas * control$initial_betas_dampen # Should be OK even if control$initial_betas_dampen is vector equal to number of species
           gc()
@@ -2893,30 +2897,35 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               rm(w2)
                               
                               if(!all(control$ridge == 0)) {
-                                   fit0 <- try(gam(tmp_formula, 
-                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
-                                                   offset = new_offset[c(1:num_units,1:num_units)], 
-                                                   knots = knots, 
-                                                   method = control$gam_method, 
-                                                   weights = new_weights, 
-                                                   H = Hmat, 
-                                                   family = nb(), 
-                                                   select = select, 
-                                                   gamma = full_gamma[j]), silent = TRUE)
+                                   fit0_try <- try(gam(tmp_formula, 
+                                                       data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                                       offset = new_offset[c(1:num_units,1:num_units)], 
+                                                       knots = knots, 
+                                                       method = control$gam_method, 
+                                                       weights = new_weights, 
+                                                       H = Hmat, 
+                                                       family = nb(), 
+                                                       select = select, 
+                                                       gamma = full_gamma[j]), silent = TRUE)
                                    }
                               if(all(control$ridge == 0)) {
-                                   fit0 <- try(gam(tmp_formula, 
-                                                   data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
-                                                   offset = new_offset[c(1:num_units,1:num_units)], 
-                                                   knots = knots, 
-                                                   method = control$gam_method,
-                                                   weights = new_weights, 
-                                                   family = nb(), 
-                                                   select = select, 
-                                                   gamma = full_gamma[j]), silent = TRUE)
+                                   fit0_try <- try(gam(tmp_formula, 
+                                                       data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                                       offset = new_offset[c(1:num_units,1:num_units)], 
+                                                       knots = knots, 
+                                                       method = control$gam_method,
+                                                       weights = new_weights, 
+                                                       family = nb(), 
+                                                       select = select, 
+                                                       gamma = full_gamma[j]), silent = TRUE)
                                    }
-                              if(inherits(fit0, "try-error"))
+                              if(inherits(fit0_try, "try-error")) {
                                    break;
+                                   }
+                              if(!inherits(fit0_try, "try-error")) {
+                                   fit0 <- fit0_try
+                                   rm(fit0_try)
+                                   }
                               
                               #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
                               update_interceptdispparam_fn <- function(pars) {
