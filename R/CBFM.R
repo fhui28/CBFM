@@ -67,6 +67,10 @@
 #' \item{subsequent_betas_dampen: }{A dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific regression coefficients corresponding to the model matrix i.e., \code{betas}, during the running of the PQL estimation algorithm. To elaborate, during the PQL algorithm updates are made to the regression coefficients related to the combined matrix of basis functions, conditional on the regression coefficients corresponding to the model matrix. However, sometimes this updating can fails due to the latter being overfitted, say. If this occurs, then an *ad-hoc* attempt is made where the update is done conditional on a dampened/shrunk set of the regression coefficients corresponding to the model matrix. For instance, setting \code{subsequent_betas_dampen = 0.25} sets the magnitudes of all the regression coefficients related to the model matrix to a quarter of their original size, including the species-specific intercepts.
 #' Note this argument *only* comes into play when the first attempt, which can be thought of as updating with \code{subsequent_betas_dampen = 1}, to update the regression coefficients associated with the combined matrix of basis functions fails. } 
 
+#' \item{initial_dispparam_dampen: }{Similar to \code{initial_betas_dampen}, a dampening factor which can be used to reduce the magnitudes of the starting values obtained for the species-specific dispersion parameters.}
+
+#' \item{subsequent_dispparam_dampen: }{Similar to \code{subsequent_dispparam_dampen}, a dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific disperson parameters, during the running of the PQL estimation algorithm.} 
+
 #' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalized cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which only occurs for a subset of parameters even when starting parameters are not supplied and \code{CBFM} tries to generate its own starting values.}
@@ -261,7 +265,7 @@
 #' ## A note on estimation and inference
 #' Because CBFMs uses a basis function approach to model spatio-temporal correlations between and within species, then they can be thought of as a type of GAM. Similar to a common implementation of GAMs then, this package uses a maximized penalized quasi-likelihood (PQL) approach for estimation and inference (Breslow and Clayton, 1993; Wood, 2017; Hui et al., 2023), while the baseline between-species correlation and community-level covariance matrices are by default estimated via Laplace approximated restricted maximum likelihood estimation (Wood, 2011; Wood, 2017). Currently, CBFM makes use of both the machinery available in [mgcv::gam()] (Wood, 2017) and [TMB::MakeADFun()] (Kristensen et al., 2016) to facilitate this entire algorithm. After the PQL algorithm has converged, a final estimation step is performed purely to update regression/basis function coefficients (and dispersion parameters if appropriate).
 #' 
-#' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works alright, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are not always easy fixes for such situations (as it may reflect an underlying, perhaps intriguing feature of the proposed model for the predictors, data, or it may genuinely be the stacked species distribution model is already fitting incredibly well!). Two *ad-hoc* fixes are available through \code{control$initial_betas_dampen} and  \code{control$initial_ridge}, but it is not guaranteed to work.
+#' If \code{start_params} is not supplied, then CBFM attempts to obtain starting values based on fitting an appropriate stacked species distribution model. This generally works alright, but can sometimes fail badly e.g., if the stacked species distribution model severely overfits for one or more species. A tell-tale sign of when it occurs is if from the returned CBFM fit, the estimates of regression coefficients corresponding to the spatial and/or temporal basis functions i.e., \code{basis_effects_mat}, are extremely close to zero for these problematic species. There are not always easy fixes for such situations (as it may reflect an underlying, perhaps intriguing feature of the proposed model for the predictors, data, or it may genuinely be the stacked species distribution model is already fitting incredibly well!). Two *ad-hoc* fixes are available through \code{control$initial_betas_dampen/control$initial_dispparam_dampen} and  \code{control$initial_ridge} arguments, but it is not guaranteed to work.
 #' 
 #' Standard errors and resulting inferential tools like confidence intervals are based on the approximate large sample distribution of the regression coefficients, and use the so-called Bayesian posterior covariance matrix for the coefficients, similar to (but not as sophisticated as!) what is provided  [mgcv::summary.gam()]. Please note **all standard errors and thus inference are currently computed without considering uncertainty in estimation of covariance \eqn{\Sigma} and correlation matrices \eqn{G}. They can lead to standard errors which are potentially too small, so please keep this in mind.** 
 #' 
@@ -380,7 +384,7 @@
 #' 
 #' * An initial thing to try is to bump up the number of inner iterations i.e., \code{control$inner_maxit} from the default of 1 to something like 10, 20 or even higher. This will give more opportunities for the inner estimation component of the PQL algorithm (where all regression and smoothing coefficients are updated) to try converge to a stable point, before proceeding to estimating the other model parameters. 
 #' 
-#' * Sometimes the starting values CBFM constructs are not great! A common situation where this occurs is when smoothers are employed in \code{formula} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen} argument or \code{control$initial_ridge}, both of which effectively dampen the starting estimated coefficients from potentially extreme magnitudes and can facilitate the underlying PQL estimation algorithm to "get going".
+#' * Sometimes the starting values CBFM constructs are not great! A common situation where this occurs is when smoothers are employed in \code{formula} and the data are (extremely) overdispersed or show signs of complete or quasi-separation. A simple way to try and break out of bad automated starting values is to make use of the \code{control$initial_betas_dampen/control$initial_dispparam_dampen} arguments or \code{control$initial_ridge}, both of which effectively dampen the starting estimated coefficients from potentially extreme magnitudes and can facilitate the underlying PQL estimation algorithm to "get going".
 #' 
 #' * Alternatively, supplying your own "wisely chosen" starting values is never a bad thing, plus it can often help to speed up the fitting process. In our experience, often a decent way to obtain starting values is to fit stacked GAMs using [mgcv::gam()] with the same formula as you will use in \code{formula}, plus smoothing terms to account for space and/or time. Some template code is provided as follows:
 #' ```
@@ -1714,6 +1718,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                 optim_lower = -50, optim_upper = 50, 
                                 convergence_type = "parameters_MSE", tol = 1e-4, final_maxit = 100,   
                                 initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
+                                initial_dispparam_dampen = 1, subsequent_dispparam_dampen = 0.25, 
                                 gam_method = "REML", seed = NULL, 
                                 initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0, 
                                 trace = 0),
@@ -1858,14 +1863,14 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           getDLL <- "cbfm_threeB"
      if(control$trace > 0) {
           message("Compiling TMB C++ file...")
-     }
+          }
      
      file.copy(from = paste0(TMB_directories$cpp, "/", getDLL, ".cpp"), to = paste0(TMB_directories$compile, "/", getDLL, ".cpp"), overwrite = FALSE)
      if(!dofit) {
           message("CBFM not fitted. Function is terminated after the C++ file in copied into ", TMB_directories$compile)
           message("Otsukaresama deshita uwu")
           return()
-     }
+          }
      
      origwd <- getwd()          
      # Please see https://github.com/kaskr/adcomp/issues/321 for flags argument
@@ -1873,6 +1878,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      TMB::compile(paste0(getDLL, ".cpp")) #, flags = "-Wno-ignored-attributes -O2 -mfpmath=sse -msse2 -mstackrealign" 
      dyn.load(paste0(TMB_directories$compile, "/", TMB::dynlib(getDLL)))
      setwd(origwd)
+     
      ##----------------
      ## Obtain starting values -- No selection is attempted here, and it assumes basis_effects_mat is a zero matrix 
      ##----------------
@@ -2332,7 +2338,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      if(is.null(start_params$dispparam)) {
           if(family$family[1] %in% c("poisson","binomial","zipoisson","ztpoisson"))                        
                start_params$dispparam <- rep(1, num_spp)          
-          
+
           if(!exists("all_start_fits")) {
                if(family$family[1] %in% c("gaussian","Gamma","tweedie"))                        
                     start_params$dispparam <- rep(1, num_spp)
@@ -2356,6 +2362,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     start_params$dispparam <- 0.5*sapply(all_start_fits, function(x) x$dispparam) 
                if(family$family[1] %in% c("Beta")) 
                     start_params$dispparam <- 0.5*sapply(1:num_spp, function(j) all_start_fits[[j]]$family$getTheta(TRUE))
+               
+               start_params$dispparam <- start_params$dispparam * control$initial_dispparam_dampen 
                } 
           }
      if(is.null(start_params$powerparam))
@@ -2488,7 +2496,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           start_params[["mean_B_spacetime"]] <- numeric(num_spacetimebasisfns)
           }
      start_params$logLik <- -Inf
-     
+
      ##----------------
      ## Run PQL algorithm
      ##----------------
@@ -2677,12 +2685,10 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                control = list(iter.max = 1000, eval.max = 1000)), 
                                         silent = TRUE) #' Note choices in control here are pretty arbitrary!
                     
-                    # Dampen Xbeta component and run it again...it is kind of ad-hoc but has been shown to be helpful especially with GAM fits to extremely overdispersed counts 
+                    # Dampen Xbeta components and dispparam and run it again; this is but I have found it to be helpful especially with GAM fits to extremely overdispersed counts 
                     if(inherits(new_fit_CBFM, "try-error")) {
-                         # if(length(control$subsequent_betas_dampen) == 1)
                          tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen 
-                         # if(length(control$subsequent_betas_dampen) == num_spp)
-                         #      tidbits_data$Xbeta <- tidbits_data$Xbeta * control$subsequent_betas_dampen[j]
+                         tidbits_data$dispparam <- tidbits_data$dispparam * control$subsequent_dispparam_dampen 
                          
                          CBFM_objs <- TMB::MakeADFun(data = tidbits_data, parameters = tidbits_parameters, DLL = getDLL, hessian = FALSE, silent = TRUE)
                          new_fit_CBFM <- try(nlminb(start = CBFM_objs$par, objective = CBFM_objs$fn, gradient = CBFM_objs$gr,
@@ -3728,4 +3734,3 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      class(out_CBFM) <- "CBFM"
      return(out_CBFM)
      }
-     
