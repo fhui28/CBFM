@@ -1,6 +1,6 @@
 # CBFM (Community-level basis function models)
 
-[![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM) 
+<!--[![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM) -->
 <!--[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)-->
 
 `CBFM` is an R package for spatial and spatio-temporal joint species distributing modeling of multivariate abundance data, based on the idea of using community-level (species-common) basis functions. It offers an alternative and connected (but by no means necessarily superior) approach to the popular spatio-temporal generalized linear latent variable model (GLLVM) method.
