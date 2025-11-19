@@ -1,6 +1,7 @@
 # CBFM (Community-level basis function models)
 
 <!--[![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM) -->
+
 <!--[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html)-->
 
 `CBFM` is an R package for spatial and spatio-temporal joint species distributing modeling of multivariate abundance data, based on the idea of using community-level (species-common) basis functions. It offers an alternative and connected (but by no means necessarily superior) approach to the popular spatio-temporal generalized linear latent variable model (GLLVM) method.
@@ -21,7 +22,7 @@ Alternatively, or if the above does not work, you may download a (supposedly) st
 
 # Getting started
 
-**For getting started with `CBFM` though, please have a read of the manuscript available [here](https://doi.org/10.1111/2041-210X.14184). After, please install the package then have a look/work through the examples in the help file for the main workhorse function, `CBFM::CBFM()`. **
+**For getting started with `CBFM` though, please have a read of the manuscript available [here](https://doi.org/10.1111/2041-210X.14184). After, please install the package then have a look/work through the examples in the help file for the main workhorse function, `CBFM::CBFM()`.**
 
 Some broad introductions to joint species distribution modeling, especially using GLLVMs, please see [So Many Variables: Joint Modeling in Community Ecology](https://doi.org/10.1016/j.tree.2015.09.007), [How to make more out of community data? A conceptual framework and its implementation as models and software](https://doi.org/10.1111/ele.12757), and the textbook [Joint Species Distribution Modelling, with Applications in R](https://doi.org/10.1017/9781108591720). <!--[Joint dynamic species distribution models: a tool for community ordination and spatio-temporal monitoring](https://doi.org/10.1111/geb.12464) -->
 
