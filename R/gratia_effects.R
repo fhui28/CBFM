@@ -93,10 +93,10 @@
 #' geteffects <- gratia_effects(fitcbfm)
 #' geteffects$all_parametric_effects$species <- geteffects$all_parametric_effects$species %>%
 #' fct_inorder
-#' ggplot(geteffects$all_parametric_effects, aes(x = value, y = partial, color = species)) +
+#' ggplot(geteffects$all_parametric_effects, aes(x = .value, y = .partial, color = species)) +
 #' geom_line() +
-#' geom_rug(aes(x = value), sides = "b", show.legend = FALSE, color = "black") +
-#' facet_wrap(. ~ term, nrow = 2) +
+#' geom_rug(aes(x = .value), sides = "b", show.legend = FALSE, color = "black") +
+#' facet_wrap(. ~ .term, nrow = 2) +
 #' labs(x = "Covariate", y = "Effect") +
 #' theme_bw() +
 #' theme(legend.position = "bottom")
@@ -127,7 +127,7 @@
 #' fct_inorder
 #' ggplot() +
 #' geom_line(data = geteffects$all_smooth_estimates %>% subset(smooth == "s(depth)"), 
-#' aes(x = depth, y = est, color = species), show.legend = FALSE) +
+#' aes(x = depth, y = .est, color = species), show.legend = FALSE) +
 #' geom_rug(aes(x = depth), data = dat, sides = "b", color = "black") +
 #' labs(x = "depth", y = "Effect") +
 #' theme_bw()
