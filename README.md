@@ -163,15 +163,15 @@ fitcbfm <- CBFM(y = simy,
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 0  Difference in parameter estimates (mean squared error): 0.19057
+#> Iteration: 0  Difference in parameter estimates (mean squared error): 0.19499
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 1  Difference in parameter estimates (mean squared error): 0.00181
+#> Iteration: 1  Difference in parameter estimates (mean squared error): 0.00187
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 2  Difference in parameter estimates (mean squared error): 0.00024
+#> Iteration: 2  Difference in parameter estimates (mean squared error): 0.00025
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
@@ -206,14 +206,14 @@ fitcbfm
 
 residuals(fitcbfm) %>% 
      str
-#>  num [1:500, 1:50] 0.19 0.205 0.366 0.311 0.272 ...
+#>  num [1:500, 1:50] 0.243 0.447 -0.703 -0.595 -0.821 ...
 #>  - attr(*, "dimnames")=List of 2
 #>   ..$ : chr [1:500] "units1" "units2" "units3" "units4" ...
 #>   ..$ : chr [1:50] "species1" "species2" "species3" "species4" ...
 
 predict(fitcbfm) %>% 
      str
-#>  num [1:500, 1:50] 1.45 1.357 0.548 0.798 0.986 ...
+#>  num [1:500, 1:50] 1.136 0.211 0.86 0.384 1.525 ...
 #>  - attr(*, "dimnames")=List of 2
 #>   ..$ : chr [1:500] "1" "2" "3" "4" ...
 #>   ..$ : chr [1:50] "species1" "species2" "species3" "species4" ...
@@ -223,37 +223,35 @@ predict(fitcbfm) %>%
 varpart(fitcbfm) 
 #> $varpart_X
 #>  species1  species2  species3  species4  species5  species6  species7  species8 
-#> 0.8356968 0.8071236 0.8215379 0.7860160 0.7869573 0.4406866 0.8126370 0.7011606 
+#> 0.8732223 0.7783960 0.7417907 0.8498941 0.7269623 0.5899344 0.7772709 0.8160586 
 #>  species9 species10 species11 species12 species13 species14 species15 species16 
-#> 0.4978361 0.7652074 0.7958052 0.7339228 0.8896515 0.7798912 0.6957831 0.8456755 
+#> 0.6044087 0.7331813 0.7544100 0.7369356 0.8537926 0.7856107 0.7840378 0.8951926 
 #> species17 species18 species19 species20 species21 species22 species23 species24 
-#> 0.6977357 0.6513606 0.7209768 0.8607639 0.4817789 0.6256921 0.7206322 0.7108684 
+#> 0.6633934 0.6715212 0.7145126 0.8551191 0.6008073 0.5977330 0.7746530 0.5315410 
 #> species25 species26 species27 species28 species29 species30 species31 species32 
-#> 0.7010970 0.8525702 0.7314687 0.7959361 0.8213233 0.3949826 0.6820069 0.8604772 
+#> 0.8279806 0.8049822 0.8344611 0.7861088 0.8302083 0.5247550 0.8228519 0.8677673 
 #> species33 species34 species35 species36 species37 species38 species39 species40 
-#> 0.7709989 0.8352444 0.8459971 0.6991546 0.7288195 0.8322753 0.8300749 0.8318143 
+#> 0.8210022 0.8353986 0.8111194 0.5622902 0.7390217 0.8096608 0.8232443 0.7986247 
 #> species41 species42 species43 species44 species45 species46 species47 species48 
-#> 0.5631777 0.9095532 0.8254126 0.8186288 0.8997527 0.7564872 0.8788737 0.8344639 
+#> 0.6991398 0.8872838 0.7219372 0.8771520 0.8845746 0.8196193 0.8617924 0.8385773 
 #> species49 species50 
-#> 0.6750379 0.6476261 
+#> 0.5014494 0.5762407 
 #> 
 #> $varpart_B_space
-#>   species1   species2   species3   species4   species5   species6   species7 
-#> 0.16430318 0.19287642 0.17846213 0.21398397 0.21304266 0.55931340 0.18736296 
-#>   species8   species9  species10  species11  species12  species13  species14 
-#> 0.29883940 0.50216386 0.23479262 0.20419480 0.26607721 0.11034855 0.22010882 
-#>  species15  species16  species17  species18  species19  species20  species21 
-#> 0.30421685 0.15432455 0.30226434 0.34863938 0.27902323 0.13923614 0.51822106 
-#>  species22  species23  species24  species25  species26  species27  species28 
-#> 0.37430794 0.27936784 0.28913157 0.29890305 0.14742978 0.26853131 0.20406385 
-#>  species29  species30  species31  species32  species33  species34  species35 
-#> 0.17867669 0.60501736 0.31799313 0.13952275 0.22900112 0.16475558 0.15400292 
-#>  species36  species37  species38  species39  species40  species41  species42 
-#> 0.30084541 0.27118055 0.16772472 0.16992513 0.16818573 0.43682232 0.09044683 
-#>  species43  species44  species45  species46  species47  species48  species49 
-#> 0.17458739 0.18137117 0.10024730 0.24351284 0.12112634 0.16553610 0.32496205 
-#>  species50 
-#> 0.35237387
+#>  species1  species2  species3  species4  species5  species6  species7  species8 
+#> 0.1267777 0.2216040 0.2582093 0.1501059 0.2730377 0.4100656 0.2227291 0.1839414 
+#>  species9 species10 species11 species12 species13 species14 species15 species16 
+#> 0.3955913 0.2668187 0.2455900 0.2630644 0.1462074 0.2143893 0.2159622 0.1048074 
+#> species17 species18 species19 species20 species21 species22 species23 species24 
+#> 0.3366066 0.3284788 0.2854874 0.1448809 0.3991927 0.4022670 0.2253470 0.4684590 
+#> species25 species26 species27 species28 species29 species30 species31 species32 
+#> 0.1720194 0.1950178 0.1655389 0.2138912 0.1697917 0.4752450 0.1771481 0.1322327 
+#> species33 species34 species35 species36 species37 species38 species39 species40 
+#> 0.1789978 0.1646014 0.1888806 0.4377098 0.2609783 0.1903392 0.1767557 0.2013753 
+#> species41 species42 species43 species44 species45 species46 species47 species48 
+#> 0.3008602 0.1127162 0.2780628 0.1228480 0.1154254 0.1803807 0.1382076 0.1614227 
+#> species49 species50 
+#> 0.4985506 0.4237593
 ```
 
 ``` r
@@ -285,12 +283,12 @@ orddat <- data.frame(dat[,c("x","y")],
 orddat %>% 
      head
 #>           x         y       Axis1       Axis2
-#> 1 2.4102361 1.8604797 -0.31475024  0.02770395
-#> 2 4.7484216 3.6814821  0.64813537  0.04050491
-#> 3 0.4196939 4.4302971 -0.26628658 -0.09829066
-#> 4 3.8437889 4.0704522  0.05458624 -0.58213466
-#> 5 2.3863523 3.5680672  0.03202522 -0.35585071
-#> 6 3.1606837 0.7024926  0.31367274  0.61447854
+#> 1 2.4102361 1.8604797 -0.29417785  0.12433338
+#> 2 4.7484216 3.6814821  0.56942335 -0.08716202
+#> 3 0.4196939 4.4302971 -0.40403471  0.07355888
+#> 4 3.8437889 4.0704522 -0.04059671  0.56384951
+#> 5 2.3863523 3.5680672  0.02782343  0.29562368
+#> 6 3.1606837 0.7024926  0.29591872 -0.61928213
 
 ggplot(orddat, aes(x = x, y = y, color = Axis1)) +
      geom_point() +
@@ -310,8 +308,9 @@ ggplot(orddat, aes(x = x, y = y, color = Axis2)) +
      theme_bw()
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-2.png" width="100%" /> \#
-If you find any bugs and issues…
+<img src="man/figures/README-unnamed-chunk-9-2.png" width="100%" />
+
+# If you find any bugs and issues…
 
 If you find something that looks like a bug/issue, please let us know
 report it, so that we can resolve it and continue to improve this

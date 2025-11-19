@@ -181,6 +181,8 @@ ggplot(orddat, aes(x = x, y = y, color = Axis2)) +
      theme_bw()
 ```
 
+
+
 # If you find any bugs and issues...
 
 If you find something that looks like a bug/issue, please let us know report it, so that we can resolve it and continue to improve this project (interest and time pending). To report a bug/issue, please make use of the Github issues and post it up there. As much as possible, please include in the issue: 1. A description of the bug/issue; 2. Paste-able code along with some comments that reproduces the problem e.g., using the [reprex](https://cran.r-project.org/package=reprex) package. If you also have an idea of how to fix the problem (Francis tends to make a lot of mistakes in my code, so some may be easy amendments!), then that is also much appreciated. 3. Required data files etc...
