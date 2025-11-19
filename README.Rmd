@@ -62,6 +62,7 @@ library(ROCR)
 library(sp)
 library(geoR)
 library(tidyverse)
+library(colorspace)
 library(CBFM)
 ```
 
@@ -125,6 +126,19 @@ fitcbfm <- CBFM(y = simy,
 Afterwards, you can a variety of standard modeling functions on the model fit, such as `summary`, `fitted`, `predict`, and `plot`, among others, along with more specific JSDM functions such as `ordinate`, `varpart`, `corX`, `corB`, and `gratia_effects`. Below are some illustrations.
 
 ```{r}
+fitcbfm
+
+# summary(fitcbfm) 
+#' Not shown as the output is very long!
+
+residuals(fitcbfm) %>% 
+     str
+
+predict(fitcbfm) %>% 
+     str
+```
+
+```{r}
 varpart(fitcbfm) 
 ```
 
@@ -134,16 +148,39 @@ geteffects <- gratia_effects(fitcbfm)
 geteffects$all_parametric_effects$species <- geteffects$all_parametric_effects$species %>%
      fct_inorder
 
-ggplot(geteffects$all_parametric_effects, 
-       aes(x = value, y = partial, color = species)) +
+ggplot(geteffects$all_parametric_effects %>% 
+            filter(.term == "temp"), 
+       aes(x = .value, y = .partial, color = species)) +
      geom_line() +
-     geom_rug(aes(x = value), sides = "b", show.legend = FALSE, color = "black") +
-     facet_wrap(. ~ term, nrow = 2) +
+     geom_rug(aes(x = .value), sides = "b", show.legend = FALSE, color = "black") +
+     scale_color_discrete_diverging() +
+     facet_wrap(. ~ .term, nrow = 4) +
      labs(x = "Covariate", y = "Effect") +
      theme_bw() +
      theme(legend.position = "bottom")
 ```
 
+```{r}
+getords <- ordinate(fitcbfm)
+
+orddat <- data.frame(dat[,c("x","y")], 
+                     getords$scores) 
+
+orddat %>% 
+     head
+
+ggplot(orddat, aes(x = x, y = y, color = Axis1)) +
+     geom_point() +
+     scale_color_continuous_sequential() +
+     labs(x = "x coordinate", y = "y coordinate", color = "Site score 1") +
+     theme_bw()
+
+ggplot(orddat, aes(x = x, y = y, color = Axis2)) +
+     geom_point() +
+     scale_color_continuous_sequential() +
+     labs(x = "x coordinate", y = "y coordinate", color = "Site score 2") +
+     theme_bw()
+```
 # If you find any bugs and issues...
 
 If you find something that looks like a bug/issue, please let us know report it, so that we can resolve it and continue to improve this project (interest and time pending). To report a bug/issue, please make use of the Github issues and post it up there. As much as possible, please include in the issue: 1. A description of the bug/issue; 2. Paste-able code along with some comments that reproduces the problem e.g., using the [reprex](https://cran.r-project.org/package=reprex) package. If you also have an idea of how to fix the problem (Francis tends to make a lot of mistakes in my code, so some may be easy amendments!), then that is also much appreciated. 3. Required data files etc...
