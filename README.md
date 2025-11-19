@@ -163,19 +163,19 @@ fitcbfm <- CBFM(y = simy,
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 0  Difference in parameter estimates (mean squared error): 0.20748
+#> Iteration: 0  Difference in parameter estimates (mean squared error): 0.19057
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 1  Difference in parameter estimates (mean squared error): 0.00193
+#> Iteration: 1  Difference in parameter estimates (mean squared error): 0.00181
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 2  Difference in parameter estimates (mean squared error): 0.00021
+#> Iteration: 2  Difference in parameter estimates (mean squared error): 0.00024
 #> Updating all coefficients and dispersion/power parameters (this includes running an inner EM algorithm if appropriate).
 #> Updating between response correlation (covariance) matrices, G.
 #> Updating covariance matrices for basis functions, Sigma, if required.
-#> Iteration: 3  Difference in parameter estimates (mean squared error): 8e-05
+#> Iteration: 3  Difference in parameter estimates (mean squared error): 6e-05
 #> Calculating (components of) the covariance (standard error) matrix...
 ```
 
@@ -206,14 +206,14 @@ fitcbfm
 
 residuals(fitcbfm) %>% 
      str
-#>  num [1:500, 1:50] -0.803 0.418 -0.608 0.336 0.275 ...
+#>  num [1:500, 1:50] 0.19 0.205 0.366 0.311 0.272 ...
 #>  - attr(*, "dimnames")=List of 2
 #>   ..$ : chr [1:500] "units1" "units2" "units3" "units4" ...
 #>   ..$ : chr [1:50] "species1" "species2" "species3" "species4" ...
 
 predict(fitcbfm) %>% 
      str
-#>  num [1:500, 1:50] 1.407 0.33 0.44 0.682 0.968 ...
+#>  num [1:500, 1:50] 1.45 1.357 0.548 0.798 0.986 ...
 #>  - attr(*, "dimnames")=List of 2
 #>   ..$ : chr [1:500] "1" "2" "3" "4" ...
 #>   ..$ : chr [1:50] "species1" "species2" "species3" "species4" ...
@@ -223,37 +223,37 @@ predict(fitcbfm) %>%
 varpart(fitcbfm) 
 #> $varpart_X
 #>  species1  species2  species3  species4  species5  species6  species7  species8 
-#> 0.8369517 0.7897832 0.8579931 0.9393983 0.8516509 0.5984185 0.7965301 0.8856998 
+#> 0.8356968 0.8071236 0.8215379 0.7860160 0.7869573 0.4406866 0.8126370 0.7011606 
 #>  species9 species10 species11 species12 species13 species14 species15 species16 
-#> 0.6323820 0.7933322 0.7480646 0.7207919 0.8874016 0.7974287 0.7485642 0.9083218 
+#> 0.4978361 0.7652074 0.7958052 0.7339228 0.8896515 0.7798912 0.6957831 0.8456755 
 #> species17 species18 species19 species20 species21 species22 species23 species24 
-#> 0.5443042 0.6459431 0.6947710 0.8916497 0.6153883 0.6540311 0.7265042 0.6116039 
+#> 0.6977357 0.6513606 0.7209768 0.8607639 0.4817789 0.6256921 0.7206322 0.7108684 
 #> species25 species26 species27 species28 species29 species30 species31 species32 
-#> 0.6827461 0.8427974 0.8357903 0.7442542 0.8259807 0.6957625 0.8076055 0.8695537 
+#> 0.7010970 0.8525702 0.7314687 0.7959361 0.8213233 0.3949826 0.6820069 0.8604772 
 #> species33 species34 species35 species36 species37 species38 species39 species40 
-#> 0.8511184 0.8377428 0.8661446 0.6947221 0.8104156 0.7565808 0.8300096 0.6170683 
+#> 0.7709989 0.8352444 0.8459971 0.6991546 0.7288195 0.8322753 0.8300749 0.8318143 
 #> species41 species42 species43 species44 species45 species46 species47 species48 
-#> 0.7375907 0.8856616 0.8008515 0.8508559 0.9152972 0.7403227 0.8300071 0.7685296 
+#> 0.5631777 0.9095532 0.8254126 0.8186288 0.8997527 0.7564872 0.8788737 0.8344639 
 #> species49 species50 
-#> 0.5993134 0.6179018 
+#> 0.6750379 0.6476261 
 #> 
 #> $varpart_B_space
 #>   species1   species2   species3   species4   species5   species6   species7 
-#> 0.16304825 0.21021682 0.14200687 0.06060172 0.14834906 0.40158153 0.20346994 
+#> 0.16430318 0.19287642 0.17846213 0.21398397 0.21304266 0.55931340 0.18736296 
 #>   species8   species9  species10  species11  species12  species13  species14 
-#> 0.11430015 0.36761800 0.20666783 0.25193537 0.27920808 0.11259835 0.20257127 
+#> 0.29883940 0.50216386 0.23479262 0.20419480 0.26607721 0.11034855 0.22010882 
 #>  species15  species16  species17  species18  species19  species20  species21 
-#> 0.25143577 0.09167819 0.45569576 0.35405690 0.30522899 0.10835028 0.38461171 
+#> 0.30421685 0.15432455 0.30226434 0.34863938 0.27902323 0.13923614 0.51822106 
 #>  species22  species23  species24  species25  species26  species27  species28 
-#> 0.34596890 0.27349585 0.38839608 0.31725391 0.15720264 0.16420974 0.25574584 
+#> 0.37430794 0.27936784 0.28913157 0.29890305 0.14742978 0.26853131 0.20406385 
 #>  species29  species30  species31  species32  species33  species34  species35 
-#> 0.17401929 0.30423748 0.19239452 0.13044627 0.14888165 0.16225725 0.13385545 
+#> 0.17867669 0.60501736 0.31799313 0.13952275 0.22900112 0.16475558 0.15400292 
 #>  species36  species37  species38  species39  species40  species41  species42 
-#> 0.30527793 0.18958441 0.24341922 0.16999038 0.38293171 0.26240931 0.11433839 
+#> 0.30084541 0.27118055 0.16772472 0.16992513 0.16818573 0.43682232 0.09044683 
 #>  species43  species44  species45  species46  species47  species48  species49 
-#> 0.19914850 0.14914415 0.08470282 0.25967734 0.16999293 0.23147044 0.40068655 
+#> 0.17458739 0.18137117 0.10024730 0.24351284 0.12112634 0.16553610 0.32496205 
 #>  species50 
-#> 0.38209822
+#> 0.35237387
 ```
 
 ``` r
@@ -262,7 +262,8 @@ geteffects <- gratia_effects(fitcbfm)
 geteffects$all_parametric_effects$species <- geteffects$all_parametric_effects$species %>%
      fct_inorder
 
-ggplot(geteffects$all_parametric_effects, 
+ggplot(geteffects$all_parametric_effects %>% 
+            filter(.term == "temp"), 
        aes(x = .value, y = .partial, color = species)) +
      geom_line() +
      geom_rug(aes(x = .value), sides = "b", show.legend = FALSE, color = "black") +
@@ -284,12 +285,12 @@ orddat <- data.frame(dat[,c("x","y")],
 orddat %>% 
      head
 #>           x         y       Axis1       Axis2
-#> 1 2.4102361 1.8604797 -0.12724338 -0.03072208
-#> 2 4.7484216 3.6814821  0.48497693  0.05491284
-#> 3 0.4196939 4.4302971 -0.30419765 -0.16742371
-#> 4 3.8437889 4.0704522 -0.12944326 -0.50118818
-#> 5 2.3863523 3.5680672 -0.05917183 -0.27337871
-#> 6 3.1606837 0.7024926  0.42912238  0.57712384
+#> 1 2.4102361 1.8604797 -0.31475024  0.02770395
+#> 2 4.7484216 3.6814821  0.64813537  0.04050491
+#> 3 0.4196939 4.4302971 -0.26628658 -0.09829066
+#> 4 3.8437889 4.0704522  0.05458624 -0.58213466
+#> 5 2.3863523 3.5680672  0.03202522 -0.35585071
+#> 6 3.1606837 0.7024926  0.31367274  0.61447854
 
 ggplot(orddat, aes(x = x, y = y, color = Axis1)) +
      geom_point() +
