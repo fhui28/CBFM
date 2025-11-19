@@ -15,7 +15,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-
 # CBFM (Community-level basis function models)
 
 <!--[![CRAN status](https://www.r-pkg.org/badges/version/CBFM)](https://CRAN.R-project.org/package=CBFM) -->
@@ -181,7 +180,6 @@ ggplot(orddat, aes(x = x, y = y, color = Axis2)) +
      labs(x = "x coordinate", y = "y coordinate", color = "Site score 2") +
      theme_bw()
 ```
-
 
 # If you find any bugs and issues...
 
