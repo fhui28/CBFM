@@ -2238,7 +2238,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                inner_inner_counter <- 0
                cw_inner_logL <- -Inf
                while(inner_err > 1e-4) { 
-                    if(inner_inner_counter > 50)
+                    if(inner_inner_counter > 25)
                          break;
                     
                     if(all(control$initial_ridge == 0)) {
@@ -2271,29 +2271,32 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          fit0 <- fit0_try
                          rm(fit0_try)
                          }
-
-                    #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
-                    update_interceptdispparam_fn <- function(pars) {
-                         intercept <- pars[1]
-                         log_dispparam <- pars[2]
-                         
-                         eta_tmp <- intercept + MM[find_nonzeros,-1,drop=FALSE] %*% fit0$coefficients[-1]
-                         if(!is.null(model.offset(model.frame(fit0))))
-                              eta_tmp <- eta_tmp + model.offset(model.frame(fit0))[find_nonzeros]
-                         
-                         logL_tmp <- .dztnbinom(y[find_nonzeros,j], 
-                                                mu = exp(eta_tmp), 
-                                                size = exp(-log_dispparam), 
-                                                log = TRUE)
-                         return(-sum(logL_tmp[is.finite(logL_tmp)]))
-                         } 
                     
-                    opt_res <- nlminb(start = c(fit0$coefficients[1], -log(fit0$family$getTheta(TRUE))),
-                                      objective = update_interceptdispparam_fn)
-                    fit0$coefficients[1] <- opt_res$par[1]
-                    fit0$dispparam <- exp(opt_res$par[2])
-
-                    cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
+                    #' #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
+                    #' This is not scrapped as it behaves erratically...
+                    #' update_interceptdispparam_fn <- function(pars) {
+                    #'      intercept <- pars[1]
+                    #'      size_param <- pars[2]
+                    #' 
+                    #'      eta_tmp <- intercept + MM[find_nonzeros,-1,drop=FALSE] %*% fit0$coefficients[-1] + cw_offset[find_nonzeros]
+                    #'      if(!is.null(model.offset(model.frame(fit0))))
+                    #'           eta_tmp <- eta_tmp + model.offset(model.frame(fit0))[find_nonzeros]
+                    #' 
+                    #'      logL_tmp <- .dztnbinom(y[find_nonzeros,j],
+                    #'                             mu = exp(eta_tmp),
+                    #'                             size = size_param,
+                    #'                             log = TRUE)
+                    #'      return(-sum(logL_tmp[is.finite(logL_tmp)]))
+                    #'      }
+                    # opt_res <- nlminb(start = c(fit0$coefficients[1], fit0$family$getTheta(TRUE)),
+                    #                   objective = update_interceptdispparam_fn,
+                    #                   lower = c(-Inf, 1e-8))
+                    # fit0$coefficients[1] <- opt_res$par[1]
+                    # fit0$dispparam <- 1/opt_res$par[2]
+                    fit0$dispparam <- 1/fit0$family$getTheta(TRUE)
+                    
+                    
+                    cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
                     
@@ -2305,8 +2308,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     w <- c(w1, w2)
                     rm(w2) 
                     
-                    
-                    new_inner_logL <- -opt_res$objective
+                    new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
+                    new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                     cw_inner_logL <- new_inner_logL
                     inner_inner_counter <- inner_inner_counter + 1
@@ -2934,28 +2937,15 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                    rm(fit0_try)
                                    }
                               
-                              #' ## Update intercept and dispersion parameter in a separate conditional maximization step. I think there is a mathematical reason why does not seem to be correct when using the EM algorithm, but I have to figure out what it is...
-                              update_interceptdispparam_fn <- function(pars) {
-                                   intercept <- pars[1]
-                                   log_dispparam <- pars[2]
-                                   mu_tmp <- exp(intercept + X[find_nonzeros,-1,drop=FALSE] %*% fit0$coefficients[-1] + new_offset[find_nonzeros] + formula_offset[find_nonzeros])
-                                   
-                                   logL_tmp <- .dztnbinom(y[find_nonzeros,j], 
-                                                          mu = mu_tmp, 
-                                                          size = exp(-log_dispparam), 
-                                                          log = TRUE)
-                                   return(-sum(logL_tmp[is.finite(logL_tmp)]))
-                                   } 
-                              
-                              opt_res <- nlminb(start = c(fit0$coefficients[1], -log(fit0$family$getTheta(TRUE))),
-                                                objective = update_interceptdispparam_fn)
-                              fit0$coefficients[1] <- opt_res$par[1]
-
-                              new_inner_logL <- -opt_res$objective 
+                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], 
+                                                           mu = as.vector(exp(X %*% fit0$coefficients + new_offset + formula_offset))[find_nonzeros],
+                                                           size = fit0$family$getTheta(TRUE), 
+                                                           log = TRUE) 
+                              new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)]) 
                               inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                               cw_inner_logL <- new_inner_logL
                               new_fit_CBFM_ptest$betas[j,] <- fit0$coefficients
-                              new_fit_CBFM_ptest$dispparam[j] <- exp(opt_res$par[2])
+                              new_fit_CBFM_ptest$dispparam[j] <- 1/fit0$family$getTheta(TRUE)
                               inner_inner_counter <- inner_inner_counter + 1
                               }
                          
@@ -2973,7 +2963,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(family$family %in% c("negative.binomial","zinegative.binomial"))                        
                          out$dispparam <- 1/fit0$family$getTheta(TRUE)
                     if(family$family %in% c("ztnegative.binomial"))                        
-                         out$dispparam <- exp(opt_res$par[2])
+                         out$dispparam <- 1/fit0$family$getTheta(TRUE)
                     if(family$family == "Beta")                        
                          out$dispparam <- exp(fit0$family$getTheta(TRUE))
                     if(family$family == "tweedie") {                        
