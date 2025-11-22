@@ -2197,32 +2197,32 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(family$family %in% c("ztnegative.binomial")) {
                ## Fit a NB GAM first to construct initial E-step weights
                if(all(control$initial_ridge == 0))
-                    fit0 <- try(gam(tmp_formula, 
-                                    data = as.data.frame(cbind(response = y[,j], data)), 
-                                    offset = offset[,j], 
-                                    knots = knots, 
-                                    method = control$gam_method, 
-                                    family = nb(), 
-                                    gamma = full_gamma[j]), 
+                    fit0 <- try(gam(tmp_formula,
+                                    data = as.data.frame(cbind(response = y[,j], data)),
+                                    offset = offset[,j],
+                                    knots = knots,
+                                    method = control$gam_method,
+                                    family = nb(),
+                                    gamma = full_gamma[j]),
                                 silent = TRUE)
                if(!all(control$initial_ridge == 0))
-                    fit0 <- try(gam(tmp_formula, 
-                                    data = as.data.frame(cbind(response = y[,j], data)), 
-                                    offset = offset[,j], 
+                    fit0 <- try(gam(tmp_formula,
+                                    data = as.data.frame(cbind(response = y[,j], data)),
+                                    offset = offset[,j],
                                     knots = knots,
                                     H = Hmat,
-                                    method = control$gam_method, 
-                                    family = nb(), 
-                                    gamma = full_gamma[j]), 
+                                    method = control$gam_method,
+                                    family = nb(),
+                                    gamma = full_gamma[j]),
                                 silent = TRUE)
                
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
-               find_nonzeros <- which(y[,j] > 0) # This automatically excludes NA values
                
+               find_nonzeros <- which(y[,j] > 0) # This automatically excludes NA values
                MM <- predict.gam(fit0, newdata = data, type = "lpmatrix")
-               cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
+               cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]
                if(!is.null(model.offset(model.frame(fit0))))
                     cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
                
@@ -2296,6 +2296,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
+                    
                     initw <- dnbinom(0, mu = exp(cw_eta), size = 1/fit0$dispparam) / (1-dnbinom(0, mu = exp(cw_eta), size = 1/fit0$dispparam))
                     w1 <- rep(1,num_units)
                     w1[which(y[,j]==0)] <- 0
@@ -2313,7 +2314,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                
                fit0$logLik <- new_inner_logL
                }
-                   
+          
           if(inherits(fit0, "try-error")) {
                fit0 <- list(coefficients = runif(num_X), dispparam = 1)
                if(family$family[1] %in% c("zipoisson","zinegative.binomial"))
