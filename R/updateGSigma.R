@@ -45,22 +45,32 @@
                }
           
           ## Note weights are on a per-species basis i.e., site runs faster than species
-          weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                        powerparam = rep(powerparam, each = nrow(B)), zieta = zieta, trial_size = trial_size)
+          num_units <- nrow(B)
+          weights_mat <- .neghessfamily(family = family,
+                                        eta = linpred_vec,
+                                        y = y_vec,
+                                        phi = rep(dispparam, each = num_units),
+                                        powerparam = rep(powerparam, each = num_units),
+                                        zieta = zieta,
+                                        trial_size = trial_size)
 
           ## Set up REML and ML
           weights_mat[is.na(y_vec)] <- 0
           weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
           if(G_control$method == "REML") {
                inner_fn <- function(j) {
-                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                    BTWX <- crossprod(B, X*weights_mat[,j])               
-                    return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                    w_j <- weights_mat[,j]
+                    sqrt_w <- sqrt(w_j)
+
+                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt_w) + Diagonal(x = 1e-8, n = ncol(X))))
+                    BTWX <- crossprod(B, X*w_j)
+                    return(crossprod(B*sqrt_w) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                     }
                }
           if(G_control$method == "ML") {
                inner_fn <- function(j) {
-                    return(crossprod(B*sqrt(weights_mat[,j])))
+                    sqrt_w <- sqrt(weights_mat[,j])
+                    return(crossprod(B * sqrt_w))
                     }
                }
           
@@ -196,7 +206,9 @@
                     }
                }
           
-          out <- list(Loading = best_Loading, nugget = best_nugget, cov = tcrossprod(best_Loading) + diag(x = best_nugget, nrow = num_spp))
+          out <- list(Loading = best_Loading,
+                      nugget = best_nugget,
+                      cov = tcrossprod(best_Loading) + diag(x = best_nugget, nrow = num_spp))
           out$invcov <- chol2inv(chol(out$cov))
           return(out)
           }
@@ -214,7 +226,7 @@
                new_approx <- do_svd$u[, 1:num_rank,drop=FALSE] %*% tcrossprod(diag(x = do_svd$d[1:num_rank], nrow = num_rank), do_svd$v[, 1:num_rank,drop=FALSE])
                new_nugget <- mean(diag(G - new_approx))
                          
-               err <- c(err, 0.5 * mean((G - new_approx)^2))
+               err <- c(err, 0.5 * mean((G - new_approx - diag(x = new_nugget, nrow = num_spp))^2))
                diff <- err[length(err)-1]/err[length(err)] - 1
                if(G_control$trace)
                     message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
