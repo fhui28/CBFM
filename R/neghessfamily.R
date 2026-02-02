@@ -1,96 +1,114 @@
 ## Negative second derivative for a bunch of distributions
 ## Hidden and not exported
-## Some help from Wolfram alpha differentiation online!
 
-.neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL, zieta = NULL, trial_size, return_matrix = FALSE, 
-                           domore = FALSE, tol = 1e-6) {
-     if(family$family[1] %in% c("Beta")) {
-          out <- grad(.sbetalogit, x = eta, y = y, phi = phi)    
-          }
+.neghessfamily <- function(family, eta, y, phi = NULL, powerparam = NULL,
+                           zieta = NULL, trial_size,
+                           return_matrix = FALSE, domore = FALSE, tol = 1e-6) {
      if(family$family[1] %in% c("binomial")) {
-#           if(family$link == "probit") {
-#                mu <- binomial(link = "probit")$linkinv(eta)
-# 
-#                d2mu_deta2 <- grad(dnorm, x = eta)
-#                if(is.matrix(eta))
-#                     d2mu_deta2 <- matrix(d2mu_deta2, nrow = nrow(y), ncol = ncol(y))
-#                
-#                out <- (-y/mu^2-(trial_size-y)/(1-mu)^2)*(binomial(link = "probit")$mu.eta(eta)^2) + (y/mu-(trial_size-y)/(1-mu))*d2mu_deta2
-#                rm(mu, d2mu_deta2)
-#                }
-                if(family$link == "logit") {
-                        mu <- plogis(eta)
-                        out <- trial_size*binomial()$var(mu)
-                        }
+          if(family$link == "logit") {
+               mu <- plogis(eta)
+               out <- trial_size*binomial()$var(mu)
+               }
+          }
+     if(family$family[1] %in% c("poisson")) {
+                out <- exp(eta)
                 }
-     if(family$family[1] %in% c("Gamma")) {
-                mu <- Gamma(link = "log")$linkinv(eta)
-                out <- (1/phi) * y / mu
+     if(family$family[1] == "negative.binomial") {
+                mu <- exp(eta)
+                out <- (phi*y + 1) * mu / (1 + phi*mu)^2
                 }
      if(family$family[1] %in% c("gaussian")) {
                 out <- 1/phi
                 }
-     if(family$family[1] == "negative.binomial") {
-                mu <- exp(eta)
-                out <- (phi*y + 1) * mu / (1 + phi*mu)^2               
+     if(family$family[1] %in% c("Gamma")) {
+                out <- y * exp(-eta) / phi
+                #mu <- Gamma(link = "log")$linkinv(eta)
+                #out <- (1/phi) * y / mu
                 }
-     if(family$family[1] %in% c("poisson")) {
-                out <- exp(eta) 
-                }
+     if(family$family[1] %in% c("Beta")) {
+          out <- grad(.sbetalogit, x = eta, y = y, phi = phi)
+          }
      if(family$family[1] == "ztpoisson") {
                 out <- .hess_ztpoisson(eta = eta, y = y)
-                # lambda <- exp(eta)
-                # out <- exp(eta) + exp(eta)/(exp(lambda)-1) + exp(2*eta) * exp(lambda) / (exp(lambda)-1)^2
-                # rm(lambda)
                 }
      if(family$family[1] == "ztnegative.binomial") {
                 out <- .hess_ztnbinom(eta = eta, y = y, size = 1/phi)
                 }
      if(family$family[1] %in% c("tweedie")) {
-             two_minus_powerparam <- 2-powerparam
-             exp_two_minus_powerparam_linpred <- exp(two_minus_powerparam * eta)
-             exp_one_minus_powerparam_linpred <- exp((two_minus_powerparam-1) * eta)
-             out <-  1/phi * (two_minus_powerparam*exp_two_minus_powerparam_linpred - y*(two_minus_powerparam-1)*exp_one_minus_powerparam_linpred)    
+             two_minus_p <- 2 - powerparam
+             one_minus_p <- 1 - powerparam
+             exp_2mp_eta <- exp(two_minus_p * eta)
+             exp_1mp_eta <- exp(one_minus_p * eta)
+             out <- (two_minus_p * exp_2mp_eta - y * one_minus_p * exp_1mp_eta) / phi
              }
      if(family$family[1] %in% c("zipoisson")) {
           lambda <- exp(eta)
-          rhat <- numeric(length(y))
-          rhat[y == 0] <- as.vector(plogis(zieta + lambda))[y == 0]
-          out <- lambda * (1-rhat) * (1-lambda*rhat)
-         
+          y_zero <- y == 0
+
+          # Pre-allocate and compute rhat only for y==0 cases
+          rhat <- numeric(n)
+          if(any(y_zero)) {
+               rhat[y_zero] <- plogis(zieta[y_zero] + lambda[y_zero])
+               }
+
+          out <- lambda * (1 - rhat) * (1 - lambda * rhat)
+
           if(domore) {
                # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
-
-               expetalambda <- exp(zieta+lambda)
+               expetalambda <- exp(zieta + lambda)
                expetalambda[expetalambda > .Machine$double.xmax] <- .Machine$double.xmax
                dhat <- expetalambda / (expetalambda + 1)
-               phat <- plogis(zieta)
-               out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat * (1-dhat)
+
+               phat <- exp(zieta)
+               phat <- exp(zieta) / (1 + exp(zieta))
+               out_zeroinflzeroinfl <- phat * (1 - phat) - y_zero * dhat * (1 - dhat)
                out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
                   
                out_zeroinflbetas <- -(expetalambda * lambda) / (expetalambda + 1)^2
-               out_zeroinflbetas[y > 0] <- 0
+               out_zeroinflbetas[!y_zero] <- 0
                }
              }
         if(family$family[1] %in% c("zinegative.binomial")) { 
              lambda <- exp(eta)
              phat <- plogis(zieta)
              
-             score_beta <- function(x, phi, phat) {
-                exp(x) * (1 + phi * exp(x))^(-1) / (1 + exp(zieta) * (1 + phi * exp(x))^(1/phi))     
-                }
-             out <- grad(score_beta, x = eta, phi = phi, phat = phat) * as.numeric(y == 0) # Being lazy here!
-             out <- out + (lambda * (1 + phi * y) / (1 + phi * lambda)^2) * as.numeric(y > 0)
+             # Probability of being in the count component
+             f0 <- (1 + phi * lambda)^(-1/phi)
+             prob_zero <- phat + (1 - phat) * f0
+             w <- ifelse(y > 0, 1, ((1 - phat) * f0) / prob_zero)
+
+             # Derivative of the weight w.r.t eta (only needed for y=0)
+             df0 <- -lambda * (1 + phi * lambda)^(-1/phi - 1)
+             dw <- ifelse(y > 0, 0, ((1 - phat) * df0 / prob_zero) - ((1 - phat) * f0 * (1 - phat) * df0) / (prob_zero^2))
+
+             term1 <- w * ((-lambda * (1 + phi * y)) / (1 + phi * lambda)^2)
+             term2 <- dw * ((y - lambda) / (1 + phi * lambda))
+             out <- -(term1 + term2)
 
              if(domore) {
                  # out is already the collection of weights for betasbetas and basiseffectsbasiseffects. So we need the other terms involving the zero-inflation component...
-                     dhat <- exp(zieta) * (1+phi*lambda)^(-1/phi) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
-                     phat <- plogis(zieta)
-                     out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat
-                     out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
-                     
-                     out_zeroinflbetas <- -(exp(zieta) * lambda * (1+phi*lambda)^(-1/phi-1)) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
-                     out_zeroinflbetas[y > 0] <- 0
+
+                 f0 <- dnbinom(0, size = 1/phi, mu = lambda)
+                 # w = P(Structural | Y=0)
+                 w <- ifelse(y == 0, phat / (phat + (1 - phat) * f0), 0)
+
+                 # For y > 0, only the -p(1-p) term remains
+                 out_zeroinflzeroinfl <- -((w * (1 - w)) - (phat * (1 - phat)))
+                 #dhat <- exp(zieta) * (1+phi*lambda)^(-1/phi) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
+                 #phat <- plogis(zieta)
+                 #out_zeroinflzeroinfl <- phat * (1-phat) - ((y == 0) * 1) * dhat
+                 out_zeroinflzeroinfl[out_zeroinflzeroinfl < 0] <- 0 ## At the moment, needed primarily for zero-inflated and zero-truncated models where weights can be negative (by design?!)
+
+
+                 # Posterior probability of coming from the count process
+                 w_count <- ifelse(y == 0, ((1 - phat) * f0) / (phat + (1 - phat) * f0), 0)
+                 grad_eta_part <- -lambda / (1 + phi * lambda )
+
+                 # The cross derivative: d/dzieta [w_count * grad_eta_part]
+                 # d(w_count)/d(zieta) = -w_count * (1 - w_count)
+                 out_zeroinflbetas <- w_count * (1 - w_count) * grad_eta_part
+                 #out_zeroinflbetas <- -(exp(zieta) * lambda * (1+phi*lambda)^(-1/phi-1)) / (exp(zieta) + (1+phi*lambda)^(-1/phi))^2
+                 #out_zeroinflbetas[y > 0] <- 0
              }
         }
 
