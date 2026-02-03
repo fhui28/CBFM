@@ -248,9 +248,11 @@
 
 #' @noRd
 
-.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv, B, X, ziX = NULL, zioffset = NULL, 
+.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv,
+                             B, X, ziX = NULL, zioffset = NULL,
                              y_vec, linpred_vec, dispparam, powerparam, zibetas,
                              trial_size, family, Sigma_control, estimate_lambda, which_B) {
+
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
@@ -261,8 +263,8 @@
      AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
      
      if(family$family == "binomial") {
-          linpred_vec[linpred_vec > 10] <- 10
-          linpred_vec[linpred_vec < -10] <- -10
+          linpred_vec[linpred_vec > 5] <- 5
+          linpred_vec[linpred_vec < -5] <- -5
           }
 
           
@@ -283,17 +285,26 @@
                zieta <- as.vector(zieta)
                }
           ## Note weights are on a per-species basis i.e., site runs faster than species
-          weights_mat <- .neghessfamily(family = family, eta = linpred_vec, y = y_vec, phi = rep(dispparam, each = nrow(B)), 
-                                        powerparam = rep(powerparam, each = nrow(B)),  zieta = zieta, trial_size = trial_size)
+          num_units <- nrow(B)
+          weights_mat <- .neghessfamily(family = family,
+                                        eta = linpred_vec,
+                                        y = y_vec,
+                                        phi = rep(dispparam, each = num_units),
+                                        powerparam = rep(powerparam, each = num_units),
+                                        zieta = zieta, trial_size = trial_size)
 
           ## Set up to REML and ML
           weights_mat[is.na(y_vec)] <- 0
           weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+
           if(Sigma_control$method == "REML") {
                inner_fn <- function(j) {
-                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt(weights_mat[,j])) + Diagonal(x = 1e-8, n = ncol(X))))
-                    BTWX <- crossprod(B, X*weights_mat[,j])               
-                    return(crossprod(B*sqrt(weights_mat[,j])) - BTWX %*% tcrossprod(XTX_inv, BTWX))
+                    w_j <- weights_mat[,j]
+                    sqrt_w <- sqrt(w_j)
+
+                    XTX_inv <- chol2inv(chol(crossprod(X*sqrt_w) + Diagonal(x = 1e-8, n = ncol(X))))
+                    BTWX <- crossprod(B, X*w_j)
+                    return(crossprod(B*sqrt_w) - BTWX %*% tcrossprod(XTX_inv, BTWX))
                     }
                }
           if(Sigma_control$method == "ML") {
@@ -363,6 +374,7 @@
                         Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
                         trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
                         KronGinvSigmainv <- kronecker(Ginv, Sigmainv_space)
+
                         fn <- function(x) {
                             expx <- mgcv::notExp(x)
                             out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
