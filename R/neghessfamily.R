@@ -46,7 +46,7 @@
           y_zero <- y == 0
 
           # Pre-allocate and compute rhat only for y==0 cases
-          rhat <- numeric(n)
+          rhat <- numeric(length(eta))
           if(any(y_zero)) {
                rhat[y_zero] <- plogis(zieta[y_zero] + lambda[y_zero])
                }

@@ -72,7 +72,7 @@
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
                }
           nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
-          out <- suppressMessages(smooth_estimates(object = nullfit, data = nulldata))
+          out <- suppressMessages(smooth_estimates(object = nullfit, data = nulldat))
           out$species <- colnames(object$y)[j]
           }
      
