@@ -71,12 +71,12 @@
           if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
                }
-          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
+          nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop=FALSE])
           out <- suppressMessages(smooth_estimates(object = nullfit, data = nulldat))
           out$species <- colnames(object$y)[j]
           }
      
-     # Smooth estimates for zero-inflation is appropriate
+     # Smooth estimates for zero-inflation if appropriate
      ziout <- NULL
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           if(length(zinullfit$smooth) == 0) 
