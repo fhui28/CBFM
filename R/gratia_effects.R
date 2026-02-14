@@ -7,6 +7,7 @@
 #' 
 #' @param object An object of class \code{CBFM}.
 #' @param ncores To speed up calculation of the smooth estimates and parametric effects, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param overall_uncertainty Should the uncertainty in the model constant term be included in the standard error of the evaluate values of the smooth? see also [gratia::smooth_estimates()] for more details. Defaults to \code{TRUE}.
 #' @param ... Not used.
 #' 
 #' @details 
@@ -142,7 +143,7 @@
 #' @export
 #' @md
 
-gratia_effects <- function(object, ncores = NULL, ...) {
+gratia_effects <- function(object, ncores = NULL, overall_uncertainty = TRUE, ...) {
      if(!inherits(object, "CBFM")) 
           stop("`object' is not of class \"CBFM\"")
      if(!object$stderrors) 
@@ -162,7 +163,7 @@ gratia_effects <- function(object, ncores = NULL, ...) {
      out$allzi_parametric_effects <- do.call(rbind, lapply(all_parametric_effects, function(x) x$ziout))
      rm(all_parametric_effects)
      
-     all_smooth_estimates <- foreach(j = 1:num_spp) %dopar% .calc_smooth_estimates(j = j, object = object)
+     all_smooth_estimates <- foreach(j = 1:num_spp) %dopar% .calc_smooth_estimates(j = j, object = object, overall_uncertainty = overall_uncertainty)
      out$all_smooth_estimates <- do.call(rbind, lapply(all_smooth_estimates, function(x) x$out))
      out$allzi_smooth_estimates <- do.call(rbind, lapply(all_smooth_estimates, function(x) x$ziout))
      rm(all_smooth_estimates)
