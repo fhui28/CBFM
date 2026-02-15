@@ -43,17 +43,17 @@
                nullfit$Vp <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE])
                ziout <- suppressMessages(parametric_effects(object = zinullfit))
                ziout$species <- colnames(object$y)[j]
-               }
           }
+     }
      
      return(list(out = out, ziout = ziout))
-     }
+}
 
 
 ## Function to trick mgcv and subsequently gratia so the right standard errors are obtained, along with everything else, when applying gratia::smooth_estimates
 .calc_smooth_estimates <- function(j, 
                                    object,
-                                   overall_uncertainty = TRUE) {
+                                   overall_uncertainty = FALSE) {
      tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
      nulldat <- data.frame(response = object$y[,j], object$data)
      nullfit <- mgcv::gam(tmp_formula, data = nulldat, knots = object$knots, fit = TRUE, control = list(maxit = 1))
@@ -90,7 +90,8 @@
                sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
                sel_rowcols <- sel_rowcols[(1:num_ziX)]
                zinullfit$Vp <- zinullfit$Ve <- zinullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols,drop=FALSE])
-               ziout <- suppressMessages(smooth_estimates(object = zinullfit, overall_uncertainty = overall_uncertainty))
+               ziout <- suppressMessages(smooth_estimates(object = zinullfit, 
+                                                          overall_uncertainty = overall_uncertainty))
                ziout$species <- colnames(object$y)[j]
                }
           }

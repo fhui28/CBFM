@@ -4,14 +4,14 @@
 \alias{gratia_effects}
 \title{Use the gratia package to construct smooth estimates and parametric effect tables from a CBFM fit}
 \usage{
-gratia_effects(object, ncores = NULL, overall_uncertainty = TRUE, ...)
+gratia_effects(object, ncores = NULL, overall_uncertainty = FALSE, ...)
 }
 \arguments{
 \item{object}{An object of class \code{CBFM}.}
 
 \item{ncores}{To speed up calculation of the smooth estimates and parametric effects, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.}
 
-\item{overall_uncertainty}{Should the uncertainty in the model constant term be included in the standard error of the evaluate values of the smooth? see also \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for more details. Defaults to \code{TRUE}.}
+\item{overall_uncertainty}{Should the uncertainty in the model constant term be included in the standard error of the evaluate values of the smooth? see also \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}} for more details. Defaults to \code{FALSE}.}
 
 \item{...}{Not used.}
 }
