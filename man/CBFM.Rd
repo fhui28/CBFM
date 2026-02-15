@@ -35,8 +35,9 @@ CBFM(
   control = list(maxit = 100, inner_maxit = 1, optim_lower = -50, optim_upper = 50,
     convergence_type = "parameters_MSE", tol = 1e-04, final_maxit = 100,
     initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, initial_dispparam_dampen =
-    1, subsequent_dispparam_dampen = 0.25, gam_method = "REML", seed = NULL,
-    initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0, trace = 0),
+    1, subsequent_dispparam_dampen = 0.25, gam_method = "REML", backfitting_trick =
+    FALSE, seed = NULL, initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0,
+    trace = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "REML", trace = 0,
     custom_space = NULL, custom_time = NULL, custom_spactime = NULL, lower_space_lambdas
     = NULL, upper_space_lambdas = NULL, lower_time_lambdas = NULL, upper_time_lambdas =
@@ -122,6 +123,7 @@ Note this argument \emph{only} comes into play when the first attempt, which can
 \item{initial_dispparam_dampen: }{Similar to \code{initial_betas_dampen}, a dampening factor which can be used to reduce the magnitudes of the starting values obtained for the species-specific dispersion parameters.}
 \item{subsequent_dispparam_dampen: }{Similar to \code{subsequent_dispparam_dampen}, a dampening factor which can be used to reduce the magnitudes of the values obtained for the species-specific disperson parameters, during the running of the PQL estimation algorithm.}
 \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in \code{\link[mgcv:gam]{mgcv::gam()}} for the available options. In fact, note \code{\link[mgcv:gam]{mgcv::gam()}} defaults to using "GCV.Cp", which is based on generalized cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
+\item{backfitting_trick: }{This is an experimental feature which can be turned on to use is an attempt to resolve potential issue around collinearity between the overall intercept in the \code{formula} component of the model, and any intercept-like terms in the \code{B_xxx} component of the model. }
 \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which only occurs for a subset of parameters even when starting parameters are not supplied and \code{CBFM} tries to generate its own starting values.}
 \item{initial_ridge: }{A ridge parameter that can be included to act as a ridge penalty when using CBFM's default approach to constructing initial/starting values of the regression coefficients related to the covariates. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{formula} and \code{data} arguments. \emph{Currently, no check is made to ensure the length is compatible with this!}}
 \item{ridge: }{A ridge parameter that can be included to act as a ridge penalty when estimating the regression coefficients related to the covariates. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{formula} and \code{data} arguments. \emph{Currently, no check is made to ensure the length is compatible with this!}}

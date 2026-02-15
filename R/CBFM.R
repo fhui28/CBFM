@@ -73,6 +73,8 @@
 
 #' \item{gam_method: }{When smoothing terms are included in the model, this controls the smoothing parameter estimation method. Defaults to "REML", which is maximum restricted likelihood estimation. However other options are available; please see the \code{method} argument in [mgcv::gam()] for the available options. In fact, note [mgcv::gam()] defaults to using "GCV.Cp", which is based on generalized cross-validation. This is generally faster, but can be slightly more unstable, and hence why restricted maximum likelihood estimation is adopted as the default. }
 
+#' \item{backfitting_trick: }{This is an experimental feature which can be turned on to use is an attempt to resolve potential issue around collinearity between the overall intercept in the `formula` component of the model, and any intercept-like terms in the `B_xxx` component of the model. }
+
 #' \item{seed: }{The seed to use for the PQL algorithm. This is only applicable when the starting values are randomly generated, which only occurs for a subset of parameters even when starting parameters are not supplied and \code{CBFM} tries to generate its own starting values.}
 
 #' \item{initial_ridge: }{A ridge parameter that can be included to act as a ridge penalty when using CBFM's default approach to constructing initial/starting values of the regression coefficients related to the covariates. This can either be a scalar or a vector equal to the number of columns in the model matrix implied by \code{formula} and \code{data} arguments. *Currently, no check is made to ensure the length is compatible with this!*}
@@ -1719,7 +1721,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                 convergence_type = "parameters_MSE", tol = 1e-4, final_maxit = 100,   
                                 initial_beta_dampen = 1, subsequent_betas_dampen = 0.25, 
                                 initial_dispparam_dampen = 1, subsequent_dispparam_dampen = 0.25, 
-                                gam_method = "REML", seed = NULL, 
+                                gam_method = "REML", backfitting_trick = FALSE, seed = NULL, 
                                 initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0, 
                                 trace = 0),
                  Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, 
@@ -2714,7 +2716,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     }
                rm(all_update_coefs, update_basiscoefsspp_fn)
 
-     
                ##-------------------------
                ## Update coefficients related to covariate model matrix X, and other nuisance parameters, one response at a time
                #' new_offset contains the explicit offset argument, while formula_offset contains the offset from the formula, and this has to be included manually to the linear predictor 
@@ -2723,6 +2724,11 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                update_Xcoefsspp_fn <- function(j) {
                     tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " ") ) )
                     new_offset <- offset[,j] + as.vector(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
+                    
+                    if(control$backfitting_trick) {
+                         new_offset <- new_offset - mean(B %*% new_fit_CBFM_ptest$basis_effects_mat[j,])
+                         }
+                    
                     Hmat <- diag(control$ridge+1e-15, nrow = num_X)
                     
                     if(family$family %in% c("binomial","gaussian","poisson","Gamma","negative.binomial","Beta","tweedie")) {

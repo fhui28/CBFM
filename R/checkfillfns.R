@@ -308,6 +308,8 @@
           control$convergence_type <- "parameters_MSE"
      if(is.null(control$gam_method))
           control$gam_method <- "REML"
+     if(is.null(control$backfitting_trick))
+          control$backfitting_trick <- FALSE
      if(is.null(control$initial_ridge))
           control$initial_ridge <- 0
      if(is.null(control$ridge))
