@@ -1809,7 +1809,11 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      ## Form covariate model matrix
      formula <- .check_X_formula(formula = formula, data = as.data.frame(data))          
      tmp_formula <- as.formula(paste("response", paste(as.character(formula),collapse = " ") ) )
-     nullfit <- gam(tmp_formula, data = data.frame(data, response = runif(nrow(y))), knots = knots, fit = TRUE, control = list(maxit = 1))
+     nullfit <- gam(tmp_formula, 
+                    data = data.frame(data, response = runif(nrow(y))), 
+                    knots = knots, 
+                    fit = TRUE, 
+                    control = list(maxit = 1))
      X <- model.matrix(nullfit)
      rm(tmp_formula, nullfit)
      rownames(X) <- rownames(y)
@@ -3000,13 +3004,17 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     new_fit_CBFM_ptest$zibetas <- do.call(rbind, lapply(all_update_coefs, function(x) x$zicoefficients))
                     }
                new_fit_CBFM_ptest$logLik <- sum(sapply(all_update_coefs, function(x) x$logLik))          
-
-
+               
+               
                ##-------------------------
                ## Check whether to finish inner EM algorithm
                ##-------------------------
-               new_inner_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
-                               new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
+               new_inner_params <- c(c(new_fit_CBFM_ptest$betas), 
+                                     c(new_fit_CBFM_ptest$basis_effects_mat), 
+                                     c(new_fit_CBFM_ptest$zibetas), 
+                                     new_fit_CBFM_ptest[["mean_B_space"]], 
+                                     new_fit_CBFM_ptest[["mean_B_time"]], 
+                                     new_fit_CBFM_ptest[["mean_B_spacetime"]]) 
                inner_params_diff <- suppressWarnings(new_inner_params - cw_inner_params) # Need to suppress warnings because in first iteration, cw_params is longer than new_params 
                if(control$convergence_type == "parameters_MSE")
                     inner_err <- mean((inner_params_diff)^2) 
@@ -3048,7 +3056,11 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     }
                }
           
-          rm(three_nonzeromean_options, three_mean_options, three_LoadingnuggetSigma_options, three_LoadingnuggetG_options, three_num_B)
+          rm(three_nonzeromean_options, 
+             three_mean_options, 
+             three_LoadingnuggetSigma_options, 
+             three_LoadingnuggetG_options, 
+             three_num_B)
 
                          
           ##-------------------------
@@ -3148,7 +3160,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                                Sigma_control = Sigma_control, 
                                                                estimate_lambda = estimate_lambda_not_Sigma, 
                                                                which_B = j1)
-                         
+
                          new_LoadingnuggetSigma_current <- .update_LoadingSigma_fn(Sigma = new_Sigma_current, 
                                                                                    Sigma_control = Sigma_control, 
                                                                                    use_rank_element = sum(which_B_used[1:j1]), 
@@ -3166,8 +3178,12 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           ##-------------------------
           ## Finish iteration 
           ##-------------------------
-          new_params <- c(c(new_fit_CBFM_ptest$betas), c(new_fit_CBFM_ptest$basis_effects_mat), c(new_fit_CBFM_ptest$zibetas), 
-                          new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]]) # Stop checking dispersion and power parameters
+          new_params <- c(c(new_fit_CBFM_ptest$betas), 
+                          c(new_fit_CBFM_ptest$basis_effects_mat), 
+                          c(new_fit_CBFM_ptest$zibetas), 
+                          new_fit_CBFM_ptest[["mean_B_space"]], 
+                          new_fit_CBFM_ptest[["mean_B_time"]], 
+                          new_fit_CBFM_ptest[["mean_B_spacetime"]]) # Stop checking dispersion and power parameters
           
           new_logLik <- new_fit_CBFM_ptest$logLik
           if(which_B_used[1]) {
@@ -3225,9 +3241,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      gc()
 
      
-     ##----------------
+     ##-----------------
      ## Do final fit -- just for coefficients and dispersion/power parameters only. 
-     ##----------------
+     ##-----------------
      if(diff < control$tol)
           converged <- TRUE
      tidbits_data <- make_tidibits_data()
@@ -3469,6 +3485,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                }
           if(!is.null(Sigma_control[["custom_space"]])) {
                out_CBFM$Sigma_space <- new_LoadingnuggetSigma_space$cov
+               out_CBFM$lambdas_space <- new_LoadingnuggetSigma_space$lambdas #' Note this is a variance component!
                out_CBFM$Loading_Sigma_space <- out_CBFM$nugget_Sigma_space <- NULL
                }
           
@@ -3509,6 +3526,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                }
           if(!is.null(Sigma_control[["custom_time"]])) {
                out_CBFM$Sigma_time <- new_LoadingnuggetSigma_time$cov
+               out_CBFM$lambdas_time <- new_LoadingnuggetSigma_time$lambdas #' Note this is a variance component!
                out_CBFM$Loading_Sigma_time <- out_CBFM$nugget_Sigma_time <- NULL
                }
 
@@ -3549,6 +3567,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                }
           if(!is.null(Sigma_control[["custom_spacetime"]])) {
                out_CBFM$Sigma_spacetime <- new_LoadingnuggetSigma_spacetime$cov
+               out_CBFM$lambdas_spacetime <- new_LoadingnuggetSigma_spacetime$lambdas #' Note this is a variance component!
                out_CBFM$Loading_Sigma_spacetime <- out_CBFM$nugget_Sigma_spacetime <- NULL
                }
           
