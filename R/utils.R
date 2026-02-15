@@ -72,12 +72,21 @@
           sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
           if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                sel_rowcols <- sel_rowcols[-(1:num_ziX)]
+               if(overall_uncertainty == TRUE)
+                    stop("Currently, overall_uncertainty = TRUE is not implemented for zero-inflated distributions. Sorry!")
                }
           nullfit$Vp <- nullfit$Ve <- nullfit$Vc <- as.matrix(object$covar_components$topleft[sel_rowcols, sel_rowcols, drop=FALSE])
           out <- suppressMessages(smooth_estimates(object = nullfit, 
                                                    data = nulldat, 
                                                    overall_uncertainty = overall_uncertainty))
           out$species <- colnames(object$y)[j]
+          
+          if(overall_uncertainty) {
+               out <- .overall_uncertainty_adjustment_fn(out = out,
+                                                         j = j,
+                                                         nullfit = nullfit, 
+                                                         object = object)
+               }
           }
      
      # Smooth estimates for zero-inflation if appropriate
@@ -98,6 +107,56 @@
      
      return(list(out = out, ziout = ziout))
      }
+
+
+## Hidden function to do manual modification of standard errors for smooths when overall_uncertainty = TRUE. Based off [gratia::spline_values()]
+#' @noMd
+#' @noRd
+.overall_uncertainty_adjustment_fn <- function(out, 
+                                               j, 
+                                               nullfit, 
+                                               object) {
+     column_means <- c(nullfit[["cmX"]], colMeans(object$B))
+     
+     #' Built up entire covariance matrix for species j
+     sel_rowcols <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topleft))
+     V_TL <- object$covar_components$topleft[sel_rowcols, sel_rowcols, drop = FALSE]
+     sel_rows <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$topright))
+     sel_cols <- grep(paste0(colnames(object$y)[j],"$"), colnames(object$covar_components$topright))
+     V_TR <- object$covar_components$topright[sel_rows, sel_cols, drop = FALSE]
+     sel_rows <- grep(paste0(colnames(object$y)[j],"$"), rownames(object$covar_components$bottomright))
+     sel_cols <- grep(paste0(colnames(object$y)[j],"$"), colnames(object$covar_components$bottomright))
+     V_BR <- object$covar_components$bottomright[sel_rows, sel_cols, drop = FALSE]
+     V <- rbind(cbind(V_TL, V_TR), cbind(t(V_TR), V_BR))
+     rm(V_TL, V_TR, V_BR, sel_rowcols, sel_rows, sel_cols)
+     nc <- ncol(V)
+     
+     for(j2 in 1:length(nullfit$smooth)) {
+          para_seq <- nullfit$smooth[[j2]][["first.para"]]:nullfit$smooth[[j2]][["last.para"]]
+          n_cons <- attr(nullfit$smooth[[j2]], "nCons")
+          meanL1 <- nullfit$smooth[[j2]][["meanL1"]]
+          tmpX <- mgcv::PredictMat(nullfit$smooth[[j2]], data = out[which(out$.smooth == gratia::smooths(nullfit)[j2]),])
+          
+          if(!is.null(n_cons) && n_cons > 0L) {
+               if(length(column_means) < nc)
+                    column_means <- c(column_means, rep(0, nc - length(column_means)))
+               Xcm <- matrix(column_means, nrow = nrow(tmpX), ncol = nc, byrow = TRUE)
+               if(!is.null(meanL1))
+                    Xcm <- Xcm / meanL1
+               Xcm[, para_seq] <- tmpX
+               rs <- rowSums((Xcm[, drop = FALSE] %*% V) * Xcm[, drop = FALSE])
+          } 
+          else {
+               tmpX <- mgcv::PredictMat(nullfit$smooth[[1]], data = nullfit$model)
+               rs <- rowSums((tmpX %*% V[para_seq, para_seq, drop = FALSE]) * tmpX)
+          }
+          
+          out[which(out$.smooth == gratia::smooths(nullfit)[j2]),]$.se <- sqrt(pmax(0, rs))
+          }
+     
+     return(out)
+     }
+
 
 
 ## Two functions used to extract relevant principle submatrices of the Bayesian posterior covariance matrix from the CBFM fit. 
