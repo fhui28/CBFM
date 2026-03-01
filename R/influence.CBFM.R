@@ -141,12 +141,16 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
      if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
           weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
           weights_mat[is.na(object$y)] <- 0
+          weights_mat <- weights_mat * object$weights # Apply observation weights
           }
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
           weights_mat_betabeta[is.na(object$y)] <- 0
+          weights_mat_betabeta <- weights_mat_betabeta * object$weights # Apply observation weights
           weights_mat$out_zeroinflzeroinfl[is.na(object$y)] <- 0
           weights_mat$out_zeroinflbetas[is.na(object$y)] <- 0
+          weights_mat$out_zeroinflzeroinfl <- weights_mat$out_zeroinflzeroinfl * object$weights
+          weights_mat$out_zeroinflbetas <- weights_mat$out_zeroinflbetas * object$weights
           }
    
    
