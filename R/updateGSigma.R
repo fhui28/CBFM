@@ -4,7 +4,7 @@
 #' @noRd
 
 .update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, zioffset = NULL, 
-                         y_vec, linpred_vec, dispparam, powerparam, zibetas,
+                         y_vec, linpred_vec, weights, dispparam, powerparam, zibetas,
                          trial_size, family, G_control, use_rank_element, return_correlation) {
      
      num_spp <- nrow(basis_effects_mat)
@@ -57,6 +57,8 @@
           ## Set up REML and ML
           weights_mat[is.na(y_vec)] <- 0
           weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+          weights_mat <- weights_mat * weights # Apply observation weights
+          
           if(G_control$method == "REML") {
                inner_fn <- function(j) {
                     w_j <- weights_mat[,j]
@@ -250,7 +252,7 @@
 
 .update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv,
                              B, X, ziX = NULL, zioffset = NULL,
-                             y_vec, linpred_vec, dispparam, powerparam, zibetas,
+                             y_vec, linpred_vec, weights, dispparam, powerparam, zibetas,
                              trial_size, family, Sigma_control, estimate_lambda, which_B) {
 
      num_spp <- nrow(basis_effects_mat)
@@ -296,6 +298,7 @@
           ## Set up to REML and ML
           weights_mat[is.na(y_vec)] <- 0
           weights_mat <- matrix(weights_mat, nrow = nrow(B), ncol = num_spp, byrow = FALSE)
+          weights_mat <- weights_mat * weights # Apply observation weights
 
           if(Sigma_control$method == "REML") {
                inner_fn <- function(j) {

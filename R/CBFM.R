@@ -13,6 +13,7 @@
 #' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
 #' @param offset A matrix of offset terms to applied in association with the \code{formula} argument.
+#' @param weights A matrix or vector of weights to be applied in association with the \code{y} argument, potentially used to control the contribution of the responses to the log likelihood. If a vector is supplied, then it must be of length \code{nrow(y)}, and this it assumed the same weights applies to all species. Note weights are not internally scaled in any way.
 #' @param ncores To speed up fitting, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as \code{y}.
@@ -279,7 +280,7 @@
 
 #' \item{family: }{The supplied response distribution i.e., family function, to be used in the model.}
 
-#' \item{y, data, trial_size: }{The supplied response matrix, covariate information data frame, and trial size(s).}
+#' \item{y, data, trial_size, weights: }{The supplied response matrix, covariate information data frame, trial size(s), and weights.}
 
 #' \item{formula: }{The supplied symbolic description of the model matrix to be created.}
 
@@ -1706,7 +1707,7 @@
 
 CBFM <- function(y, formula, ziformula = NULL, data, 
                  B_space = NULL, B_time = NULL, B_spacetime = NULL, 
-                 offset = NULL, ncores = NULL, 
+                 offset = NULL, weights = NULL, ncores = NULL, 
                  family = stats::gaussian(), trial_size = 1, 
                  dofit = TRUE, stderrors = TRUE, 
                  select = FALSE, gamma = 1, knots = NULL, 
@@ -1840,6 +1841,23 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      .check_ranks2(num_spp = num_spp, which_B_used = which_B_used, G_control = G_control, 
                    vec_num_basisfns = c(num_spacebasisfns,num_timebasisfns,num_spacetimebasisfns), Sigma_control = Sigma_control)
      
+     ## Validate and set up observation weights
+     if(!is.null(weights)) {
+          if(is.vector(weights)) {
+               if(length(weights) != num_units)
+                    stop("weights vector must have length equal to nrow(y).")
+               weights <- matrix(weights, nrow = num_units, ncol = num_spp)
+               }
+               if(is.matrix(weights)) {
+                    if(!identical(dim(weights), dim(y)))
+                         stop("weights matrix must have the same dimensions as y.")
+                    }
+               if(any(weights < 0, na.rm = TRUE))
+                    stop("weights must be non-negative.")
+          }
+     if(is.null(weights))
+          weights <- matrix(1, nrow = num_units, ncol = num_spp)
+
      
      ## If required, form covariate model matrix for zero-inflation component
      if(is.null(ziformula)) {
@@ -1915,6 +1933,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     fit0 <- try(gam(tmp_formula, 
                                     data = as.data.frame(cbind(response = y[,j], data, size = use_size)), 
                                     offset = offset[,j], 
+                                    weights = weights[,j],
                                     knots = knots, 
                                     method = control$gam_method, 
                                     family = cw_family, 
@@ -1924,6 +1943,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     fit0 <- try(gam(tmp_formula, 
                                     data = as.data.frame(cbind(response = y[,j], data, size = use_size)), 
                                     offset = offset[,j], 
+                                    weights = weights[,j],
                                     knots = knots,
                                     H = Hmat,
                                     method = control$gam_method, 
@@ -1948,7 +1968,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(all(control$initial_ridge == 0))
                     fit0 <- gam(tmp_formula, 
                            data = data.frame(response = y[,j], data), 
-                           weights = 1-w, 
+                           weights = weights[,j] * (1-w), 
                            offset = cw_offset, 
                            knots = knots, 
                            method = control$gam_method, 
@@ -1957,7 +1977,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(!all(control$initial_ridge == 0))
                     fit0 <- gam(tmp_formula, 
                                 data = data.frame(response = y[,j], data), 
-                                weights = 1-w, 
+                                weights = weights[,j] * (1-w), 
                                 offset = cw_offset, 
                                 knots = knots, 
                                 H = Hmat,
@@ -1968,6 +1988,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(all(control$initial_ziridge == 0))
                     fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                   data = data.frame(taus = w, data), 
+                                                  weights = weights[,j],
                                                   knots = ziknots, 
                                                   method = control$gam_method, 
                                                   family = "binomial", 
@@ -1975,6 +1996,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(!all(control$initial_ziridge == 0))
                     fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                   data = data.frame(taus = w, data), 
+                                                  weights = weights[,j],
                                                   knots = ziknots, 
                                                   H = ziHmat, 
                                                   method = control$gam_method, 
@@ -1986,7 +2008,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                cw_eta <- MM %*% fit0$coefficients
                if(!is.null(model.offset(model.frame(fit0))))
                     cw_eta <- cw_eta + model.offset(model.frame(fit0))
-               cw_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi)) 
+               sel_NAs <- which(is.na(y[,j]))
+               cw_inner_logL <- weights[,j][!sel_NAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi)) 
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
 
                inner_err <- Inf
@@ -2002,7 +2025,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(all(control$initial_ridge == 0))
                          fit0 <- gam(tmp_formula, 
                                      data = data.frame(response = y[,j], data), 
-                                     weights = 1-w, 
+                                     weights = weights[,j] * (1-w), 
                                      offset = cw_offset, 
                                      knots = knots, 
                                      method = control$gam_method, 
@@ -2011,7 +2034,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(!all(control$initial_ridge == 0))
                          fit0 <- gam(tmp_formula, 
                                      data = data.frame(response = y[,j], data), 
-                                     weights = 1-w, 
+                                     weights = weights[,j] * (1-w), 
                                      offset = cw_offset, 
                                      knots = knots, 
                                      H = Hmat,
@@ -2022,6 +2045,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(all(control$initial_ziridge == 0))
                          fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                        data = data.frame(taus = w, data), 
+                                                       weights = weights[,j],
                                                        knots = ziknots, 
                                                        method = control$gam_method, 
                                                        family = "binomial", 
@@ -2029,6 +2053,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(!all(control$initial_ziridge == 0))
                          fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                        data = data.frame(taus = w, data), 
+                                                       weights = weights[,j],
                                                        knots = ziknots,
                                                        H = ziHmat,
                                                        method = control$gam_method, 
@@ -2039,7 +2064,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- MM %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))
-                    new_inner_logL <- .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi))
+                    sel_NAs <- which(is.na(y[,j]))
+                    new_inner_logL <- weights[,j][!sel_NAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2062,7 +2088,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(all(control$initial_ridge == 0))
                     fit0 <- gam(tmp_formula, 
                                 data = data.frame(response = y[,j], data), 
-                                weights = 1-w, 
+                                weights = weights[,j] * (1-w), 
                                 offset = cw_offset, 
                                 knots = knots, 
                                 method = control$gam_method, 
@@ -2071,7 +2097,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(!all(control$initial_ridge == 0))
                     fit0 <- gam(tmp_formula, 
                                 data = data.frame(response = y[,j], data), 
-                                weights = 1-w, 
+                                weights = weights[,j] * (1-w), 
                                 offset = cw_offset, 
                                 knots = knots, 
                                 H = Hmat,
@@ -2082,6 +2108,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(all(control$initial_ziridge == 0))
                     fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                   data = data.frame(taus = w, data), 
+                                                  weights = weights[,j],
                                                   knots = ziknots, 
                                                   method = control$gam_method, 
                                                   family = "binomial", 
@@ -2089,6 +2116,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(!all(control$initial_ziridge == 0))
                     fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                   data = data.frame(taus = w, data), 
+                                                  weights = weights[,j],
                                                   knots = ziknots, 
                                                   H = ziHmat,
                                                   method = control$gam_method, 
@@ -2100,7 +2128,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                cw_eta <- MM %*% fit0$coefficients
                if(!is.null(model.offset(model.frame(fit0))))
                     cw_eta <- cw_eta + model.offset(model.frame(fit0))
-               cw_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
+               sel_NAs <- which(is.na(y[,j]))
+               cw_inner_logL <- weights[,j][!sel_NAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
@@ -2116,7 +2145,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(all(control$initial_ridge == 0))
                          fit0 <- gam(tmp_formula, 
                                      data = data.frame(response = y[,j], data), 
-                                     weights = 1-w, 
+                                     weights = weights[,j] * (1-w), 
                                      offset = cw_offset, 
                                      knots = knots, 
                                      method = control$gam_method, 
@@ -2125,7 +2154,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(!all(control$initial_ridge == 0))
                          fit0 <- gam(tmp_formula, 
                                      data = data.frame(response = y[,j], data), 
-                                     weights = 1-w, 
+                                     weights = weights[,j] * (1-w), 
                                      offset = cw_offset, 
                                      knots = knots,
                                      H = Hmat,
@@ -2136,6 +2165,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(all(control$initial_ziridge == 0))
                          fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                        data = data.frame(taus = w, data), 
+                                                       weights = weights[,j],
                                                        knots = ziknots, 
                                                        method = control$gam_method, 
                                                        family = "binomial", 
@@ -2143,6 +2173,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(!all(control$initial_ziridge == 0))
                          fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                        data = data.frame(taus = w, data), 
+                                                       weights = weights[,j],
                                                        knots = ziknots, 
                                                        H = ziHmat,
                                                        method = control$gam_method, 
@@ -2153,7 +2184,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- MM %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))
-                    new_inner_logL <- .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
+                    sel_NAs <- which(is.na(y[,j]))
+                    new_inner_logL <- weights[,j][!sel_NAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2169,11 +2201,15 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                cw_offset <- offset[,j]
                if(is.null(cw_offset))
                     cw_offset <- numeric(num_units)
-               tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data),1:10),], off = c(cw_offset, numeric(10))) # Append some zeros speeds ziplss up a heck of a lot!
+               tmp_dat <- data.frame(response = c(y[,j], numeric(10)), 
+                                     data[c(1:nrow(data),1:10),], 
+                                     off = c(cw_offset, numeric(10)),
+                                     obs_wt = c(weights[,j], rep(0, 10))) # Append some zeros speeds ziplss up a heck of a lot!
                
                if(all(control$initial_ridge == 0))
                     fit0 <- gam(list(tmp_formula, ~1), 
                                 data = tmp_dat, 
+                                weights = obs_wt,
                                 method = control$gam_method, 
                                 family = ziplss(), 
                                 knots = knots, 
@@ -2181,6 +2217,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(!all(control$initial_ridge == 0))
                     fit0 <- gam(list(tmp_formula, ~1), 
                                 data = tmp_dat, 
+                                weights = obs_wt,
                                 method = control$gam_method, 
                                 family = ziplss(), 
                                 knots = knots, 
@@ -2195,7 +2232,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- MM %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[1:(nrow(MM))]
-                    fit0$logLik <- .dztpois(y[,j], lambda = exp(cw_eta), log = TRUE) # .dztpois y = 0 values to -Inf, and handles NA values; because offset is in formula, then offset is contained in linear.predictors
+                    fit0$logLik <- weights[,j] * .dztpois(y[,j], lambda = exp(cw_eta), log = TRUE) # .dztpois y = 0 values to -Inf, and handles NA values; because offset is in formula, then offset is contained in linear.predictors
                     fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])
                     rm(MM)
                     }
@@ -2205,6 +2242,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(all(control$initial_ridge == 0))
                     fit0 <- try(gam(tmp_formula,
                                     data = as.data.frame(cbind(response = y[,j], data)),
+                                    weights = weights[,j],
                                     offset = offset[,j],
                                     knots = knots,
                                     method = control$gam_method,
@@ -2214,6 +2252,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                if(!all(control$initial_ridge == 0))
                     fit0 <- try(gam(tmp_formula,
                                     data = as.data.frame(cbind(response = y[,j], data)),
+                                    weights = weights[,j],
                                     offset = offset[,j],
                                     knots = knots,
                                     H = Hmat,
@@ -2237,7 +2276,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                w1[which(y[,j]==0)] <- 0
                w2 <- numeric(num_units)
                w2[find_nonzeros] <- initw
-               w <- c(w1, w2)
+               w <- c(w1, w2) * c(weights[,j], weights[,j])
                rm(w2, fit0, cw_eta)
 
                inner_err <- Inf
@@ -2301,7 +2340,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     # fit0$dispparam <- 1/opt_res$par[2]
                     fit0$dispparam <- 1/fit0$family$getTheta(TRUE)
                     
-                    
                     cw_eta <- MM[find_nonzeros,,drop=FALSE] %*% fit0$coefficients + cw_offset[find_nonzeros]
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
@@ -2311,10 +2349,10 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     w1[which(y[,j]==0)] <- 0
                     w2 <- numeric(num_units)
                     w2[find_nonzeros] <- initw
-                    w <- c(w1, w2)
+                    w <- c(w1, w2) * c(weights[,j], weights[,j])
                     rm(w2) 
                     
-                    new_inner_logL <- .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
+                    new_inner_logL <- weights[,j] * .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                     cw_inner_logL <- new_inner_logL
@@ -2638,6 +2676,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     tidbits_data$dispparam <- new_fit_CBFM_ptest$dispparam[j]
                     tidbits_data$powerparam <- new_fit_CBFM_ptest$powerparam[j]
                     tidbits_data$estep_weights <- as.vector(getweights[,j])
+                    tidbits_data$obs_weights <- as.vector(weights[,j])
                     tidbits_data$offset <- offset[,j] + formula_offset
                     if(sum(which_B_used) == 1) {
                          tidbits_data$mean_basis_effects <- c(new_fit_CBFM_ptest[["mean_B_space"]], new_fit_CBFM_ptest[["mean_B_time"]], new_fit_CBFM_ptest[["mean_B_spacetime"]])
@@ -2752,8 +2791,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               
                          if(!all(control$ridge == 0))
                               fit0 <- gam(tmp_formula, 
-                                          data = as.data.frame(cbind(response = y[,j], data, size = use_size)), 
+                                          data = as.data.frame(cbind(response = y[,j], data, size = use_size)),
                                           offset = new_offset, 
+                                          weights = weights[,j],
                                           knots = knots, 
                                           method = control$gam_method, 
                                           H = Hmat, 
@@ -2764,6 +2804,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               fit0 <- gam(tmp_formula, 
                                           data = as.data.frame(cbind(response = y[,j], data, size = use_size)), 
                                           offset = new_offset, 
+                                          weights = weights[,j],
                                           knots = knots, 
                                           method = control$gam_method, 
                                           family = cw_family, 
@@ -2784,7 +2825,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                           offset = new_offset, 
                                           knots = knots, 
                                           method = control$gam_method, 
-                                          weights = 1-getweights[,j], 
+                                          weights = weights[,j] * (1-getweights[,j]), 
                                           H = Hmat, 
                                           family = "poisson", 
                                           select = select, 
@@ -2795,7 +2836,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                           offset = new_offset, 
                                           knots = knots, 
                                           method = control$gam_method, 
-                                          weights = 1-getweights[,j], 
+                                          weights = weights[,j] * (1-getweights[,j]), 
                                           family = "poisson", 
                                           select = select, 
                                           gamma = full_gamma[j])
@@ -2803,6 +2844,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          if(!all(control$ziridge == 0))
                               fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                             data = data.frame(taus = getweights[,j], data), 
+                                                            weights = weights[,j],
                                                             knots = ziknots, 
                                                             method = control$gam_method, 
                                                             H = ziHmat, 
@@ -2812,6 +2854,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          if(all(control$ziridge == 0))
                               fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                             data = data.frame(taus = getweights[,j], data), 
+                                                            weights = weights[,j],
                                                             knots = ziknots, 
                                                             method = control$gam_method, 
                                                             family = "binomial", 
@@ -2819,7 +2862,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                             gamma = full_zigamma[j]))
 
                          
-                         fit0$logLik <- sum(.dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)))
+                         sel_NAs <- which(is.na(y[,j]))
+                         fit0$logLik <- sum(weights[!sel_NAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("zinegative.binomial")) { # M-step
@@ -2832,7 +2876,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                           offset = new_offset, 
                                           knots = knots, 
                                           method = control$gam_method, 
-                                          weights = 1-getweights[,j], 
+                                          weights = weights[,j] * (1-getweights[,j]), 
                                           H = Hmat, 
                                           family = nb(), 
                                           select = select, 
@@ -2843,13 +2887,14 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                           offset = new_offset, 
                                           knots = knots, 
                                           method = control$gam_method,
-                                          weights = 1-getweights[,j], 
+                                          weights = weights[,j] * (1-getweights[,j]), 
                                           family = nb(), 
                                           select = select, 
                                           gamma = full_gamma[j])
                          if(!all(control$ziridge == 0))
                               fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                             data = data.frame(taus = getweights[,j], data), 
+                                                            weights = weights[,j],
                                                             knots = ziknots, 
                                                             method = control$gam_method, 
                                                             H = ziHmat, 
@@ -2859,22 +2904,28 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          if(all(control$ziridge == 0))
                               fitzi <- suppressWarnings(gam(tmp_ziformula, 
                                                             data = data.frame(taus = getweights[,j], data), 
+                                                            weights = weights[,j],
                                                             knots = ziknots, 
                                                             method = control$gam_method, 
                                                             family = "binomial", 
                                                             select = ziselect, 
                                                             gamma = full_zigamma[j]))
 
-                         fit0$logLik <- sum(.dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE)))
+                         sel_NAs <- which(is.na(y[,j]))
+                         fit0$logLik <- sum(weights[,j][!sel_NAs] .dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE)))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("ztpoisson")) {
                          Hmat <- diag(control$ridge+1e-15, nrow = num_X+1)
-                         tmp_dat <- data.frame(response = c(y[,j], numeric(10)), data[c(1:nrow(data), 1:10),], off = c(new_offset, numeric(10))) # Append some zeros avoids a non-convergence problem in mgcv
+                         tmp_dat <- data.frame(response = c(y[,j], numeric(10)), 
+                                               data[c(1:nrow(data), 1:10),], 
+                                               off = c(new_offset, numeric(10)),
+                                               obs_wt = c(weights[,j], rep(0, 10))) # Append some zeros avoids a non-convergence problem in mgcv
                          tmp_formula <- as.formula(paste("response", paste(as.character(formula), collapse = " "), "+ offset(off)" ) )
                          if(!all(control$ridge == 0))
                               fit0 <- gam(list(tmp_formula, ~1), 
                                           data = tmp_dat, 
+                                          weights = obs_wt,
                                           knots = knots, 
                                           method = control$gam_method, 
                                           H = Hmat, 
@@ -2883,7 +2934,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                           gamma = full_gamma[j])
                          if(all(control$ridge == 0))
                               fit0 <- gam(list(tmp_formula, ~1), 
-                                          data = tmp_dat, 
+                                          data = tmp_dat,
+                                          weights = obs_wt,
                                           knots = knots, 
                                           method = control$gam_method, 
                                           family = ziplss(), 
@@ -2891,7 +2943,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                           gamma = full_gamma[j])
                          fit0$coefficients <- fit0$coefficients[1:num_X] 
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
-                         fit0$logLik <- .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
+                         fit0$logLik <- weights[,j] * .dztpois(y[,j], lambda = exp(fit0$linear.predictors), log = TRUE) # .dztpois sets y = 0 values to -Inf, and handles NA values
                          fit0$logLik <- sum(fit0$logLik[is.finite(fit0$logLik)])                               
                          }
                     if(family$family %in% c("ztnegative.binomial")) { # Do EM here to update betas (since E-step is also specifically performed within here)
@@ -2913,12 +2965,14 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               w1[which(y[,j]==0)] <- 0
                               w2 <- numeric(num_units)
                               w2[find_nonzeros] <- initw
-                              w <- c(w1, w2)
+                              w <- c(w1, w2) * c(weights[,j], weights[,j])
                               rm(w2)
                               
                               if(!all(control$ridge == 0)) {
                                    fit0_try <- try(gam(tmp_formula, 
-                                                       data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                                       data = data.frame(response = c(y[,j],numeric(num_units)), 
+                                                                         data[c(1:num_units,1:num_units),], 
+                                                                         new_weights = w), 
                                                        offset = new_offset[c(1:num_units,1:num_units)], 
                                                        knots = knots, 
                                                        method = control$gam_method, 
@@ -2947,10 +3001,10 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                    rm(fit0_try)
                                    }
                               
-                              new_inner_logL <- .dztnbinom(y[find_nonzeros,j], 
-                                                           mu = as.vector(exp(X %*% fit0$coefficients + new_offset + formula_offset))[find_nonzeros],
-                                                           size = fit0$family$getTheta(TRUE), 
-                                                           log = TRUE) 
+                              new_inner_logL <- weights[,j] * .dztnbinom(y[find_nonzeros,j], 
+                                                                         mu = as.vector(exp(X %*% fit0$coefficients + new_offset + formula_offset))[find_nonzeros],
+                                                                         size = fit0$family$getTheta(TRUE), 
+                                                                         log = TRUE) 
                               new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)]) 
                               inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                               cw_inner_logL <- new_inner_logL
@@ -3097,6 +3151,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                        zioffset = zioffset,
                                                        y_vec = as.vector(y), 
                                                        linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), 
+                                                       weights = weights, # Note this is passed as matrix
                                                        dispparam = new_fit_CBFM_ptest$dispparam, 
                                                        powerparam = new_fit_CBFM_ptest$powerparam, 
                                                        zibetas = new_fit_CBFM_ptest$zibetas, 
@@ -3152,6 +3207,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                                zioffset = zioffset,
                                                                y_vec = as.vector(y), 
                                                                linpred_vec = c(new_fit_CBFM_ptest$linear_predictors), 
+                                                               weights = weights, # Note this is passed as matrix
                                                                dispparam = new_fit_CBFM_ptest$dispparam, 
                                                                powerparam = new_fit_CBFM_ptest$powerparam, 
                                                                zibetas = new_fit_CBFM_ptest$zibetas, 
@@ -3384,6 +3440,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      out_CBFM$y <- y
      out_CBFM$data <- data
      out_CBFM$trial_size <- trial_size
+     out_CBFM$weights <- weights
      out_CBFM$formula <- formula
      out_CBFM$ziformula <- ziformula
      out_CBFM$select <- select
@@ -3631,12 +3688,16 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           if(!(family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
                weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
                weights_mat[is.na(out_CBFM$y)] <- 0
+               weights_mat <- weights_mat * weights # Apply observation weights
                }
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {
                weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
                weights_mat_betabeta[is.na(out_CBFM$y)] <- 0
+               weights_mat_betabeta <- weights_mat_betabeta * weights # Apply observation weights
                weights_mat$out_zeroinflzeroinfl[is.na(out_CBFM$y)] <- 0
                weights_mat$out_zeroinflbetas[is.na(out_CBFM$y)] <- 0
+               weights_mat$out_zeroinflzeroinfl <- weights_mat$out_zeroinflzeroinfl * weights
+               weights_mat$out_zeroinflbetas <- weights_mat$out_zeroinflbetas * weights
                }
           
           # Bottom right of covariance matrix
