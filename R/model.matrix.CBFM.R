@@ -3,14 +3,14 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Obtains the model matrix from a fitted \code{CBFM} object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used. 
+#' Obtains the model matrix from a fitted `CBFM` object. This is especially useful when the fitted CBFM includes smoothing terms, say, in which case, the function will return the precise model matrix used.
 #' 
-#' @param object An object of class \code{CBFM}.
-#' @param zi For zero-inflated distributions, set this to \code{TRUE} if the model matrix associated with modeling the probabilities of zero-inflation is desired.
+#' @param object An object of class `CBFM`.
+#' @param zi For zero-inflated distributions, set this to `TRUE` if the model matrix associated with modeling the probabilities of zero-inflation is desired.
 #' @param ... Not used.
 #' 
 #' @details 
-#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] with no \code{newdata} argument and \code{type = "lpmatrix"} in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments \code{object$formula}, and **not** the basis functions. 
+#' Similar to how [mgcv::model.matrix.gam()] works, it calls [mgcv::predict.gam()] with no `newdata` argument and `type = "lpmatrix"` in order to obtain the model matrix. Note this is the model matrix associated with the covariates i.e., based on arguments `object$formula`, and **not** the basis functions.
 #' 
 #' For zero-inflated distributions, it can also obtain the model matrix associated with modeling the probabilities of zero-inflation.
 #' 

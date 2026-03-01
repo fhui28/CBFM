@@ -3,13 +3,13 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #'
-#' Simulate new spatio-temporal multivariate abundance data based on a fitted \code{CBFM} or \code{CBFM_hurdle} object.
+#' Simulate new spatio-temporal multivariate abundance data based on a fitted `CBFM` or `CBFM_hurdle` object.
 #'
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
 #' @param nsim A positive integer specifying the number of simulated datasets. Defaults to 1.
 #' @param seed An integer to set seed number. Defaults to a random seed number.
-#' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
-#' @param conditional If \code{conditional = TRUE}, the data are simulated conditional on the estimated species-specific regression coefficients associated with the basis functions. Otherwise if \code{conditional = FALSE} then new species-specific regression coefficients are generated from the estimated values of the \eqn{\Sigma}'s and \eqn{G}'s, and their corresponding random effects distribution. Please see the details section in [CBFM()] for more details. Note with CBFM being set up much a like generalized additive model or GAM, then simulating conditionally is generally what most users will required, if they need to simulate.
+#' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not `max_resp`. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
+#' @param conditional If `conditional = TRUE`, the data are simulated conditional on the estimated species-specific regression coefficients associated with the basis functions. Otherwise if `conditional = FALSE` then new species-specific regression coefficients are generated from the estimated values of the \eqn{\Sigma}'s and \eqn{G}'s, and their corresponding random effects distribution. Please see the details section in [CBFM()] for more details. Note with CBFM being set up much a like generalized additive model or GAM, then simulating conditionally is generally what most users will required, if they need to simulate.
 #' @param ... not used.
 #'
 #'
@@ -18,9 +18,9 @@
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the \code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. For hurdle CBFM models, there are two component models corresponding to the modeling the probability of presence and modeling the distribution of the data conditional on the species being present; please see [makeahurdle()] for more details. 
+#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the `formula` and `data` arguments, \eqn{\beta_j} is supplied as part of the `betas` argument, and \eqn{b_i} is formed from the `B_space`, `B_time` and `B_spacetime` arguments. Finally, \eqn{a_j} is either supplied directly as part of `basis_effects_mat` argument, or generated based on the `Sigma` and `G` arguments. For hurdle CBFM models, there are two component models corresponding to the modeling the probability of presence and modeling the distribution of the data conditional on the species being present; please see [makeahurdle()] for more details.
 #' 
-#' Now, as an example suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of \code{B_space} and \code{B_time} (which were inputs into the fitted CBFM), while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row of the fitted CBFM i.e., from \code{object$basis_effects_mat}. If \code{object$basis_effects_mat} is not supplied i.e., \code{conditional = FALSE}, then it is instead obtain by simulating 
+#' Now, as an example suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of `B_space` and `B_time` (which were inputs into the fitted CBFM), while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row of the fitted CBFM i.e., from `object$basis_effects_mat`. If `object$basis_effects_mat` is not supplied i.e., `conditional = FALSE`, then it is instead obtain by simulating
 #' 
 #' \deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
 #' 
@@ -29,7 +29,7 @@
 #' By plugging estimated (or simulated) values of the parameters from the fitted CBFM into the mean model given above, responses \eqn{y_{ij}} are then subsequently simulated from the assumed distribution given this mean value, along with any estimated values of the dispersion/power/zero-inflation probability parameters from the fitted CBFM as appropriate. For hurdle CBFMs, the simulation process is analogous to this, except it consists of two steps: 1) simulating presence-absence responses first, and then simulating count responses for the presences only.
 #' 
 #' 
-#' @return A three dimensional array of dimension \eqn{N} by \eqn{m} by \code{nsim} is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
+#' @return A three dimensional array of dimension \eqn{N} by \eqn{m} by `nsim` is returned, where the number of simulated spatio-temporal multivariate abundance data sets is given by the last index.
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 

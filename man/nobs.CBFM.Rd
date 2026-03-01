@@ -26,7 +26,7 @@ A positive integer.
 Extract the number of observational units from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This is principally intended to be used in computing information criterion such as in the function \code{\link[=AIC.CBFM]{AIC.CBFM()}}.
 }
 \details{
-With CBFM being set up much a like generalized additive model or GAM, then this function returns the number of observational units \eqn{N} e.g., the number of rows in \code{object$y}, as opposed to the total number of elements in the response matrix \code{obejct$y}.
+With CBFM being set up much a like generalized additive model or GAM, then this function returns the number of observational units \eqn{N} e.g., the number of rows in \code{y}, as opposed to the total number of elements in the response matrix \code{object$y}.
 }
 \examples{
 \dontrun{

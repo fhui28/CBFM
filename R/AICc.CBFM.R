@@ -3,20 +3,20 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002) from a fitted \code{CBFM} or \code{CBFM_hurdle} object. 
+#' Calculates the corrected AIC (AICc, Cavanaugh, 1997; Burnham and Anderson, 2002) from a fitted `CBFM` or `CBFM_hurdle` object.
 #'
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
-#' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
+#' @param use_edf If `TRUE`, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to `FALSE`, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'
 #' @details 
 #' The corrected Akaike Information Criterion (AICc) is a correction of AIC for small sample sizes. For a CBFM, and adapting the idea from [gllvm::AICc()], it takes the form
 #' \deqn{-2 \times \ell + k \times df + \frac{2 \times df \times (df+1)}{Nm - df - 1},}
-#' where \eqn{\ell} is the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the \code{CBFM} object at convergence \eqn{df} is the (estimated) degrees of freedom (please see [logLik.CBFM()] for more details, especially regarding the use of the argument \code{use_edf}), \eqn{N} is the number of observational units, and \eqn{m} is the number of species. In light of the use of the maximized log-likelihood value, one may consider this function constructs something more akin to a conditional AICc; see the discussion in [mgcv::logLik.gam()] and references therein.
+#' where \eqn{\ell} is the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the `CBFM` object at convergence \eqn{df} is the (estimated) degrees of freedom (please see [logLik.CBFM()] for more details, especially regarding the use of the argument `use_edf`, \eqn{N} is the number of observational units, and \eqn{m} is the number of species. In light of the use of the maximized log-likelihood value, one may consider this function constructs something more akin to a conditional AICc; see the discussion in [mgcv::logLik.gam()] and references therein.
 #' 
 #' Basically, AICc is essentially AIC with an extra penalty term for the number of parameters in the model. Note as the number of observational units increase, this extra penalty term converges to zero, and thus AICc converges to AIC.
 #' 
-#' As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the [CBFM()] help file as well as [mgcv::gam.selection()] for more information.  
+#' As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the `select` argument in the [CBFM()] help file as well as [mgcv::gam.selection()] for more information.
 #' 
 #' 
 #' @return A numeric value of the calculated corrected AIC.

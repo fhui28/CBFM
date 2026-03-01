@@ -3,22 +3,22 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #'
-#' Extracts the so-called Bayesian posterior covariance matrix of the parameters estimators from a \code{CBFM} fit.
+#' Extracts the so-called Bayesian posterior covariance matrix of the parameters estimators from a `CBFM` fit.
 #' 
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class `CBFM`.
 #' @param ... Not used.
 #' 
 #' @details 
 #' 
-#' This basically extracts \code{object$covar_components}, assuming \code{stderrors = TRUE} in the original CBFM fit. Please note to save memory, rather than returning the full Bayesian posterior covariance matrix, only relevant sub-blocks which are needed for standard errors and inference/prediction are returned.
+#' This basically extracts `object$covar_components`, assuming `stderrors = TRUE` in the original CBFM fit. Please note to save memory, rather than returning the full Bayesian posterior covariance matrix, only relevant sub-blocks which are needed for standard errors and inference/prediction are returned.
 #' 
 #' 
 #' @return A list containing with the following components: 
-#' \item{topleft: }{A matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors in \code{object$formula}, and, if appropriate in \code{object$ziformula} i.e., the covariance matrix associated with \code{object$betas} and \code{object$zibetas}.}
+#' \item{topleft: }{A matrix corresponding to the top-left block of the full Bayesian posterior covariance matrix. The top-left block specifically relates to the regression coefficients associated with the measured predictors in `object$formula`, and, if appropriate in `object$ziformula` i.e., the covariance matrix associated with `object$betas` and `object$zibetas`.}
 
-#' \item{topright: }{matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between \code{object$betas}/\code{object$zibetas} and \code{object$basis_effects_mat}.}
+#' \item{topright: }{matrix of the top-right block of the full Bayesian posterior covariance matrix. The top-right block specifically relates to the cross-covariance of the regression coefficients associated with the measured predictors (plus the species-specific zero-inflated probabilities on the logit scale) and the basis functions i.e., the cross-covariance matrix between `object$betas`/`object$zibetas` and `object$basis_effects_mat`.}
 
-#' \item{bottomright: }{A matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with \code{object$basis_effects_mat}.} 
+#' \item{bottomright: }{A matrix containing components of the bottom-right block of the full Bayesian posterior covariance matrix. The bottom-left block specifically relates to the regression coefficients associated with the basis functions i.e., the covariance matrix associated with `object$basis_effects_mat`.}
 #' 
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak

@@ -17,8 +17,8 @@
 \value{
 A list containing two elements:
 \describe{
-\item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
-\item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
+\item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{y}.}
+\item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{y}. }
 }
 }
 \description{

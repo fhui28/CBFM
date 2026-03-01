@@ -15,7 +15,7 @@
 \item{...}{Not used.}
 }
 \value{
-A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula} and which of \code{B_space/B_time/B_spacetime} were included in the model.
+A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula} and which of \code{B_space/B_time/B_spacetime} were included in the model.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

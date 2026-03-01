@@ -3,9 +3,9 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extracts the estimated regression coefficients associated with the covariates from a fitted \code{CBFM} object.
+#' Extracts the estimated regression coefficients associated with the covariates from a fitted `CBFM` object.
 #'
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class `CBFM`.
 #' @param ... Not used in this case.
 #'
 #' @details 
@@ -17,7 +17,7 @@
 #' 
 #' This function will extract the estimated coefficients \eqn{\hat{\beta}_j}'s from the fitted CBFM, noting this may include the estimated smoothing coefficients if any smoothers were included. For zero-inflated distributions, it will also return the estimated coefficients associated with modeling the probability of zero-inflation, noting this may include the estimated smoothing coefficients if any smoothers were included.
 #' 
-#' This function does \emph{not} return the estimated regression coefficients associated with the basis functions i.e., the \eqn{\hat{a}_j}'s. These can be obtained from \code{object$basis_effects_mat}.
+#' This function does \emph{not} return the estimated regression coefficients associated with the basis functions i.e., the \eqn{\hat{a}_j}'s. These can be obtained from `object$basis_effects_mat`.
 #'
 #' @return A matrix of estimated species-specific regression coefficients corresponding to the model matrix created, where the number of rows is equal to the number of species. For zero-inflated distributions, it returns a list containing both the matrix of estimated species-specific regression coefficients corresponding to the model matrix created, and a vector of estimated species-specific probabilities of zero-inflation on the logit scale.
 #'

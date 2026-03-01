@@ -3,10 +3,10 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #'
-#' Takes a fitted \code{CBFM} object and calculates hat values i.e., diagonal elements of the influence/hat matrix and an approximate Cook's distance.
+#' Takes a fitted `CBFM` object and calculates hat values i.e., diagonal elements of the influence/hat matrix and an approximate Cook's distance.
 #'
-#' @param object An object of class \code{CBFM}.
-#' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param object An object of class `CBFM`.
+#' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to `detectCores()-1`.
 #' @param ... Not used.
 #'
 #' @details 
@@ -19,9 +19,9 @@
 #'  
 #' @return A list containing two elements:
 #' \describe{
-#' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
+#' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as `y`.}
 
-#' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
+#' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as `y`. }
 #' }
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak

@@ -38,7 +38,7 @@
 )
 }
 \arguments{
-\item{x}{An object of class \code{CBFM} or \code{CBFM_hurdle}.}
+\item{x}{An object of class `CBFM` or `CBFM_hurdle`.}
 
 \item{which_plot}{If a subset of the plots is desired, then a vector containing subset of the integers 1, 2, 3, 4, 5.}
 
@@ -46,17 +46,17 @@
 
 \item{titles}{Titles to appear above each plot.}
 
-\item{species_colors}{Either a scalar is supplied or a vector with length of number of species in the spatio-temporal multivariate abundance data. If the former than all species use this color in the plots. If the latter then the vector specified the colors to use for each species. Defaults to \code{NULL}, which results in each species having a unique color based on the [grDevices::rainbow()] palette.}
+\item{species_colors}{Either a scalar is supplied or a vector with length of number of species in the spatio-temporal multivariate abundance data. If the former than all species use this color in the plots. If the latter then the vector specified the colors to use for each species. Defaults to `NULL`, which results in each species having a unique color based on the [grDevices::rainbow()] palette.}
 
 \item{smooth}{Should a smoother be added to each plot?}
 
-\item{envelope}{Should approximate simulation envelopes be constructed for the normal probability plot? Default to \code{TRUE}. Note if \code{envelope = FALSE} then \code{envelope_col} and \code{envelope_K} are ignored.}
+\item{envelope}{Should approximate simulation envelopes be constructed for the normal probability plot? Default to `TRUE`. Note if `envelope = FALSE` then `envelope_col` and `envelope_K` are ignored.}
 
 \item{envelope_col}{A vector of length 2, specifying the colors to use for the lines and shade respectively for the approximate simulation envelopes.}
 
 \item{envelope_rep}{The number of simulations to use in order to build the approximate simulation envelope.}
 
-\item{which_species}{A vector indexing the species to plot, if the residual plots should be constructed for only a subset of species. Defaults to \code{NULL}, in which case all species are plotted. This may be useful if the number of species is quite large.}
+\item{which_species}{A vector indexing the species to plot, if the residual plots should be constructed for only a subset of species. Defaults to `NULL`, in which case all species are plotted. This may be useful if the number of species is quite large.}
 
 \item{seed}{This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.}
 
@@ -65,10 +65,10 @@
 \description{
 `r lifecycle::badge("experimental")`
 
-Five potential plots are currently available for some basic residual diagnostics for a fitted \code{CBFM} or \code{CBFM_hurdle} object: 1) a plot of residuals against estimated linear predictors (log of the fitted values for a hurdle model); 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
+Five potential plots are currently available for some basic residual diagnostics for a fitted `CBFM` or `CBFM_hurdle` object: 1) a plot of residuals against estimated linear predictors (log of the fitted values for a hurdle model); 2) a normal probability or quantile-quantile plot of residuals with simulated point-wise 95\% confidence interval envelope; 3) plot of residuals against observational unit index; 4) a plot of residuals again column index; 5) scale-location plot.
 }
 \details{
-This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the \code{gllvm} package, especially Jenni Niku, for the code!
+This function is heavily adapted from [gllvm::plot.gllvm()] and [boral::plot.boral()]. A lot of credit goes to the authors of the [gllvm::gllvm()] package, especially Jenni Niku, for the code!
 
 As basic residual diagnostics, these plots should behave as follows: 
 
