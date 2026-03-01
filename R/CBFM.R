@@ -2008,8 +2008,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                cw_eta <- MM %*% fit0$coefficients
                if(!is.null(model.offset(model.frame(fit0))))
                     cw_eta <- cw_eta + model.offset(model.frame(fit0))
-               sel_NAs <- which(is.na(y[,j]))
-               cw_inner_logL <- weights[,j][!sel_NAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi)) 
+               sel_nonNAs <- which(!is.na(y[,j]))
+               cw_inner_logL <- weights[,j][sel_nonNAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi)) 
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
 
                inner_err <- Inf
@@ -2064,8 +2064,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- MM %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))
-                    sel_NAs <- which(is.na(y[,j]))
-                    new_inner_logL <- weights[,j][!sel_NAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi))
+                    sel_nonNAs <- which(!is.na(y[,j]))
+                    new_inner_logL <- weights[,j][sel_nonNAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2128,8 +2128,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                cw_eta <- MM %*% fit0$coefficients
                if(!is.null(model.offset(model.frame(fit0))))
                     cw_eta <- cw_eta + model.offset(model.frame(fit0))
-               sel_NAs <- which(is.na(y[,j]))
-               cw_inner_logL <- weights[,j][!sel_NAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
+               sel_nonNAs <- which(!is.na(y[,j]))
+               cw_inner_logL <- weights[,j][sel_nonNAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                cw_inner_logL <- sum(cw_inner_logL[is.finite(cw_inner_logL)])
                
                inner_err <- Inf
@@ -2184,8 +2184,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- MM %*% fit0$coefficients
                     if(!is.null(model.offset(model.frame(fit0))))
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))
-                    sel_NAs <- which(is.na(y[,j]))
-                    new_inner_logL <- weights[,j][!sel_NAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
+                    sel_nonNAs <- which(!is.na(y[,j]))
+                    new_inner_logL <- weights[,j][sel_nonNAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = cw_eta, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE))
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL-1)
                     cw_inner_logL <- new_inner_logL
@@ -2862,8 +2862,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                             gamma = full_zigamma[j]))
 
                          
-                         sel_NAs <- which(is.na(y[,j]))
-                         fit0$logLik <- sum(weights[!sel_NAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)))
+                         sel_nonNAs <- which(!is.na(y[,j]))
+                         fit0$logLik <- sum(weights[sel_nonNAs] * .dzipoisson_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi)))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("zinegative.binomial")) { # M-step
@@ -2911,8 +2911,8 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                             select = ziselect, 
                                                             gamma = full_zigamma[j]))
 
-                         sel_NAs <- which(is.na(y[,j]))
-                         fit0$logLik <- sum(weights[,j][!sel_NAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE)))
+                         sel_nonNAs <- which(!is.na(y[,j]))
+                         fit0$logLik <- sum(weights[,j][sel_nonNAs] * .dzinegativebinomial_log(y = na.omit(y[,j]), eta = model.matrix(fit0) %*% fit0$coefficients + fit0$offset, zeroinfl_prob = fitted(fitzi), phi = 1/fit0$family$getTheta(TRUE)))
                          fit0$linear.predictors <- X %*% fit0$coefficients + new_offset + formula_offset
                          }
                     if(family$family %in% c("ztpoisson")) {
