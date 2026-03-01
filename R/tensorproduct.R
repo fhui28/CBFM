@@ -9,14 +9,14 @@
 #' @param B2 A matrix.
 #' 
 #' @details 
-#' For the purposes of this package, this function may be used for constructing a matrix basis functions formed from the tensor product of two individual basis functions. A prime example of this is the construction of \code{B_spacetime} for use in the main function [CBFM()], where the spatio-temporal basis functions may be formed as a tensor product of spatial and temporal basis functions.
+#' For the purposes of this package, this function may be used for constructing a matrix basis functions formed from the tensor product of two individual basis functions. A prime example of this is the construction of `B_spacetime` for use in the main function [CBFM()], where the spatio-temporal basis functions may be formed as a tensor product of spatial and temporal basis functions.
 #' 
-#' The tensor product is formed by multiplying the first column of \code{B2} with \code{B1}, then the second column of \code{B2} with \code{B1}, and so on, working through all the columns of \code{B2}. 
+#' The tensor product is formed by multiplying the first column of `B2` with `B1`, then the second column of `B2` with `B1`, and so on, working through all the columns of `B2`.
 #' 
-#' @return A matrix resulting from the tensor product, with the number of columns equal to \code{ncol(B1)*ncol(B2)}. 
+#' @return A matrix resulting from the tensor product, with the number of columns equal to `ncol(B1)*ncol(B2)`.
 #' 
 #' @details # Warnings
-#' No attempt is made by the function to made the resulting matrix sparse, unless the supplied \code{B1} and \code{B2} are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
+#' No attempt is made by the function to made the resulting matrix sparse, unless the supplied `B1` and `B2` are themselves sparse. Therefore, please be careful of how much memory the resulting object uses!
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 

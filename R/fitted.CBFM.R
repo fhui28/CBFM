@@ -3,15 +3,15 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extracts fitted mean values from a \code{CBFM} or \code{CBFM_hurdle} fit.
+#' Extracts fitted mean values from a `CBFM` or `CBFM_hurdle` fit.
 #' 
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
 #' @param ... Not used.
 #' 
 #' @details 
 #' To clarify, the returned fitted values are on the response scale i.e., a matrix of the estimated means \eqn{\hat{\mu}_{ij}} after model fitting. Note for zero-inflated distributions, while the mean of the non-zero-inflated component is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{(1-\pi_{ij})*\mu_{ij}} where \eqn{\pi_{ij}} is the species-specific probability of zero inflation and \eqn{\mu_{ij}} is the mean of the non-zero-inflated component.
 #' 
-#' Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns \code{NA} values for elements corresponding to zero counts in \code{object$y}.
+#' Similarly, for zero-truncated count distributions, while the mean of the base count distribution is modeled in CBFM, the fitted values are the *actual expected mean values* i.e., it returns estimated values of \eqn{\mu_{ij}/(1-p(0,\mu_{ij}))} where \eqn{\mu_{ij}} is the mean of the base count distribution component and \eqn{p(0,\mu_{ij})} generically denotes the probability of observing a zero count for the base count distribution (and it returns `NA` values for elements corresponding to zero counts in `y`.
 #' 
 #' For hurdle CBFMs, the function returns the estimated values of \eqn{\pi_{ij}*\mu_{ij}} where \eqn{\pi_{ij}} is the probability of observing a presence based on the presence-absence component of the model, and \eqn{\mu_{ij}} is the mean of the zero-truncated component of the model.  
 #' 

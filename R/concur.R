@@ -3,10 +3,10 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Calculates measures of concurvity from a fitted \code{CBFM} object. The measures are adapted from those found in [mgcv::concurvity()], and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.  
+#' Calculates measures of concurvity from a fitted `CBFM` object. The measures are adapted from those found in [mgcv::concurvity()], and expanded to work on individual parametric terms as well on the spatial and/or temporal basis functions included in the CBFM.
 #' 
-#' @param object An object of class \code{CBFM}.
-#' @param zi For zero-inflated distributions, set this to \code{TRUE} if measures of concurvity associated with modeling the probabilities of zero-inflation are desired.
+#' @param object An object of class `CBFM`.
+#' @param zi For zero-inflated distributions, set this to `TRUE` if measures of concurvity associated with modeling the probabilities of zero-inflation are desired.
 #' @param ... Not used.
 #' 
 #' @details 
@@ -15,8 +15,8 @@
 #' Concurvity is something perhaps particularly worth keeping in mind in the context of CBFMs: many of the measured covariates included are likely to be spatially and/or temporally indexed, in which case their inclusion (whether as a smooth or parametric) maybe exhibit concurvity with the "smooths" resulting from the spatial and/or temporal basis functions also included to account for residual spatio-temporal correlations both between- and within-species. Again however, we stress the **perhaps**, as extreme concurvity may be something to think/worry about but otherwise it may not be something to stress over depending on the goal of the CBFM. Concurvity is also closely related (I suspect?!) to the issue of spatial confounding (Hodges et al., 2010, Hanks et al., 2015; Lany et al., 2020)
 #' 
 #' For each species, this function presents two measures of concurvity, bounded between zero and one (zero indicating no problem and one indicating a total lack of identifiability in the CBFM), which are based on those found in [mgcv::concurvity()]. Both are based on something of the form \eqn{\|g\|^2 / \|f\|^2}, where \eqn{\|\cdot\|^2} is the squared norm, \eqn{f} is the smooth term of focus, and \eqn{g} is the "component" of the smooth which can be represented by other remaining terms in the model. The two measures specifically are
-#' 1. \code{Observed}, which is based on the corresponding linear predictors and their Euclidean norm. Basically, it is a measure of how well the linear predictor for a specific covariate can be represented by a linear predictor formed from the other terms in the model. According to [mgcv::concurvity()], the measure can be a bit over-optimistic about the potential for a problem in some cases. 
-#' 2. \code{Estimate}, which is based on the the covariate only and its representation in terms of the other terms in the model. Basically, it is a measure of how well a specific covariate can be represented by the other terms in the model (in terms of breaking things down to basis functions). According to [mgcv::concurvity()], it does not suffer from the pessimism or potential for over-optimism than the first measure.
+#' 1. `Observed`, which is based on the corresponding linear predictors and their Euclidean norm. Basically, it is a measure of how well the linear predictor for a specific covariate can be represented by a linear predictor formed from the other terms in the model. According to [mgcv::concurvity()], the measure can be a bit over-optimistic about the potential for a problem in some cases.
+#' 2. `Estimate`, which is based on the the covariate only and its representation in terms of the other terms in the model. Basically, it is a measure of how well a specific covariate can be represented by the other terms in the model (in terms of breaking things down to basis functions). According to [mgcv::concurvity()], it does not suffer from the pessimism or potential for over-optimism than the first measure.
 #' 
 #' Note concurvity to measured on a per-species basis, although this does not matter for the second measure due to the covariates community-level nature of the basis functions.
 #' 

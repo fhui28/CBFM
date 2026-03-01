@@ -38,7 +38,7 @@ For \code{type = "PIT"}, this returns the probability integral transform residua
 
 For \code{type = "dunnsmyth"}, this returns the Dunn-Smyth residuals also used in \code{\link[boral:ds.residuals]{boral::ds.residuals()}} and\code{\link[gllvm:residuals.gllvm]{gllvm::residuals.gllvm()}}, among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard normal distribution (Dunn and Smyth, 1996). Note there is a level of jitting used in producing the Dunn-Smyth residuals.
 
-Note if there are missing values in the response matrix, then one or more warnings maybe outputted (and mostly likely can be safely ignored) when calculating residuals.
+Note if there are missing values in the response matrix, then one or more warnings maybe outputted (and mostly likely can be safely ignored) when calculating residuals. Also, note the calculation of residuals does \emph{not} take into account \code{object$weights}!
 }
 \examples{
 \dontrun{

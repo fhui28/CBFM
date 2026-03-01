@@ -3,19 +3,19 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This can also be generalized to other information criterion by modifying the model complexity penalty \code{k}.
+#' Calculates Akaike's "An Information Criterion" (AIC, Akaike, 1974) from a fitted `CBFM` or `CBFM_hurdle` object. This can also be generalized to other information criterion by modifying the model complexity penalty `k`.
 #'
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
-#' @param k The model complexity penalty to use in the calculation of the information criterion. Defaults to \code{k = 2}, which is the classical AIC.
-#' @param use_edf If \code{TRUE}, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to \code{FALSE}, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
+#' @param k The model complexity penalty to use in the calculation of the information criterion. Defaults to `k = 2`, which is the classical AIC.
+#' @param use_edf If `TRUE`, then the estimated degrees of freedom for the species-specific coefficients related to the spatial and/temporal basis functions is used instead. Defaults to `FALSE`, in which case species-specific coefficients related to the basis functions are regarded as fixed effects.
 #' @param ... Not used in this case.
 #'
 #' @details 
-#' While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of two, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where \code{k = log(nobs(object))}. 
+#' While the default returns the much celebrated AIC for a fitted CBFM, using a default complexity penalty of two, the user is free to modify the model complexity penalty according to whatever information criterion they wish to calculate. Another common choice is the Bayesian Information criterion (BIC, Schwarz, 1978), where `k = log(nobs(object))`.
 #' 
-#' The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the fitted CBFM at convergence and \eqn{df} is the (estimated) degrees of freedom; please [logLik.CBFM()] for more details, especially regarding the use of the argument \code{use_edf}. In light of the former, one may consider this function constructs something akin to a conditional AIC; see the discussion in [mgcv::logLik.gam()] and references therein.
+#' The generic form of the information criterion this function uses is \eqn{-2 \times \ell + k \times df}, where \eqn{\ell} is the maximized log-likelihood value (*excluding* the quadratic penalty term in the PQL) of the fitted CBFM at convergence and \eqn{df} is the (estimated) degrees of freedom; please [logLik.CBFM()] for more details, especially regarding the use of the argument `use_edf`. In light of the former, one may consider this function constructs something akin to a conditional AIC; see the discussion in [mgcv::logLik.gam()] and references therein.
 #' 
-#' As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the \code{select} argument in the [CBFM()] help file as well as [mgcv::gam.selection()] for more information.  
+#' As an alternative to using information criteria, CBFM also has available built-in approaches for smoothing term (but not parametric term) selection via shrinkage smoothers or null space penalization; please see the `select` argument in the [CBFM()] help file as well as [mgcv::gam.selection()] for more information.
 #' 
 #' 
 #' @return A numeric value of the calculated information criterion.

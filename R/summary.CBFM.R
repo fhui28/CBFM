@@ -3,16 +3,16 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #'
-#' Takes a fitted \code{CBFM} object and produces some useful summaries from it.
+#' Takes a fitted `CBFM` object and produces some useful summaries from it.
 #'
-#' @param object An object of class \code{CBFM}.
+#' @param object An object of class `CBFM`.
 #' @param coverage The coverage probability for any confidence intervals of the regression coefficients which are calculated. Defaults to 0.95, which corresponds to 95% confidence intervals.
 #' @param digits The number of significant figures to use when printing.
-#' @param ncores To speed up calculation of the standard error estimates and summary tables, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param ncores To speed up calculation of the standard error estimates and summary tables, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to `detectCores()-1`.
 #' @param ... Not used.
 #'
 #' @details 
-#' Currently, the function returns estimated species-specific regression coefficients, including those associated with modeling the probability of zero-inflation if appropriate. If the \code{object$stderrors == TRUE}, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is *heavily* adapted from [mgcv::summary.gam()]; we refer the reader to their help file as well as Wood (2017) for more details on these tests, with any mistakes/issues to be blamed on me (sorry!) and not on Simon Wood who maintains \code{mgcv} splendidly.
+#' Currently, the function returns estimated species-specific regression coefficients, including those associated with modeling the probability of zero-inflation if appropriate. If the `object$stderrors == TRUE`, then summary tables are also produced containing standard errors, hypothesis tests for parametric coefficients and smoothing terms, plus Wald confidence intervals (when possible). The set up of these summary tables, in particular the way the hypothesis tests for smoothing terms are performed, is *heavily* adapted from [mgcv::summary.gam()]; we refer the reader to their help file as well as Wood (2017) for more details on these tests, with any mistakes/issues to be blamed on me (sorry!) and not on Simon Wood who maintains `mgcv` splendidly.
 #' 
 #' As discussed in [CBFM()], all tests are based on the Bayesian posterior covariance matrix of the coefficients. Please note all P-values are computed without considering uncertainty in the smoothing parameter estimates.
 #' 
@@ -21,11 +21,11 @@
 #' \describe{
 #' \item{call: }{The matched function call of \code{object}.}
 
-#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with \code{object$formula}, rounded.}
+#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with `object$formula`, rounded.}
 
 #' \item{basis_effects_mat: }{The estimated matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. }
 
-#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with \code{object$ziformula}, rounded.}
+#' \item{betas: }{The estimated matrix of species-specific regression coefficients corresponding to the model matrix associated with `object$ziformula`, rounded.}
 
 #' \item{summary_tables: }{If the \code{object$stderrors == TRUE}, then a list with length equal to the number of species i.e., \code{ncol(object$y)}. Each element in the list may contain the following (as appropriate): 
 #' 1) \code{parametric_coefs}, which is a summary table corresponding to (any) strictly parametric coefficients included in the model; 

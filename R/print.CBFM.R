@@ -3,9 +3,9 @@
 #' @description 
 #' `r lifecycle::badge("stable")
 #'
-#' The default print method for a \code{CBFM} or \code{CBFM_hurdle} object.
+#' The default print method for a `CBFM` or `CBFM_hurdle` object.
 #' 
-#' @param x An object of class \code{CBFM} or \code{CBFM_hurdle}.
+#' @param x An object of class `CBFM` or `CBFM_hurdle`.
 #' @param ... Not used.
 #'
 #' @details 
