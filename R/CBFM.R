@@ -2276,7 +2276,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                w1[which(y[,j]==0)] <- 0
                w2 <- numeric(num_units)
                w2[find_nonzeros] <- initw
-               w <- c(w1, w2) * c(weights[,j], weights[,j])
+               w <- c(w1, w2)
                rm(w2, fit0, cw_eta)
 
                inner_err <- Inf
@@ -2288,7 +2288,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     
                     if(all(control$initial_ridge == 0)) {
                          fit0_try <- try(gam(tmp_formula, 
-                                             data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                             data = data.frame(response = c(y[,j],numeric(num_units)), 
+                                                               data[c(1:num_units,1:num_units),], 
+                                                               new_weights = c(weights[,j], weights[,j]) * w), 
                                              weights = new_weights, 
                                              offset = cw_offset[c(1:num_units, 1:num_units)], 
                                              knots = knots, 
@@ -2299,7 +2301,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          }
                     if(!all(control$initial_ridge == 0)) {
                          fit0_try <- try(gam(tmp_formula, 
-                                             data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                             data = data.frame(response = c(y[,j],numeric(num_units)), 
+                                                               data[c(1:num_units,1:num_units),], 
+                                                               new_weights = c(weights[,j], weights[,j]) * w), 
                                              weights = new_weights, 
                                              offset = cw_offset[c(1:num_units, 1:num_units)], 
                                              knots = knots,
@@ -2349,10 +2353,10 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     w1[which(y[,j]==0)] <- 0
                     w2 <- numeric(num_units)
                     w2[find_nonzeros] <- initw
-                    w <- c(w1, w2) * c(weights[,j], weights[,j])
+                    w <- c(w1, w2)
                     rm(w2) 
                     
-                    new_inner_logL <- weights[,j] * .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
+                    new_inner_logL <- weights[find_nonzeros,j] * .dztnbinom(y[find_nonzeros,j], mu = exp(cw_eta), size = fit0$family$getTheta(TRUE), log = TRUE)
                     new_inner_logL <- sum(new_inner_logL[is.finite(new_inner_logL)])
                     inner_err <- abs(new_inner_logL/cw_inner_logL - 1)
                     cw_inner_logL <- new_inner_logL
@@ -2545,6 +2549,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           }
      start_params$logLik <- -Inf
 
+     
      ##----------------
      ## Run PQL algorithm
      ##----------------
@@ -2965,14 +2970,14 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                               w1[which(y[,j]==0)] <- 0
                               w2 <- numeric(num_units)
                               w2[find_nonzeros] <- initw
-                              w <- c(w1, w2) * c(weights[,j], weights[,j])
+                              w <- c(w1, w2) 
                               rm(w2)
                               
                               if(!all(control$ridge == 0)) {
                                    fit0_try <- try(gam(tmp_formula, 
                                                        data = data.frame(response = c(y[,j],numeric(num_units)), 
                                                                          data[c(1:num_units,1:num_units),], 
-                                                                         new_weights = w), 
+                                                                         new_weights = c(weights[,j], weights[,j]) * w),
                                                        offset = new_offset[c(1:num_units,1:num_units)], 
                                                        knots = knots, 
                                                        method = control$gam_method, 
@@ -2984,7 +2989,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                    }
                               if(all(control$ridge == 0)) {
                                    fit0_try <- try(gam(tmp_formula, 
-                                                       data = data.frame(response = c(y[,j],numeric(num_units)), data[c(1:num_units,1:num_units),], new_weights = w), 
+                                                       data = data.frame(response = c(y[,j],numeric(num_units)), 
+                                                                         data[c(1:num_units,1:num_units),], 
+                                                                         new_weights = c(weights[,j], weights[,j]) * w),
                                                        offset = new_offset[c(1:num_units,1:num_units)], 
                                                        knots = knots, 
                                                        method = control$gam_method,
@@ -3001,7 +3008,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                    rm(fit0_try)
                                    }
                               
-                              new_inner_logL <- weights[,j] * .dztnbinom(y[find_nonzeros,j], 
+                              new_inner_logL <- weights[find_nonzeros,j] * .dztnbinom(y[find_nonzeros,j], 
                                                                          mu = as.vector(exp(X %*% fit0$coefficients + new_offset + formula_offset))[find_nonzeros],
                                                                          size = fit0$family$getTheta(TRUE), 
                                                                          log = TRUE) 
