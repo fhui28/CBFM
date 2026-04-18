@@ -3236,12 +3236,24 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     }     
                }
           rm(three_custom_options, three_mean_options, three_B_options, three_LoadingnuggetSigma_options, three_LoadingnuggetG_options, three_num_B)
-          
+
+          if(!is.null(Sigma_control[["prior_precision_space"]])) {
+               new_LoadingnuggetSigma_space$invcov <- new_LoadingnuggetSigma_space$invcov + Sigma_control[["prior_precision_space"]]
+               new_LoadingnuggetSigma_space$cov <- .pinv(new_LoadingnuggetSigma_space$invcov)
+               }
+          if(!is.null(Sigma_control[["prior_precision_time"]])) {
+               new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_time$invcov + Sigma_control[["prior_precision_time"]]
+               new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
+               }
+          if(!is.null(Sigma_control[["prior_precision_spacetime"]])) {
+               new_LoadingnuggetSigma_spacetime$invcov <- new_LoadingnuggetSigma_spacetime$invcov + Sigma_control[["prior_precision_spacetime"]]
+               new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
+               }
 
           ##-------------------------
-          ## Finish iteration 
+          ## Finish iteration
           ##-------------------------
-          new_params <- c(c(new_fit_CBFM_ptest$betas), 
+          new_params <- c(c(new_fit_CBFM_ptest$betas),
                           c(new_fit_CBFM_ptest$basis_effects_mat), 
                           c(new_fit_CBFM_ptest$zibetas), 
                           new_fit_CBFM_ptest[["mean_B_space"]], 
