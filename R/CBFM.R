@@ -2453,6 +2453,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_space <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_space$invcov <- .pinv(Sigma_control[["custom_space"]])
                     new_LoadingnuggetSigma_space$cov <- Sigma_control[["custom_space"]]
+                    new_LoadingnuggetSigma_space <- .add_prior_precision(new_LoadingnuggetSigma_space, Sigma_control[["prior_precision_space"]])
                     }
                if(is.list(Sigma_control[["custom_space"]])) {
                     start_params$Sigma_space <- NULL
@@ -2489,6 +2490,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_time <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_time$invcov <- .pinv(Sigma_control[["custom_time"]])
                     new_LoadingnuggetSigma_time$cov <- Sigma_control[["custom_time"]]
+                    new_LoadingnuggetSigma_time <- .add_prior_precision(new_LoadingnuggetSigma_time, Sigma_control[["prior_precision_time"]])
                     }
                if(is.list(Sigma_control[["custom_time"]])) {
                     start_params$Sigma_time <- NULL
@@ -2525,6 +2527,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_spacetime <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_spacetime$invcov <- .pinv(Sigma_control[["custom_spacetime"]])
                     new_LoadingnuggetSigma_spacetime$cov <- Sigma_control[["custom_spacetime"]]
+                    new_LoadingnuggetSigma_spacetime <- .add_prior_precision(new_LoadingnuggetSigma_spacetime, Sigma_control[["prior_precision_spacetime"]])
                     }
                if(is.list(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
@@ -3236,19 +3239,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     }     
                }
           rm(three_custom_options, three_mean_options, three_B_options, three_LoadingnuggetSigma_options, three_LoadingnuggetG_options, three_num_B)
-
-          if(!is.null(Sigma_control[["prior_precision_space"]])) {
-               new_LoadingnuggetSigma_space$invcov <- new_LoadingnuggetSigma_space$invcov + Sigma_control[["prior_precision_space"]]
-               new_LoadingnuggetSigma_space$cov <- .pinv(new_LoadingnuggetSigma_space$invcov)
-               }
-          if(!is.null(Sigma_control[["prior_precision_time"]])) {
-               new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_time$invcov + Sigma_control[["prior_precision_time"]]
-               new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
-               }
-          if(!is.null(Sigma_control[["prior_precision_spacetime"]])) {
-               new_LoadingnuggetSigma_spacetime$invcov <- new_LoadingnuggetSigma_spacetime$invcov + Sigma_control[["prior_precision_spacetime"]]
-               new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
-               }
 
           ##-------------------------
           ## Finish iteration
