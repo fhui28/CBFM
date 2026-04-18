@@ -10,3 +10,6 @@ src/*.o
 src/*.so
 src/*.dll
 revdep/
+
+# Claude Code session state
+.claude/
