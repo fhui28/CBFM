@@ -568,7 +568,19 @@
 	
 
 #' @noRd
+.add_prior_precision <- function(out, prior_precision) {
+     if(is.null(prior_precision))
+          return(out)
+     out$invcov <- out$invcov + prior_precision
+     out$cov <- .pinv(out$invcov)
+     return(out)
+     }
+
+
+#' @noRd
 .update_LoadingSigma_fn <- function(Sigma, Sigma_control, use_rank_element, estimate_lambda_not_Sigma, which_B) {
+     prior_precision <- Sigma_control[[c("prior_precision_space", "prior_precision_time", "prior_precision_spacetime")[which_B]]]
+
      if(!estimate_lambda_not_Sigma) {
           num_basisfns <- nrow(Sigma)
           num_rank <- Sigma_control$rank[use_rank_element]
@@ -576,7 +588,7 @@
           if(num_rank == "full") {
              out <- list(Loading = NULL, nugget = NULL, cov = Sigma)
              out$invcov <- chol2inv(chol(out$cov))
-             return(out)
+             return(.add_prior_precision(out, prior_precision))
              }
           
           min_err <- Inf
@@ -639,6 +651,6 @@
                     out$cov <- .pinv(out$invcov)
                     }
           }
-     
-     return(out)
+
+     return(.add_prior_precision(out, prior_precision))
      }
