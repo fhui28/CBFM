@@ -62,6 +62,7 @@ Suggests:
     sp,
     spelling,
     statmod,
+    testthat (>= 3.0.0),
     tidyverse
 VignetteBuilder: 
     knitr
@@ -70,5 +71,6 @@ RdMacros:
 Encoding: UTF-8
 Language: en-US
 NeedsCompilation: no
+Config/testthat/edition: 3
 Roxygen: list(markdown = FALSE)
 RoxygenNote: 7.3.3
