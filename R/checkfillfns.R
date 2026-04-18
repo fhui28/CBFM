@@ -163,6 +163,26 @@
     }
 
         
+.check_prior_precision <- function(M, in_use, dim_B, which_name, basis_name) {
+     if(is.null(M))
+          return(invisible(NULL))
+     if(!in_use)
+          stop("Please do not supply Sigma_control$", which_name, " if ", basis_name, " is also not supplied.")
+     if(is.list(M))
+          stop("Sigma_control$", which_name, " should be a single matrix, not a list.")
+     if(!is.matrix(M))
+          stop("Sigma_control$", which_name, " should be a matrix.")
+     if(nrow(M) != dim_B | ncol(M) != dim_B)
+          stop("Sigma_control$", which_name, " should be a square matrix with the same dimensions as ncol(", basis_name, ").")
+     if(max(abs(M - t(M))) > sqrt(.Machine$double.eps))
+          stop("Sigma_control$", which_name, " should be a symmetric matrix.")
+     e <- eigen(M, symmetric = TRUE, only.values = TRUE)$values
+     if(min(e) < -sqrt(.Machine$double.eps))
+          stop("Sigma_control$", which_name, " should be positive semi-definite.")
+     invisible(NULL)
+     }
+
+
 .check_ranks <- function(num_spp, rank_G, num_basisfns, rank_Sigma) {
      #if(num_spp <= 2)
      #     message("rank_G ignored for models containing two or less responses.")
@@ -483,6 +503,10 @@
                }
         control$which_custom_Sigma_used[3] <- 1
         }
+
+     .check_prior_precision(control[["prior_precision_space"]],     which_B_used[1] == 1, num_spacebasisfns,     "prior_precision_space",     "B_space")
+     .check_prior_precision(control[["prior_precision_time"]],      which_B_used[2] == 1, num_timebasisfns,      "prior_precision_time",      "B_time")
+     .check_prior_precision(control[["prior_precision_spacetime"]], which_B_used[3] == 1, num_spacetimebasisfns, "prior_precision_spacetime", "B_spacetime")
 
      control$method <- match.arg(control$method, choices = c("REML","simple","ML"))
      #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
