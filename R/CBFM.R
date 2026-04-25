@@ -108,6 +108,14 @@
 
 #' \item{custom_spacetime: }{A custom, pre-specified community-level covariance matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in `B_spacetime`. Defaults to `NULL`, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 
+#' \item{prior_covariance_space: }{An optional fixed covariance matrix added directly to the overall community-level covariance matrix for the spatial basis function regression, *when `custom_space` is also provided*. If supplied, it must be a single square matrix square with dimension equal to the number of columns in `B_space`. In principle it should also be symmetric and positive semi-definite. Defaults to `NULL`, in which case no augmentation is applied and estimation is unchanged.
+
+#' From a penalized-likelihood perspective, `prior_covariance_space` acts as a supplementary fixed penalty on the basis coefficients, analogous to the `H` argument in [mgcv::gam()], with the key difference being that the `H` argument involves supplying a penalty or inverse covariance matrix, while `prior_covariance_space` involves supplying a covariance matrix. In practice, this mean that smaller values in `prior_covariance_space` leads to more prior penalization and hence smoother spatial basis function effects.}
+
+#' \item{prior_covariance_time: }{An optional fixed covariance matrix added directly to the overall community-level covariance matrix for the temporal basis function regression, *when `custom_time` is also provided*. If supplied, it must be a single square matrix square with dimension equal to the number of columns in `B_time`. In principle it should also be symmetric and positive semi-definite. Defaults to `NULL`, in which case no augmentation is applied and estimation is unchanged.}
+
+#' \item{prior_covariance_spacetime: }{An optional fixed covariance matrix added directly to the overall community-level covariance matrix for the spatio-temporal basis function regression, *when `custom_spacetime` is also provided*. If supplied, it must be a single square matrix square with dimension equal to the number of columns in `B_spacetime`. In principle it should also be symmetric and positive semi-definite. Defaults to `NULL`, in which case no augmentation is applied and estimation is unchanged.}
+
 #' \item{lower_space_lambdas/upper_space_lambdas: }{Can be safely ignored for almost all applications.}
 
 #' \item{lower_time_lambdas/upper_time_lambdas: }{Can be safely ignored for almost all applications.}
@@ -1728,6 +1736,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                  Sigma_control = list(rank = 5, maxit = 100, tol = 1e-4, 
                                       method = "REML", trace = 0, 
                                       custom_space = NULL, custom_time = NULL, custom_spactime = NULL,
+                                      prior_covariance_space = NULL, prior_covariance_time = NULL, prior_covariance_spacetime = NULL,
                                       lower_space_lambdas = NULL, upper_space_lambdas = NULL,
                                       lower_time_lambdas = NULL, upper_time_lambdas = NULL,
                                       lower_spacetime_lambdas = NULL, upper_spacetime_lambdas = NULL), 
@@ -1822,7 +1831,12 @@ CBFM <- function(y, formula, ziformula = NULL, data,
      .check_BX(B = B, X = X) 
      .check_offset(offset = offset, y = y) 
      .check_nonzeromeans(nonzeromean_B_space = nonzeromean_B_space, nonzeromean_B_time = nonzeromean_B_time, nonzeromean_B_spacetime = nonzeromean_B_spacetime) 
-     .check_customSigma_Gstructure(Sigma_control = Sigma_control, G_control = G_control, which_B_used = which_B_used)
+     .check_customSigma_Gstructure(Sigma_control = Sigma_control, 
+                                   G_control = G_control, 
+                                   which_B_used = which_B_used,
+                                   num_spacebasisfns = num_spacebasisfns,
+                                   num_timebasisfns = num_timebasisfns,
+                                   num_spacetimebasisfns = num_spacetimebasisfns)
      
      
      ## Some other checks
@@ -2452,7 +2466,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(is.null(start_params$custom_space_lambdas))
                          new_LoadingnuggetSigma_space <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_space$invcov <- .pinv(Sigma_control[["custom_space"]])
-                    new_LoadingnuggetSigma_space$cov <- Sigma_control[["custom_space"]]
+                    if(!is.null(Sigma_control[["prior_covariance_space"]]))
+                         new_LoadingnuggetSigma_space$invcov <- new_LoadingnuggetSigma_space$invcov + .pinv(Sigma_control[["prior_covariance_space"]])
+                    new_LoadingnuggetSigma_space$cov <- .pinv(new_LoadingnuggetSigma_space$invcov)
                     }
                if(is.list(Sigma_control[["custom_space"]])) {
                     start_params$Sigma_space <- NULL
@@ -2460,8 +2476,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_space <- list(lambdas = start_params$custom_space_lambdas) 
                     if(is.null(start_params$custom_space_lambdas))
                          new_LoadingnuggetSigma_space <- list(lambdas = rep(10, length(Sigma_control[["custom_space"]]))) #' This is an arbitrary starting value!
-                    new_LoadingnuggetSigma_space$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_space"]]), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / new_LoadingnuggetSigma_space$lambdas[x])) 
-                    # Note this object will not contain the individual constituent Sigma_space matrices. 
+                    new_LoadingnuggetSigma_space$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_space"]]), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / new_LoadingnuggetSigma_space$lambdas[x])) # Note this object will not contain the individual constituent Sigma_space matrices. 
+                    if(!is.null(Sigma_control[["prior_covariance_space"]]))
+                         new_LoadingnuggetSigma_space$invcov <- new_LoadingnuggetSigma_space$invcov + .pinv(Sigma_control[["prior_covariance_space"]])
                     new_LoadingnuggetSigma_space$cov <- .pinv(new_LoadingnuggetSigma_space$invcov)
                     }
                }
@@ -2488,7 +2505,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     if(is.null(start_params$custom_time_lambdas))
                          new_LoadingnuggetSigma_time <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_time$invcov <- .pinv(Sigma_control[["custom_time"]])
-                    new_LoadingnuggetSigma_time$cov <- Sigma_control[["custom_time"]]
+                    if(!is.null(Sigma_control[["prior_covariance_time"]]))
+                         new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_space$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
+                    new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
                     }
                if(is.list(Sigma_control[["custom_time"]])) {
                     start_params$Sigma_time <- NULL
@@ -2496,8 +2515,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_time <- list(lambdas = start_params$custom_time_lambdas) 
                     if(is.null(start_params$custom_time_lambdas))
                          new_LoadingnuggetSigma_time <- list(lambdas = rep(10, length(Sigma_control[["custom_time"]]))) #' This is an arbitrary starting value!
-                    new_LoadingnuggetSigma_time$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_time"]]), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / new_LoadingnuggetSigma_time$lambdas[x])) 
-                    # Note this object will not contain the individual constituent Sigma_time matrices. 
+                    new_LoadingnuggetSigma_time$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_time"]]), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / new_LoadingnuggetSigma_time$lambdas[x])) # Note this object will not contain the individual constituent Sigma_time matrices. 
+                    if(!is.null(Sigma_control[["prior_covariance_time"]]))
+                         new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_space$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
                     new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
                     }
                }
@@ -2525,15 +2545,19 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_spacetime <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_spacetime$invcov <- .pinv(Sigma_control[["custom_spacetime"]])
                     new_LoadingnuggetSigma_spacetime$cov <- Sigma_control[["custom_spacetime"]]
+                    if(!is.null(Sigma_control[["prior_covariance_spacetime"]]))
+                         new_LoadingnuggetSigma_spacetime$invcov <- new_LoadingnuggetSigma_spacetime$invcov + .pinv(Sigma_control[["prior_covariance_spacetime"]])
+                    new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
                     }
                if(is.list(Sigma_control[["custom_spacetime"]])) {
                     start_params$Sigma_spacetime <- NULL
                     if(!is.null(start_params$custom_spacetime_lambdas))
                          new_LoadingnuggetSigma_spacetime <- list(lambdas = start_params$custom_spacetime_lambdas) 
                     if(is.null(start_params$custom_spacetime_lambdas))
-                         new_LoadingnuggetSigma_spacetime <- list(lambdas = rep(0.1, length(Sigma_control[["custom_spacetime"]]))) #' This is an arbitrary starting value!
-                    new_LoadingnuggetSigma_spacetime$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / new_LoadingnuggetSigma_spacetime$lambdas[x])) 
-                    # Note this object will not contain the individual constituent Sigma_spacetime matrices. 
+                         new_LoadingnuggetSigma_spacetime <- list(lambdas = rep(10, length(Sigma_control[["custom_spacetime"]]))) #' This is an arbitrary starting value!
+                    new_LoadingnuggetSigma_spacetime$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_spacetime"]]), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / new_LoadingnuggetSigma_spacetime$lambdas[x])) # Note this object will not contain the individual constituent Sigma_spacetime matrices. 
+                    if(!is.null(Sigma_control[["prior_covariance_spacetime"]]))
+                         new_LoadingnuggetSigma_spacetime$invcov <- new_LoadingnuggetSigma_spacetime$invcov + .pinv(Sigma_control[["prior_covariance_spacetime"]])
                     new_LoadingnuggetSigma_spacetime$cov <- .pinv(new_LoadingnuggetSigma_spacetime$invcov)
                     }
                }
@@ -3197,7 +3221,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           
           for(j1 in 1:3) {
                if(which_B_used[j1]) {
-                    estimate_lambda_not_Sigma <- as.numeric(G_control$structure[sum(which_B_used[1:j1])] %in% c("identity", "homogeneous"))
+                    estimate_lambda_not_Sigma <- as.numeric(G_control$structure[sum(which_B_used[1:j1])] %in% c("identity", "homogeneous")) # Because of .fill_Sigma_control, then this is equivalent to checking whether Sigma_control[[ three_custom_options[j1] ]] is NULL
                     
                     if(is.null(Sigma_control[[ three_custom_options[j1] ]]) | estimate_lambda_not_Sigma == 1) {
                          centered_BF_mat <- new_fit_CBFM_ptest$basis_effects_mat[, three_num_B[1]*(j1>1) + three_num_B[2]*(j1>2) + 1:three_num_B[j1], drop = FALSE] + .Machine$double.eps
@@ -3239,9 +3263,9 @@ CBFM <- function(y, formula, ziformula = NULL, data,
           
 
           ##-------------------------
-          ## Finish iteration 
+          ## Finish iteration
           ##-------------------------
-          new_params <- c(c(new_fit_CBFM_ptest$betas), 
+          new_params <- c(c(new_fit_CBFM_ptest$betas),
                           c(new_fit_CBFM_ptest$basis_effects_mat), 
                           c(new_fit_CBFM_ptest$zibetas), 
                           new_fit_CBFM_ptest[["mean_B_space"]], 
