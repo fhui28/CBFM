@@ -63,7 +63,12 @@
 
 
      
-.check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
+.check_customSigma_Gstructure <- function(Sigma_control, 
+                                          G_control, 
+                                          which_B_used, 
+                                          num_spacebasisfns, 
+                                          num_timebasisfns, 
+                                          num_spacetimebasisfns) {
      if(is.null(Sigma_control[["custom_space"]]) & which_B_used[1]) {
           if(G_control$structure[1] != "unstructured")
                stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unstructured, possibly rank-reduced correlation matrix.")
@@ -92,7 +97,7 @@
                stop("Sigma_control$prior_covariance_time is currently only applicable when Sigma_control$custom_time is supplied.")
           if(!is.matrix(Sigma_control[["prior_covariance_time"]]))
                stop("Sigma_control$prior_covariance_time must be a square matrix.")
-          if(nrow(Sigma_control[["prior_covariance_time"]]) != num_timebasis | ncol(Sigma_control[["prior_covariance_time"]]) != num_timebasisfns)
+          if(nrow(Sigma_control[["prior_covariance_time"]]) != num_timebasisfns | ncol(Sigma_control[["prior_covariance_time"]]) != num_timebasisfns)
                stop("Sigma_control$prior_covariance_time should be a square matrix with the same dimensions as ncol(B_time).")
           if(max(abs(Sigma_control[["prior_covariance_time"]] - t(Sigma_control[["prior_covariance_time"]]))) > sqrt(.Machine$double.eps))
                stop("Sigma_control$prior_covariance_time should be a symmetric matrix.")
