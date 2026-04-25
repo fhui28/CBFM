@@ -430,14 +430,14 @@
                                 which_B_used, 
                                 num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns, 
                                 G_control) {
-    if(is.null(control$rank))
+     if(is.null(control$rank))
           control$rank <- rep(5, sum(which_B_used))
      if(length(control$rank) == 1)
           control$rank <- rep(control$rank, sum(which_B_used))
      if(sum(which_B_used) != length(control$rank)) {
           stop("Sigma_control$rank should be a vector with length depending on whether B_space/B_time/B_spacetime are supplied. Each element corresponds to the rank of Sigma to use for B_space/B_time/B_spacetime. For example, if B_space and B_spacetime are both supplied, then Sigma_control$rank should be a vector with length 2. 
                Please note ranks still needs to be supplied even when custom Sigmas are used (although the corresponding rank is ignored in such case).")
-          }
+     }
      
      if(is.null(control$maxit))
           control$maxit <- 100
@@ -449,16 +449,19 @@
           control$inv_method <- "chol2inv"
      if(is.null(control$trace))
           control$trace <- 0
-    
+     
      control$which_custom_Sigma_used <- c(0,0,0)
      if(!is.null(control[["custom_space"]])) {
-        if(which_B_used[1] == 0)
-            stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
-        if(is.matrix(control[["custom_space"]])) {
-            if(nrow(control[["custom_space"]]) != num_spacebasisfns | ncol(control[["custom_space"]]) != num_spacebasisfns)
-                stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).")             
-            }
-        if(is.list(control[["custom_space"]])) {
+          if(which_B_used[1] == 0)
+               stop("Please do not supply Sigma_control$custom_space if B_space is also not supplied.")
+          if(!(G_control$structure[sum(which_B_used[1])] %in% c("identity", "homogeneous")))
+               stop("If one or more matrices are supplied to Sigma_control$custom_space, then the corresponding element in G_control$structure must be set to either \"homogeneous\" or \"identity\".")
+          
+          if(is.matrix(control[["custom_space"]])) {
+               if(nrow(control[["custom_space"]]) != num_spacebasisfns | ncol(control[["custom_space"]]) != num_spacebasisfns)
+                    stop("Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).")             
+               }
+          if(is.list(control[["custom_space"]])) {
                if(length(control[["custom_space"]]) == 1)
                     stop("If the list Sigma_control$custom_space is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_space to just be a single matrix instead of a list.")
                for(j in 1:length(control[["custom_space"]])) {
@@ -466,15 +469,15 @@
                          stop("Each element in the list Sigma_control$custom_space should be a square matrix with the same dimensions as ncol(B_space).")
                     } 
                }
-          if(is.list(control[["custom_space"]])) {
-               if(!(G_control$structure[sum(which_B_used[1])] %in% c("identity", "homogeneous")))
-                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_space, then the corresponding element in G_control$structure must be set to either \"homogeneous\" or \"identity\".")
+          control$which_custom_Sigma_used[1] <- 1
           }
-         control$which_custom_Sigma_used[1] <- 1
-         }
+     
      if(!is.null(control[["custom_time"]])) {
-         if(which_B_used[2] == 0)
-            stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
+          if(which_B_used[2] == 0)
+               stop("Please do not supply Sigma_control$custom_time if B_time is also not supplied.")
+          if(!(G_control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")))
+               stop("If one or more matrices are supplied to Sigma_control$custom_time, then the corresponding element in G_control$structure must be set to either \"homogeneous\" or \"identity\".")
+          
           if(is.matrix(control[["custom_time"]])) {
                if(nrow(control[["custom_time"]]) != num_timebasisfns | ncol(control[["custom_time"]]) != num_timebasisfns)
                     stop("Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).") 
@@ -487,15 +490,15 @@
                          stop("Each element in the list Sigma_control$custom_time should be a square matrix with the same dimensions as ncol(B_time).")
                     } 
                }
-          if(is.list(control[["custom_time"]])) {
-               if(!(G_control$structure[sum(which_B_used[1:2])] %in% c("identity", "homogeneous")))
-                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_time, then the corresponding element in G_control$structure must be set to either \"homogeneous\" or \"identity\".")
-          }
           control$which_custom_Sigma_used[2] <- 1
-        }
+          }
+     
      if(!is.null(control[["custom_spacetime"]])) {
-         if(which_B_used[3] == 0) 
-            stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
+          if(!(G_control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")))
+               stop("If one or more matrices are supplied to Sigma_control$custom_spacetime, then the corresponding element in G_control$structure must be set to either \"homogeneous\" or \"identity\".")
+          if(which_B_used[3] == 0) 
+               stop("Please do not supply Sigma_control$custom_spacetime if B_spacetime is also not supplied.")
+          
           if(is.matrix(control[["custom_spacetime"]])) {
                if(nrow(control[["custom_spacetime"]]) != num_spacetimebasisfns | ncol(control[["custom_spacetime"]]) != num_spacetimebasisfns)
                     stop("Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
@@ -505,16 +508,12 @@
                     stop("If the list Sigma_control$custom_spacetime is of length 1 i.e., only contains one matrix, please reformat Sigma_control$custom_spacetime to just be a single matrix instead of a list.")
                for(j in 1:length(control[["custom_spacetime"]])) {
                     if(nrow(control[["custom_spacetime"]][[j]]) != num_spacetimebasisfns | ncol(control[["custom_spacetime"]][[j]]) != num_spacetimebasisfns)
-                    stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
+                         stop("Each element in the list Sigma_control$custom_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
                     } 
                }
-          if(is.list(control[["custom_spacetime"]])) {
-               if(!(G_control$structure[sum(which_B_used[1:3])] %in% c("identity", "homogeneous")))
-                    stop("If multiple (a list of) matrices are supplied to Sigma_control$custom_spacetime, then the corresponding element in G_control$structure must be set to either \"homogeneous\" or \"identity\".")
-               }
-        control$which_custom_Sigma_used[3] <- 1
-        }
-
+          control$which_custom_Sigma_used[3] <- 1
+          }
+     
      control$method <- match.arg(control$method, choices = c("REML","simple","ML"))
      #control$inv_method <- match.arg(control$inv_method, choices = c("chol2inv","schulz"))
      
