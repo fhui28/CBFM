@@ -40,9 +40,11 @@ CBFM(
     FALSE, seed = NULL, initial_ridge = 0, ridge = 0, initial_ziridge = 0, ziridge = 0,
     trace = 0),
   Sigma_control = list(rank = 5, maxit = 100, tol = 1e-04, method = "REML", trace = 0,
-    custom_space = NULL, custom_time = NULL, custom_spactime = NULL, lower_space_lambdas
-    = NULL, upper_space_lambdas = NULL, lower_time_lambdas = NULL, upper_time_lambdas =
-    NULL, lower_spacetime_lambdas = NULL, upper_spacetime_lambdas = NULL),
+    custom_space = NULL, custom_time = NULL, custom_spactime = NULL,
+    prior_covariance_space = NULL, prior_covariance_time = NULL,
+    prior_covariance_spacetime = NULL, lower_space_lambdas = NULL, upper_space_lambdas =
+    NULL, lower_time_lambdas = NULL, upper_time_lambdas = NULL, lower_spacetime_lambdas =
+    NULL, upper_spacetime_lambdas = NULL),
   G_control = list(rank = 5, structure = "unstructured", nugget_profile = seq(0.05, 0.95,
     by = 0.05), maxit = 100, tol = 1e-04, method = "REML", trace = 0, custom_space =
     NULL, custom_time = NULL, custom_spactime = NULL),
@@ -147,6 +149,10 @@ The rank/s should be at least 2, although internal checks are also performed to 
 \item{custom_space: }{A custom, pre-specified community-level matrix for the spatial basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_space}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 \item{custom_time: }{A custom, pre-specified community-level covariance matrix for the temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_time}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
 \item{custom_spacetime: }{A custom, pre-specified community-level covariance matrix for the spatio-temporal basis function regression can be supplied. If supplied, it must be a square matrix with dimension equal to the number of columns in \code{B_spacetime}. Defaults to \code{NULL}, in which case it is estimated. Note as a side quirk, if this argument is supplied then a corresponding rank (as above) still has to be supplied, even though it is not used.}
+\item{prior_covariance_space: }{An optional fixed covariance matrix added directly to the overall community-level covariance matrix for the spatial basis function regression, \emph{when \code{custom_space} is also provided}. If supplied, it must be a single square matrix square with dimension equal to the number of columns in \code{B_space}. In principle it should also be symmetric and positive semi-definite. Defaults to \code{NULL}, in which case no augmentation is applied and estimation is unchanged.
+From a penalized-likelihood perspective, \code{prior_covariance_space} acts as a supplementary fixed penalty on the basis coefficients, analogous to the \code{H} argument in \code{\link[mgcv:gam]{mgcv::gam()}}, with the key difference being that the \code{H} argument involves supplying a penalty or inverse covariance matrix, while \code{prior_covariance_space} involves supplying a covariance matrix. In practice, this mean that smaller values in \code{prior_covariance_space} leads to more prior penalization and hence smoother spatial basis function effects.}
+\item{prior_covariance_time: }{An optional fixed covariance matrix added directly to the overall community-level covariance matrix for the temporal basis function regression, \emph{when \code{custom_time} is also provided}. If supplied, it must be a single square matrix square with dimension equal to the number of columns in \code{B_time}. In principle it should also be symmetric and positive semi-definite. Defaults to \code{NULL}, in which case no augmentation is applied and estimation is unchanged.}
+\item{prior_covariance_spacetime: }{An optional fixed covariance matrix added directly to the overall community-level covariance matrix for the spatio-temporal basis function regression, \emph{when \code{custom_spacetime} is also provided}. If supplied, it must be a single square matrix square with dimension equal to the number of columns in \code{B_spacetime}. In principle it should also be symmetric and positive semi-definite. Defaults to \code{NULL}, in which case no augmentation is applied and estimation is unchanged.}
 \item{lower_space_lambdas/upper_space_lambdas: }{Can be safely ignored for almost all applications.}
 \item{lower_time_lambdas/upper_time_lambdas: }{Can be safely ignored for almost all applications.}
 \item{lower_spacetime_lambdas/upper_spacetime_lambdas: }{Can be safely ignored for almost all applications.}
