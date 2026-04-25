@@ -63,25 +63,56 @@
 
 
      
-.check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used) {
+.check_customSigma_Gstructure <- function(Sigma_control, G_control, which_B_used, num_spacebasisfns, num_timebasisfns, num_spacetimebasisfns) {
      if(is.null(Sigma_control[["custom_space"]]) & which_B_used[1]) {
           if(G_control$structure[1] != "unstructured")
-               stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+               stop("If Sigma_control$custom_space is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unstructured, possibly rank-reduced correlation matrix.")
           }
      if(is.null(Sigma_control[["custom_time"]]) & which_B_used[2]) {
           if(G_control$structure[sum(which_B_used[1:2])] != "unstructured")
-               stop("If Sigma_control$custom_time is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+               stop("If Sigma_control$custom_time is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unstructured, possibly rank-reduced correlation matrix.")
           }
      if(is.null(Sigma_control[["custom_spacetime"]]) & which_B_used[3]) {
           if(G_control$structure[sum(which_B_used[1:3])] != "unstructured")
-               stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unrestructured, possibly rank-reduced correlation matrix.")
+               stop("If Sigma_control$custom_spacetime is not supplied i.e., it is estimated, then the corresponding element in G_control$structure can only be set to \"unstructured\" i.e., an unstructured, possibly rank-reduced correlation matrix.")
           }
+     
+     if(!is.null(Sigma_control[["prior_covariance_space"]])) {
+          if(is.null(Sigma_control[["custom_space"]]))
+               stop("Sigma_control$prior_covariance_space is currently only applicable when Sigma_control$custom_space is supplied.")
+          if(!is.matrix(Sigma_control[["prior_covariance_space"]]))
+               stop("Sigma_control$prior_covariance_space must be a square matrix.")
+          if(nrow(Sigma_control[["prior_covariance_space"]]) != num_spacebasisfns | ncol(Sigma_control[["prior_covariance_space"]]) != num_spacebasisfns)
+               stop("Sigma_control$prior_covariance_space should be a square matrix with the same dimensions as ncol(B_space).")
+          if(max(abs(Sigma_control[["prior_covariance_space"]] - t(Sigma_control[["prior_covariance_space"]]))) > sqrt(.Machine$double.eps))
+               stop("Sigma_control$prior_covariance_space should be a symmetric matrix.")
+          }
+     if(!is.null(Sigma_control[["prior_covariance_time"]])) {
+          if(is.null(Sigma_control[["custom_time"]]))
+               stop("Sigma_control$prior_covariance_time is currently only applicable when Sigma_control$custom_time is supplied.")
+          if(!is.matrix(Sigma_control[["prior_covariance_time"]]))
+               stop("Sigma_control$prior_covariance_time must be a square matrix.")
+          if(nrow(Sigma_control[["prior_covariance_time"]]) != num_timebasis | ncol(Sigma_control[["prior_covariance_time"]]) != num_timebasisfns)
+               stop("Sigma_control$prior_covariance_time should be a square matrix with the same dimensions as ncol(B_time).")
+          if(max(abs(Sigma_control[["prior_covariance_time"]] - t(Sigma_control[["prior_covariance_time"]]))) > sqrt(.Machine$double.eps))
+               stop("Sigma_control$prior_covariance_time should be a symmetric matrix.")
+          }
+     if(!is.null(Sigma_control[["prior_covariance_spacetime"]])) {
+          if(is.null(Sigma_control[["custom_spacetime"]]))
+               stop("Sigma_control$prior_covariance_spacetime is currently only applicable when Sigma_control$custom_spacetime is supplied.")
+          if(!is.matrix(Sigma_control[["prior_covariance_spacetime"]]))
+               stop("Sigma_control$prior_covariance_spacetime must be a square matrix.")
+          if(nrow(Sigma_control[["prior_covariance_spacetime"]]) != num_spacetimebasisfns | ncol(Sigma_control[["prior_covariance_spacetime"]]) != num_spacetimebasisfns)
+               stop("Sigma_control$prior_covariance_spacetime should be a square matrix with the same dimensions as ncol(B_spacetime).")
+          if(max(abs(Sigma_control[["prior_covariance_spacetime"]] - t(Sigma_control[["prior_covariance_spacetime"]]))) > sqrt(.Machine$double.eps))
+               stop("Sigma_control$prior_covariance_spacetime should be a symmetric matrix.")
+          }
+     
      
      
      if(any(G_control$structure %in% c("identity", "homogeneous"))) {
           warning("The default choice of G_control$structure = \"unstructured\" is not being used. Using these other options should not be done unless you know what are doing, especially as very little checks are made to ensure parameter identifiability of the model in these settings!")
           }
-     
      
      if(which_B_used[1]) {
           if(G_control$structure[1] %in% c("identity", "homogeneous")) { if(is.null(Sigma_control[["custom_space"]])) {
