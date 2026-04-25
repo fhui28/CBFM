@@ -5,8 +5,8 @@
 #' 
 #' Given one CBFM fitted to presence-absence data, and a second CBFM fitted to zero-truncated count data, this function simply links the two fitted CBFM to create a hurdle CBFM object. 
 #'
-#' @param pa_object An object of class \code{CBFM}. A check is made to see if the CBFM was fitted using the binary/binomial family.
-#' @param count_object An object of class \code{CBFM}. A check is made to see if the CBFM was fitted using a zero-truncated count family.
+#' @param pa_object An object of class `CBFM`. A check is made to see if the CBFM was fitted using the binary/binomial family.
+#' @param count_object An object of class `CBFM`. A check is made to see if the CBFM was fitted using a zero-truncated count family.
 #' @param ... Not used.
 #'
 #'  
@@ -34,9 +34,9 @@
 #'     
 #' 
 #' @return An object of class "CBFM_hurdle" which includes the following two components:
-#' \item{pa_fit: }{Equivalent to \code{pa_object} i.e., a CBFM fitted using the binary/binomial family.}
+#' \item{pa_fit: }{Equivalent to `pa_object` i.e., a CBFM fitted using the binary/binomial family.}
 #' 
-#' \item{count_fit: }{Equivalent to \code{count_object} i.e., a CBFM fitted using a zero-truncated count family.}
+#' \item{count_fit: }{Equivalent to `count_object` i.e., a CBFM fitted using a zero-truncated count family.}
 #' 
 #' @details # Warning
 #' Just because a hurdle CBFM is available does not necessarily mean you should always use it! It is a relatively sophisticated model with a large number of parameters, and when appropriate it may be better to adopt a simpler model such as the negative binomial CBFM instead; please see [CBFM()] for other families for handling spatio-temporal multivariate count data. 

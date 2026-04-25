@@ -218,19 +218,20 @@ data.frame(temp = dat_train$temp, cbfm = fitcbfm$linear_predictors, hgam = matri
 #' Custom testing
 ##----------------------------------
 function() {
-     y = Ypa[sel_training_units, test_spp, drop = FALSE]
-     data = X[sel_training_units,]
-     formula = myformula 
+     y = simy_train
+     data = dat_train
+     formula = useformula 
      ziformula <- NULL
-     B_space = MM_train_spacexy_bygp
+     weights = NULL
+     B_space = train_basisfunctions
      B_time = NULL
      B_spacetime = NULL
      ncores = detectCores() - 4
-     family = binomial() 
+     family = ztnb2() 
      start_params = NULL
-     control = list(trace = 1, tol = 1e-5)
-     G_control = list(rank = c("full"), structure = c("identity"))
-     Sigma_control = list(rank = c("full"), custom_space = Sigma_spacexy_bygp)
+     control = list(trace = 1)
+     G_control = list(NULL)
+     Sigma_control = list(NULL)
      knots = NULL
      ziknots = NULL
      offset = NULL

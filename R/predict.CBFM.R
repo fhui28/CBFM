@@ -3,46 +3,46 @@
 #' @description
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Takes a fitted \code{CBFM} or \code{CBFM_hurdle} object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in [mgcv::predict.gam()] this is also known as the linear predictor matrix.  
+#' Takes a fitted `CBFM` or `CBFM_hurdle` object and produces predictions given (potentially) a new set of observational units with their corresponding covariate and basis function functions. Predictions can be accompanied by standard errors, based on the Bayesian covariance matrix of the parameter estimates. As another option, the function can return the model matrix of the covariates constructed (potentially) using at the new set of observational units; in [mgcv::predict.gam()] this is also known as the linear predictor matrix.
 #' 
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
-#' @param newdata A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If \code{newdata} is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as \code{object$formula}.
-#' @param manualX A manually supplied model matrix at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualX} should equal to \code{ncol(object$betas)}.
-#' @param manualziX For zero-inflated distributions, a manually supplied model matrix associated with modeling the probability of zero-inflation, at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied \code{newdata} argument. The number of columns in \code{manualziX} should equal to \code{ncol(object$zibetas)}.
-#' @param new_B_space A matrix of new spatial basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_space} argument are returned. Please note this should only be supplied if \code{B_space} was supplied in the original CBFM fit.  
-#' @param new_B_time A matrix of new temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_time} argument are returned. Please note this should only be supplied if \code{B_time} was supplied in the original CBFM fit.  
-#' @param new_B_spacetime A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original \code{B_spacetime} argument are returned. Please note this should only be supplied if \code{B_spacetime} was supplied in the original CBFM fit.  
-#' @param newdata_pa For hurdle CBFM models, similar to \code{newdata} above but applied to the presence-absence component model.
-#' @param manualX_pa For hurdle CBFM models, similar to \code{manual_X} above but applied to the presence-absence component model. 
-#' @param new_B_space_pa For hurdle CBFM models, similar to \code{new_B_space} above but applied to the presence-absence component model. 
-#' @param new_B_time_pa For hurdle CBFM models, similar to \code{new_B_time} above but applied to the presence-absence component model. 
-#' @param new_B_spacetime_pa For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the presence-absence component model.
-#' @param newdata_count For hurdle CBFM models, similar to \code{newdata} above but applied to the zero-truncated count component model.
-#' @param manualX_count For hurdle CBFM models, similar to \code{manual_X} above but applied to the zero-truncated count component model. 
-#' @param new_B_space_count For hurdle CBFM models, similar to \code{new_B_space} above but applied to the zero-truncated count component model. 
-#' @param new_B_time_count For hurdle CBFM models, similar to \code{new_B_time} above but applied to the zero-truncated count component model. 
-#' @param new_B_spacetime_count For hurdle CBFM models, similar to \code{new_B_spacetime} above but applied to the zero-truncated count component model.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
+#' @param newdata A data frame containing the values of the covariates at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original data are returned. If `newdata` is provided then it should contain all the variables needed for prediction, that is, it can construct a model matrix from this as `object$formula`.
+#' @param manualX A manually supplied model matrix at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied `newdata` argument. The number of columns in `manualX` should equal to `ncol(object$betas)`.
+#' @param manualziX For zero-inflated distributions, a manually supplied model matrix associated with modeling the probability of zero-inflation, at which predictions are to be calculated. This can be used if for some reason the user wants to supply a very custom model matrix for calculating predictions. Note supply of this overrides any supplied `newdata` argument. The number of columns in `manualziX` should equal to `ncol(object$zibetas)`.
+#' @param new_B_space A matrix of new spatial basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original `B_space` argument are returned. Please note this should only be supplied if `B_space` was supplied in the original CBFM fit.
+#' @param new_B_time A matrix of new temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original `B_time` argument are returned. Please note this should only be supplied if `B_time` was supplied in the original CBFM fit.
+#' @param new_B_spacetime A matrix of new spatio-temporal basis functions at which predictions are to be calculated. If this is not provided, then predictions corresponding to the original `B_spacetime` argument are returned. Please note this should only be supplied if `B_spacetime` was supplied in the original CBFM fit.
+#' @param newdata_pa For hurdle CBFM models, similar to `newdata` above but applied to the presence-absence component model.
+#' @param manualX_pa For hurdle CBFM models, similar to `manualX` above but applied to the presence-absence component model.
+#' @param new_B_space_pa For hurdle CBFM models, similar to `new_B_space` above but applied to the presence-absence component model.
+#' @param new_B_time_pa For hurdle CBFM models, similar to `new_B_time` above but applied to the presence-absence component model.
+#' @param new_B_spacetime_pa For hurdle CBFM models, similar to `new_B_spacetime` above but applied to the presence-absence component model.
+#' @param newdata_count For hurdle CBFM models, similar to `newdata` above but applied to the zero-truncated count component model.
+#' @param manualX_count For hurdle CBFM models, similar to `manualX` above but applied to the zero-truncated count component model.
+#' @param new_B_space_count For hurdle CBFM models, similar to `new_B_space` above but applied to the zero-truncated count component model.
+#' @param new_B_time_count For hurdle CBFM models, similar to `new_B_time` above but applied to the zero-truncated count component model.
+#' @param new_B_spacetime_count For hurdle CBFM models, similar to `new_B_spacetime` above but applied to the zero-truncated count component model.
 #' @param type The type of prediction required: 
-#' The default \code{type = "link"} is on the scale of the linear predictors. Alternatively, \code{type = "response"} returns predictions on the scale of the response variable. For example, the predicted response for a binomial CBFM are the predicted probabilities.
-#' Note for zero-inflated distributions, \code{type = "link"} returns the predicted linear predictor of the count component, consistent with what \code{object$linear_predictors} returns. But \code{type = "response"} returns the *actual predicted mean values* of the distribution, consistent with what \code{object$fitted} returns. If the linear predictor associated with modeling the probability of zero-inflation is desired, then use \code{type = "zilink"}.
-#' Similarly, for zero-truncated distributions, \code{type = "link"} returns the predicted linear predictor of the base count distribution, consistent with what \code{object$linear_predictors} returns. But \code{type = "response"} returns the *actual predicted mean values* of the zero-truncated distribution, consistent with what \code{object$fitted} returns. 
-#' Another option is given by \code{type  = "lpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata} and based on \code{object$formula}. In [mgcv::predict.gam()], this is also known as the linear predictor matrix. Note under this option, arguments such as \code{new_B_space/new_B_time/new_B_spacetime/se_fit/coverage} are irrelevant and hence ignored. 
-#' Another is given by \code{type  = "zilpmatrix"}, which returns the model matrix of the covariates constructing (potentially) using \code{newdata} and based on \code{object$ziformula} i.e., the linear predictor matrix associated with modeling the probability of zero inflation.
-#' Finally, note for hurdle CBFMS, this argument is not available, as the only option which is really of use here (and which you can not obtain based on applying the \code{predict} to the components of the hurdle CBFM itself) is the predicted mean values i.e., \code{type = "response"}.
-#' @param se_fit When this is set to \code{TRUE} (not default), then standard error estimates are returned for each predicted value.
+#' The default `type = "link"` is on the scale of the linear predictors. Alternatively, `type = "response"` returns predictions on the scale of the response variable. For example, the predicted response for a binomial CBFM are the predicted probabilities.
+#' Note for zero-inflated distributions, `type = "link"` returns the predicted linear predictor of the count component, consistent with what `object$linear_predictors` returns. But `type = "response"` returns the *actual predicted mean values* of the distribution, consistent with what `object$fitted` returns. If the linear predictor associated with modeling the probability of zero-inflation is desired, then use `type = "zilink"`.
+#' Similarly, for zero-truncated distributions, `type = "link"` returns the predicted linear predictor of the base count distribution, consistent with what `object$linear_predictors` returns. But `type = "response"` returns the *actual predicted mean values* of the zero-truncated distribution, consistent with what `object$fitted` returns.
+#' Another option is given by `type  = "lpmatrix"`, which returns the model matrix of the covariates constructing (potentially) using `newdata` and based on `object$formula`. In [mgcv::predict.gam()], this is also known as the linear predictor matrix. Note under this option, arguments such as `new_B_space/new_B_time/new_B_spacetime/se_fit/coverage` are irrelevant and hence ignored.
+#' Another is given by `type  = "zilpmatrix"`, which returns the model matrix of the covariates constructing (potentially) using `newdata` and based on `object$ziformula` i.e., the linear predictor matrix associated with modeling the probability of zero inflation.
+#' Finally, note for hurdle CBFMS, this argument is not available, as the only option which is really of use here (and which you can not obtain based on applying the `predict` to the components of the hurdle CBFM itself) is the predicted mean values i.e., `type = "response"`.
+#' @param se_fit When this is set to `TRUE` (not default), then standard error estimates are returned for each predicted value.
 #' @param coverage The coverage probability of the uncertainty intervals for prediction. Defaults to 0.95, which corresponds to 95% uncertainty intervals.
-#' @param ncores To speed up calculation of the standard error estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param ncores To speed up calculation of the standard error estimates, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to `detectCores()-1`.
 #' @param num_sims If simulation is required for constructing uncertainty intervals, then this specifies the number of Monte-Carlo examples to simulate.
 #' @param return_internals Not used. Please ignore this argument!
 #' @param ... Not used.
 #' 
 #' @details 
-#' The standard errors produced by \code{predict.CBFM} are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted \code{CBFM} object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior distribution of the parameters. This construction is similar to [mgcv::predict.gam()].
+#' The standard errors produced by `predict.CBFM` are based on the Bayesian posterior covariance matrix of the estimated parameters from the fitted `CBFM` object, and associated uncertainty intervals are obtained based on the associated large sample normality result of i.e., basically a Gaussian approximation to the posterior distribution of the parameters. This construction is similar to [mgcv::predict.gam()].
 #' 
-#' The functions tries to avoid using simulation (also known as single-fit bootstrapping, Fletcher and Jowett, 2022) for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson and negative-binomial distribution when \code{type = "response"}. 
+#' The functions tries to avoid using simulation (also known as single-fit bootstrapping, Fletcher and Jowett, 2022) for constructing the uncertainty intervals for the predictions (to minimize computational burden) However, in some cases it will fallback to doing so when it can not find a simple way to construct these intervals  (blame Francis!) e.g., for the zero-inflated Poisson and negative-binomial distribution when `type = "response"`.
 #' 
 #' 
-#' @return If \code{se_fit = TRUE}, then a list with the following components (if applicable) is returned:
+#' @return If `se_fit = TRUE`, then a list with the following components (if applicable) is returned:
 #' \item{fit: }{A matrix of predicted values.}
 
 #' \item{stderr: }{A matrix of standard errors associated with the uncertainty intervals for the predictions.}
@@ -50,9 +50,9 @@
 #' \item{lower: }{A matrix of the lower bound of the uncertainty intervals for the predictions.}
 
 #' \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
-#' Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned. 
+#' Otherwise if `se_fit = FALSE`, then a matrix of predicted values is returned.
 #' 
-#' Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
+#' Other if `type = "lpmatrix"`, then a model matrix with the number of rows equal to either the number of rows if `y` (if `newdata` is not supplied) or the number of rows in `newdata` when it is supplied.
 #' 
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak

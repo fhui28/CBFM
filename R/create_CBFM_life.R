@@ -6,38 +6,38 @@
 #' Simulates spatio-temporal multivariate abundance data based on a CBFM and given the various parameter values as appropriate.
 #'
 #' @param family a description of the response distribution to be used in the model, as specified by a family function. Please see details below for more information on the distributions currently permitted.
-#' @param formula An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the \code{data} argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details. 
-#' @param ziformula An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the \code{data} argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.
-#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the \code{formula} argument). 
-#' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
-#' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
-#' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of \code{B_space}, \code{B_time}, or \code{B_spacetime} must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
-#' @param offset A matrix of offset terms to be applied in association with the \code{formula} argument. 
-#' @param zioffset A matrix of offset terms to be applied in association with the \code{ziformula} argument. 
-#' @param betas A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in \code{betas} is equal to the number of species in the resulting simulated dataset.
-#' @param zibetas A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in \code{zibetas} is equal to the number of species in the resulting simulated dataset.
-#' @param basis_effects_mat A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in \code{basis_effects_mat} is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the \code{Sigma} and \code{G} arguments.   
-#' @param Sigma A list containing the covariance matrix of the species-specific regression coefficients, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{Sigma$Space} must be supplied.
-#' @param G A list containing the baseline between-species correlation matrix, corresponding to the basis functions supplied. This list should contain the elements \code{space}, \code{time} and/or \code{spacetime} as appropriate e.g., if only \code{B_space} is supplied then \code{G$Space} must be supplied.
+#' @param formula An object of class "formula", which represents a symbolic description of the model matrix to be created (based on using this argument along with the `data` argument). Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.
+#' @param ziformula An object of class "formula", which represents a symbolic description of the model matrix to be created for the zero-inflation component (based on using this argument along with the `data` argument), if appropriate. Note there should be nothing on the left hand side of the "~". Formulas based on generalized additive models or GAMs are permitted (at least, for the smoothing terms we have tried so far!); please see [mgcv::formula.gam()] and [mgcv::s()] for more details.
+#' @param data A data frame containing covariate information, from which the model matrix is to be created (based on this argument along with the `formula` argument).
+#' @param B_space An optional matrix of spatial basis functions to be included in the CBFM. One of `B_space`, `B_time`, or `B_spacetime` must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param B_time An optional of matrix of temporal basis functions to be included in the CBFM. One of `B_space`, `B_time`, or `B_spacetime` must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param B_spacetime An optional of matrix of spatio-temporal basis functions to be included in the CBFM e.g., formed from a tensor-product of spatial and temporal basis functions. One of `B_space`, `B_time`, or `B_spacetime` must be supplied. The basis function matrix may be sparse or dense in form; please see the details and examples later on for illustrations of how they can constructed.
+#' @param offset A matrix of offset terms to be applied in association with the `formula` argument.
+#' @param zioffset A matrix of offset terms to be applied in association with the `ziformula` argument.
+#' @param betas A matrix of species-specific regression coefficients corresponding to the model matrix created. The number of rows in `betas` is equal to the number of species in the resulting simulated dataset.
+#' @param zibetas A matrix of species-specific regression coefficients corresponding to the model matrix created for the zero-inflation component. The number of rows in `zibetas` is equal to the number of species in the resulting simulated dataset.
+#' @param basis_effects_mat A matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. If supplied, then number of rows in `basis_effects_mat` is equal to the number of species in the resulting simulated dataset. If it is not supplied, then species-specific regression coefficients are simulated based on the `Sigma` and `G` arguments.
+#' @param Sigma A list containing the covariance matrix of the species-specific regression coefficients, corresponding to the basis functions supplied. This list should contain the elements `space`, `time` and/or `spacetime` as appropriate e.g., if only `B_space` is supplied then `Sigma$space` must be supplied.
+#' @param G A list containing the baseline between-species correlation matrix, corresponding to the basis functions supplied. This list should contain the elements `space`, `time` and/or `spacetime` as appropriate e.g., if only `B_space` is supplied then `G$space` must be supplied.
 #' @param trial_size Trial sizes to use for binomial distribution. This can either equal a scalar or a matrix with the same dimension as the simulated response matrix is to be.
 #' @param dispparam A vector of species-specific dispersion parameters, to be used for distributions that require one.  
 #' @param powerparam A vector of species-specific power parameters, to be used for distributions that require one. 
-#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note \code{ziformula} is supplied, then this argument is ignored.
-#' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not \code{max_resp}. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
-#' @param only_y If \code{TRUE}, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if \code{FALSE}, then additional information about is returned.
+#' @param zeroinfl_prob A vector of species-specific probabilities of zero-inflation, to be used for distributions that require one. Note `ziformula` is supplied, then this argument is ignored.
+#' @param max_resp A upper bound to limit the maximum value of responses obtained. This is useful if the user wants, say, all counts to not exceed a particular value. In such case, the function will attempt to simulate counts that do not `max_resp`. Note it only \emph{attempts} this: it will give up after 10 unsuccessful attempts and then return whatever is simulated on the 10-th attempt.
+#' @param only_y If `TRUE`, then only the simulated spatio-temporal multivariate abundance response matrix is returned. Otherwise if `FALSE`, then additional information about is returned.
 #' 
 #' @details 
 #' Simulates spatio-temporal multivariate abundance data from a community-level basis function model (CBFM). For the purposes of the package, the CBFM is characterized by the following mean regression model: for observational unit \eqn{i=1,\ldots,N} and species \eqn{j=1,\ldots,m}, we have
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the \code{formula} and \code{data} arguments, \eqn{\beta_j} is supplied as part of the \code{betas} argument, and \eqn{b_i} is formed from the \code{B_space}, \code{B_time} and \code{B_spacetime} arguments. Finally, \eqn{a_j} is either supplied directly as part of \code{basis_effects_mat} argument, or generated based on the \code{Sigma} and \code{G} arguments. 
+#' where \eqn{g(.)} is a known link function, \eqn{x_i} denotes a vector of predictors for unit \eqn{i} i.e., the \eqn{i}-th row from the created model matrix, \eqn{\beta_j} denotes the corresponding regression coefficients for species \eqn{j}, \eqn{b_i} denotes a vector of spatial, temporal, and/or spatio-temporal basis functions for unit \eqn{i} , and \eqn{a_j} denotes the corresponding regression coefficients for species \eqn{j}. In the function, \eqn{x_i} is created based on the `formula` and `data` arguments, \eqn{\beta_j} is supplied as part of the `betas` argument, and \eqn{b_i} is formed from the `B_space`, `B_time` and `B_spacetime` arguments. Finally, \eqn{a_j} is either supplied directly as part of `basis_effects_mat` argument, or generated based on the `Sigma` and `G` arguments.
 #' 
-#' As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of \code{B_space} and \code{B_time}, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row \code{basis_effects_mat}. If \code{basis_effects_mat} is not supplied, then it is instead obtain by simulating 
+#' As an example, suppose we have a CBFM which involves spatial and temporal (but no spatio-temporal) basis functions. Then \eqn{b_i = (b_{i,space}, b_{i,time})} is formed from the \eqn{i}-th rows of `B_space` and `B_time`, while \eqn{a_j = (a_{j,space}, a_{j,time})} comes from the \eqn{j}-th row `basis_effects_mat`. If `basis_effects_mat` is not supplied, then it is instead obtain by simulating
 #' 
 #' \deqn{(a_{1,space}, \ldots, a_{m,space}) \sim N(0, kronecker(G_{space}, \Sigma_{space})),} 
 #' 
-#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from \code{G$space} and \code{Sigma$space} respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}. 
+#' where \eqn{G_{space}} and \eqn{\Sigma_{space}} are supplied from `G$space` and `Sigma$space` respectively, and \eqn{kronecker(\cdot)} is the Kroneckker product operator. Similarly, we have \eqn{(a_{1,time}, \ldots, a_{m,time}) \sim N(0, kronecker(G_{time}, \Sigma_{time}))}.
 #' 
 #' Based on the mean model given above, responses \eqn{y_{ij}} are then simulated from the assumed distribution, using the additional dispersion and power parameters as appropriate.
 #' 
@@ -45,34 +45,34 @@
 #' 
 #' Currently the following response distributions are permitted: 
 #' \describe{
-#' \item{\code{betalogitfam()}: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{`betalogitfam()`: }{Beta distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = \mu(1-\mu)/(1+\phi)}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{binomial(link = "logit")}: }{Binomial distribution, noting only the logit link is permitted. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)} where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
+#' \item{`binomial(link = "logit")`: }{Binomial distribution using a logit link. The corresponding mean-variance relationship is given by \eqn{V = N_{trial}\mu(1-\mu)}, where \eqn{\mu} denotes the mean and \eqn{N_{trial}} is the trial size.}
 
-#' \item{\code{Gamma(link = "log")}: }{Gamma distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{`Gamma(link = "log")`: }{Gamma distribution using a log link. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^2}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{gaussian(link = "identity")}: }{Gaussian or normal distribution, noting only the identity link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi}, where \eqn{\phi} is the dispersion parameter.}
+#' \item{`gaussian(link = "identity")`: }{Gaussian or normal distribution using an identity link. The corresponding mean-variance relationship is given by \eqn{V = \phi}, where \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{poisson(link = "log")}: }{Poisson distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu} where \eqn{\mu} denotes the mean.}
+#' \item{`poisson(link = "log")`: }{Poisson distribution using a log link. The corresponding mean-variance relationship is given by \eqn{V = \mu}, where \eqn{\mu} denotes the mean.}
 
-#' \item{\code{nb2()}: }{Negative binomial distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2} where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
+#' \item{`nb2()`: }{Negative binomial distribution with the log link. The corresponding mean-variance relationship is given by \eqn{V = \mu + \phi\mu^2}, where \eqn{\mu} denotes the mean and \eqn{\phi} is the dispersion parameter.}
 
-#' \item{\code{tweedielogfam()}: }{Tweedie distribution, noting only the log link is permitted. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}} where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
+#' \item{`tweedielogfam()`: }{Tweedie distribution using log link. The corresponding mean-variance relationship is given by \eqn{V = \phi\mu^{\rho}}, where \eqn{\mu} denotes the mean, \eqn{\phi} is the dispersion parameter, and \eqn{\rho} is the power parameter.}
 
-#' \item{\code{zipoisson()}: }{Zero-inflated Poisson distribution, noting only the log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation can either be a single, species-specific probability as given in part of \code{zeroinfl_prob}, or can also be modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
+#' \item{`zipoisson()`: }{Zero-inflated Poisson distribution using a log link for the Poisson part is permitted. This partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{pois}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions, while the probability of zero-inflation is also modeled against covariates only via `ziformula`. In the case of the latter, a logit link function is used.}
 
-#' \item{\code{zinb2()}: }{Zero-inflated negative binomial distribution, noting only the log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation can either be a single, species-specific probability as given in part of \code{zeroinfl_prob}, or can also be modeled against covariates via \code{ziformula}. In the case of the latter, a logit link function is used.}
+#' \item{`zinb2()`: }{Zero-inflated negative binomial distribution using a log link for the negative binomial part is permitted. The partial mass function of the distribution is given by \eqn{f(y) = \pi I(y=0) + (1-\pi) f_{NB}(y)}, where \eqn{\pi} is the probability of being in the zero-inflation component, while \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions, while the probability of zero-inflation is also modeled against covariates only via `ziformula`. In the case of the latter, a logit link function is used.}
 
-#' \item{\code{ztpoisson()}: }{Zero-truncated Poisson distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution. The mean of the Poisson distribution is modeled against covariates and basis functions.}
-
-#' \item{\code{ztnb2()}: }{Zero-truncated negative binomial distribution, noting only the log link is permitted. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
+#' \item{`ztpoisson()`: }{Zero-truncated Poisson distribution using a log link. The partial mass function of the distribution is given by \eqn{f(y) = f_{pois}(y)/(1-f_{pois}(0)}) where \eqn{f_{pois}(y)} is the usual Poisson distribution as described above. The mean of the Poisson distribution is modeled against covariates and basis functions.}
+#'
+#' \item{`ztnb2()`: }{Zero-truncated negative binomial distribution using a log link. The partial mass function of the distribution is given by \eqn{f(y) = f_{NB}(y)/(1-f_{NB}(0)}) where \eqn{f_{NB}(y)} is the usual negative binomial distribution as described above. The mean of the negative binomial distribution is modeled against covariates and basis functions.}
 #' }
 #' 
 #' Note with zero truncated distributions being available, generating spatio-temporal multivariate abundance data from a hurdle CBFM is possible by combining it separate mechanisms for generating presence-absence responses and a truncated count responses. Please see the examples below for an illustration.
 #' }
 #' 
 #' @return 
-#' If \code{only_y = TRUE}, then the simulated spatio-temporal multivariate abundance response matrix. Otherwise, a list with the following components (if applicable):
+#' If `only_y = TRUE`, then the simulated spatio-temporal multivariate abundance response matrix. Otherwise, a list with the following components (if applicable):
 #' \describe{
 #' \item{y }{The simulated spatio-temporal multivariate abundance response matrix.}
 #' \item{basis_effects_mat }{The matrix of species-specific regression coefficients corresponding to the combined matrix of basis functions. This either comes directly from the supplied argument or is a simulated as discussed in Details above.}
@@ -81,7 +81,7 @@
 #' }
 #' 
 #' @details # Warning
-#' Note **no** checks are made on the arguments \code{Sigma} and \code{G} arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
+#' Note **no** checks are made on the arguments `Sigma` and `G` arguments, if supplied, to see if they are positive definite matrices or not. Please be careful about this!
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
 #' 

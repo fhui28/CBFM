@@ -78,7 +78,7 @@ Finally, note for hurdle CBFMS, this argument is not available, as the only opti
 
 \item{newdata_pa}{For hurdle CBFM models, similar to \code{newdata} above but applied to the presence-absence component model.}
 
-\item{manualX_pa}{For hurdle CBFM models, similar to \code{manual_X} above but applied to the presence-absence component model.}
+\item{manualX_pa}{For hurdle CBFM models, similar to \code{manualX} above but applied to the presence-absence component model.}
 
 \item{new_B_space_pa}{For hurdle CBFM models, similar to \code{new_B_space} above but applied to the presence-absence component model.}
 
@@ -88,7 +88,7 @@ Finally, note for hurdle CBFMS, this argument is not available, as the only opti
 
 \item{newdata_count}{For hurdle CBFM models, similar to \code{newdata} above but applied to the zero-truncated count component model.}
 
-\item{manualX_count}{For hurdle CBFM models, similar to \code{manual_X} above but applied to the zero-truncated count component model.}
+\item{manualX_count}{For hurdle CBFM models, similar to \code{manualX} above but applied to the zero-truncated count component model.}
 
 \item{new_B_space_count}{For hurdle CBFM models, similar to \code{new_B_space} above but applied to the zero-truncated count component model.}
 
@@ -104,7 +104,7 @@ If \code{se_fit = TRUE}, then a list with the following components (if applicabl
 \item{upper: }{A matrix of the upper bound of the uncertainty intervals for the predictions.}
 Otherwise if \code{se_fit = FALSE}, then a matrix of predicted values is returned.
 
-Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{object$y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
+Other if \code{type = "lpmatrix"}, then a model matrix with the number of rows equal to either the number of rows if \code{y} (if \code{newdata} is not supplied) or the number of rows in \code{newdata} when it is supplied.
 }
 \description{
 \ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}

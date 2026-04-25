@@ -3,13 +3,13 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Extract the number of observational units from a fitted \code{CBFM} or \code{CBFM_hurdle} object. This is principally intended to be used in computing information criterion such as in the function [AIC.CBFM()].
+#' Extract the number of observational units from a fitted `CBFM` or `CBFM_hurdle` object. This is principally intended to be used in computing information criterion such as in the function [AIC.CBFM()].
 #'
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
 #' @param ... Not used in this case.
 #'
 #' @details 
-#' With CBFM being set up much a like generalized additive model or GAM, then this function returns the number of observational units \eqn{N} e.g., the number of rows in \code{object$y}, as opposed to the total number of elements in the response matrix \code{obejct$y}.
+#' With CBFM being set up much a like generalized additive model or GAM, then this function returns the number of observational units \eqn{N} e.g., the number of rows in `y`, as opposed to the total number of elements in the response matrix `object$y`.
 #' 
 #' 
 #' @return A positive integer.

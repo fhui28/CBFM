@@ -24,6 +24,7 @@ Type objective_function<Type>::operator() () {
     DATA_VECTOR(powerparam);
     DATA_VECTOR(offset); 
     DATA_VECTOR(estep_weights); 
+    DATA_VECTOR(obs_weights); 
     DATA_VECTOR(mean_basis_effects); 
     DATA_MATRIX(other_centered_basis_effects_mat);
     DATA_INTEGER(spp_ind);
@@ -66,7 +67,7 @@ Type objective_function<Type>::operator() () {
     if(family == 1) { //beta
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= dbeta(y(i), dispparam(0)*invlogit(eta(i)), dispparam(0)*(1-invlogit(eta(i))), true);
+          nll -= obs_weights(i) * dbeta(y(i), dispparam(0)*invlogit(eta(i)), dispparam(0)*(1-invlogit(eta(i))), true);
           }
         }
       }
@@ -75,7 +76,7 @@ Type objective_function<Type>::operator() () {
         
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          predvalue = dbinom(y(i), Type(trial_size(i)), invlogit(eta(i)), true);
+          predvalue = obs_weights(i) * dbinom(y(i), Type(trial_size(i)), invlogit(eta(i)), true);
           }
         if(predvalue < -10000)
           predvalue = -10000;
@@ -85,14 +86,14 @@ Type objective_function<Type>::operator() () {
     if(family == 3) { //gamma(logit link)
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= dgamma(y(i), 1/dispparam(0), exp(eta(i))*dispparam(0), true);
+          nll -= obs_weights(i) * dgamma(y(i), 1/dispparam(0), exp(eta(i))*dispparam(0), true);
           }
         }
       }
     if(family == 4) { //negative binomial
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          lik_val(i) = dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+          lik_val(i) = obs_weights(i) * dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
           }
         if(isNA(y(i))) {
           lik_val(i) = Type(0.0);
@@ -106,21 +107,21 @@ Type objective_function<Type>::operator() () {
     if(family == 5) { //normal
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= dnorm(y(i), eta(i), dispparam(0), true);
+          nll -= obs_weights(i) * dnorm(y(i), eta(i), dispparam(0), true);
           }
         }
       }
     if(family == 6) { //poisson
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= dpois(y(i), exp(eta(i)), true);
+          nll -= obs_weights(i) * dpois(y(i), exp(eta(i)), true);
           }
         }
       }
     if(family == 7) { //tweedie
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= dtweedie(y(i), exp(eta(i)), dispparam(0), powerparam(0), true);
+          nll -= obs_weights(i) * dtweedie(y(i), exp(eta(i)), dispparam(0), powerparam(0), true);
           }
         }
       }
@@ -128,7 +129,7 @@ Type objective_function<Type>::operator() () {
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
           if(y(i) > 0)
-            nll -= (dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true) - log(1-dnbinom2(Type(0.0), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), false)));
+            nll -= obs_weights(i) * (dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true) - log(1-dnbinom2(Type(0.0), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), false)));
           }
         }
       }
@@ -136,21 +137,21 @@ Type objective_function<Type>::operator() () {
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
           if(y(i) > 0)
-            nll -= (dpois(y(i), exp(eta(i)), true) - log(1-dpois(Type(0.0), exp(eta(i)), false)));
+            nll -= obs_weights(i) * (dpois(y(i), exp(eta(i)), true) - log(1-dpois(Type(0.0), exp(eta(i)), false)));
           }
         }
       }
     if(family == 10) { //zero-inflated poisson
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= (Type(1)-estep_weights(i))*dpois(y(i), exp(eta(i)), true);
+          nll -= obs_weights(i) * (Type(1)-estep_weights(i))*dpois(y(i), exp(eta(i)), true);
           }
         }
       }
     if(family == 11) { //zero-inflated negative binomial
       for(int i=0; i<num_units; i++) { 
         if(!isNA(y(i))) {
-          nll -= (Type(1)-estep_weights(i))*dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
+          nll -= obs_weights(i) * (Type(1)-estep_weights(i))*dnbinom2(y(i), exp(eta(i)), exp(eta(i)) + dispparam(0)*pow(exp(eta(i)),2), true);
           }
         }
       }

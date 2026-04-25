@@ -3,26 +3,26 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #' 
-#' Calculate various types of residuals from a fitted \code{CBFM} or \code{CBFM_hurdle} object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
+#' Calculate various types of residuals from a fitted `CBFM` or `CBFM_hurdle` object, including probability integral transform (PIT) residuals and Dunn-Smyth residuals.
 #' 
-#' @param object An object of class \code{CBFM} or \code{CBFM_hurdle}.
-#' @param type The type of residuals which should be returned. For general \code{CBFM} objects, the options currently available are: "response" (default), "pearson", "PIT", "dunnsmyth". For \code{CBFM_hurdle} objects, only "response" (default), "PIT", and "dunnsmyth" are permitted. This can be abbreviated.
+#' @param object An object of class `CBFM` or `CBFM_hurdle`.
+#' @param type The type of residuals which should be returned. For general `CBFM` objects, the options currently available are: "response" (default), "pearson", "PIT", "dunnsmyth". For `CBFM_hurdle` objects, only "response" (default), "PIT", and "dunnsmyth" are permitted. This can be abbreviated.
 #' @param seed This can be used set the seed when constructing the PIT and Dunn-Smyth residuals, which for discrete responses involve some degree of jittering.  
 #' @param ... Not used.
 #' 
 #' @details 
 #' Suppose the fitted values from a CBFM fit are denoted by \eqn{\hat{\mu}_{ij}} for observational unit \eqn{i = 1,\ldots,N} and species \eqn{j=1,\ldots,m}. Then:
 #' 
-#' For \code{type = "response"}, this returns the raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success". 
+#' For `type = "response"`, this returns the raw residuals \eqn{y_{ij} - \hat{\mu}_{ij}}. Note for binomial responses what is returned is \eqn{y_{ij}/N_{trial,ij} - \hat{\mu}_{ij}} where \eqn{N_{trial,ij}} is the corresponding trial size and \eqn{\hat{\mu}_{ij}} is the fitted probability of "success".
 #' For zero-inflated distributions, this returns  \eqn{y_{ij} - (1-\hat{\pi}_{ij})\hat{\mu}_{ij}} where \eqn{\hat{\pi}_{ij}} is the estimated probabilities of zero-inflation and \eqn{\hat{\mu}_{ij}} is the estimated mean of the non-zero-inflated component.
 #' 
-#' For \code{type = "pearson"}, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance. Note the variance incorporates any scaled parameters if present, and so sometimes this type of residual is referred to as scaled Pearson residuals.
+#' For `type = "pearson"`, this returns the Pearson residuals, which are calculated by standardizing the raw residuals by the square root of their corresponding variance. Note the variance incorporates any scaled parameters if present, and so sometimes this type of residual is referred to as scaled Pearson residuals.
 #' 
-#' For \code{type = "PIT"}, this returns the probability integral transform residuals also used in [DHARMa::simulateResiduals()] and [mpcmp::rPIT()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard uniform distribution (Dunn and Smyth, 1996). Note there is a level of jittering used in producing the PIT residuals.
+#' For `type = "PIT"`, this returns the probability integral transform residuals also used in [DHARMa::simulateResiduals()] and [mpcmp::rPIT()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard uniform distribution (Dunn and Smyth, 1996). Note there is a level of jittering used in producing the PIT residuals.
 #' 
-#' For \code{type = "dunnsmyth"}, this returns the Dunn-Smyth residuals also used in [boral::ds.residuals()] and[gllvm::residuals.gllvm()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard normal distribution (Dunn and Smyth, 1996). Note there is a level of jitting used in producing the Dunn-Smyth residuals.
+#' For `type = "dunnsmyth"`, this returns the Dunn-Smyth residuals also used in [boral::ds.residuals()] and[gllvm::residuals.gllvm()], among other packages. If the (estimated) model is correct, then these residuals should behave as random variables from a standard normal distribution (Dunn and Smyth, 1996). Note there is a level of jitting used in producing the Dunn-Smyth residuals.
 #' 
-#' Note if there are missing values in the response matrix, then one or more warnings maybe outputted (and mostly likely can be safely ignored) when calculating residuals.
+#' Note if there are missing values in the response matrix, then one or more warnings maybe outputted (and mostly likely can be safely ignored) when calculating residuals. Also, note the calculation of residuals does *not* take into account `object$weights`! 
 #' 
 #' @return A matrix of residuals.
 #' 

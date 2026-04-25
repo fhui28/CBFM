@@ -30,7 +30,7 @@ Calculates parametric effects and smooth estimates for all species from a \code{
 \details{
 This function is more or less direct wrapper for \code{\link[gratia:parametric_effects]{gratia::parametric_effects()}} and \code{\link[gratia:smooth_estimates]{gratia::smooth_estimates()}}, applied to every species; please see the help files for those two functions for more details. Please note the returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be \emph{very} large data frames!
 
-Acknowledgments to Gavin Simpson for building and assisting with the implementation of the \code{gratia} package!
+Acknowledgments to Gavin Simpson!
 }
 \examples{
 \dontrun{

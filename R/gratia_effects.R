@@ -3,27 +3,27 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' Calculates parametric effects and smooth estimates for all species from a \code{CBFM} fit, based on applying the corresponding functions [gratia::parametric_effects()] and [gratia::smooth_estimates()].
+#' Calculates parametric effects and smooth estimates for all species from a `CBFM` fit, based on applying the corresponding functions [gratia::parametric_effects()] and [gratia::smooth_estimates()].
 #' 
-#' @param object An object of class \code{CBFM}.
-#' @param ncores To speed up calculation of the smooth estimates and parametric effects, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param object An object of class `CBFM`.
+#' @param ncores To speed up calculation of the smooth estimates and parametric effects, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to `detectCores()-1`.
 #' @param overall_uncertainty Should the uncertainty in the model constant term be included in the standard error of the evaluate values of the smooth? see also [gratia::smooth_estimates()] for more details. Defaults to `FALSE`.
 #' @param ... Not used.
 #' 
 #' @details 
-#' This function is more or less direct wrapper for [gratia::parametric_effects()] and [gratia::smooth_estimates()], applied to every species; please see the help files for those two functions for more details. Please note the returned outputs \code{all_parametric_estimates} and \code{all_smooth_effects} can be *very* large data frames!
+#' This function is more or less direct wrapper for [gratia::parametric_effects()] and [gratia::smooth_estimates()], applied to every species; please see the help files for those two functions for more details. Please note the returned outputs `all_parametric_estimates` and `all_smooth_effects` can be *very* large data frames!
 #' 
-#' Acknowledgments to Gavin Simpson for building and assisting with the implementation of the \code{gratia} package!
+#' Acknowledgments to Gavin Simpson!
 #' 
 #' 
 #' @return A list with the following components (as appropriate):
-#' \item{all_parametric_effects: }{If \code{formula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
+#' \item{all_parametric_effects: }{If `formula` included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in `formula`, then this will equal to `NULL`.}
 
-#' \item{allzi_parametric_effects: }{If \code{ziformula} included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
+#' \item{allzi_parametric_effects: }{If `ziformula` included any parametric terms excluding the intercept, then a long format data frame is returned containing each estimated parametric effect for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the estimated parametric model terms. The data frame is effectively constructed by applying [gratia::parametric_effects()] for each species. If no smoothing terms are included in `ziformula`, then this will equal to `NULL`.}
 
-#' \item{all_smooth_estimates: }{If \code{formula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{formula}, then this will equal to \code{NULL}.}
+#' \item{all_smooth_estimates: }{If `formula` included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in `formula`, then this will equal to `NULL`.}
 
-#' \item{allzi_smooth_estimates: }{If \code{ziformula} included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in \code{ziformula}, then this will equal to \code{NULL}.}
+#' \item{allzi_smooth_estimates: }{If `ziformula` included any smoothing terms excluding the intercept, then a long format data frame is returned containing each estimated smoothed effect (evaluated on a grid of evenly spaced values over the range of each corresponding covariate) for each species in relation to the probability of zero-inflation, which is then primarily used for visualizing the smooth model terms. The data frame is effectively constructed by applying [gratia::smooth_estimates()] for each species. If no smoothing terms are included in `ziformula`, then this will equal to `NULL`.}
 
 #' 
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak

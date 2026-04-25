@@ -3,10 +3,10 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #'
-#' Takes a fitted \code{CBFM} object and calculates hat values i.e., diagonal elements of the influence/hat matrix and an approximate Cook's distance.
+#' Takes a fitted `CBFM` object and calculates hat values i.e., diagonal elements of the influence/hat matrix and an approximate Cook's distance.
 #'
-#' @param object An object of class \code{CBFM}.
-#' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param object An object of class `CBFM`.
+#' @param ncores To speed up calculation of the influence measures, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to `detectCores()-1`.
 #' @param ... Not used.
 #'
 #' @details 
@@ -19,9 +19,9 @@
 #'  
 #' @return A list containing two elements:
 #' \describe{
-#' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as \code{object$y}.}
+#' \item{hat: }{A matrix of estimated hat values i.e., diagonal elements of the influence/hat matrix. The dimensions of this matrix should be the same as `y`.}
 
-#' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as \code{object$y}. }
+#' \item{cooks: }{A matrix of estimated and approximate Cook's distances. The dimensions of this matrix should be the same as `y`. }
 #' }
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -141,12 +141,16 @@ influence.CBFM <- function(object, ncores = NULL, ...) {
      if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
           weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
           weights_mat[is.na(object$y)] <- 0
+          weights_mat <- weights_mat * object$weights # Apply observation weights
           }
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
           weights_mat_betabeta[is.na(object$y)] <- 0
+          weights_mat_betabeta <- weights_mat_betabeta * object$weights # Apply observation weights
           weights_mat$out_zeroinflzeroinfl[is.na(object$y)] <- 0
           weights_mat$out_zeroinflbetas[is.na(object$y)] <- 0
+          weights_mat$out_zeroinflzeroinfl <- weights_mat$out_zeroinflzeroinfl * object$weights
+          weights_mat$out_zeroinflbetas <- weights_mat$out_zeroinflbetas * object$weights
           }
    
    

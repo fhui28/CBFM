@@ -3,18 +3,18 @@
 #' @description 
 #' `r lifecycle::badge("experimental")`
 #'
-#' Takes a fitted \code{CBFM} object and calculates the estimated or effective degrees of freedom associated with each smoothing terms included in the model, as well as for each of the spatial and/or temporal basis functions included in the model.
+#' Takes a fitted `CBFM` object and calculates the estimated or effective degrees of freedom associated with each smoothing terms included in the model, as well as for each of the spatial and/or temporal basis functions included in the model.
 #'
-#' @param object An object of class \code{CBFM}.
-#' @param ncores To speed up calculation of the estimated degrees of freedom, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to \code{detectCores()-1}.
+#' @param object An object of class `CBFM`.
+#' @param ncores To speed up calculation of the estimated degrees of freedom, parallelization can be performed, in which case this argument can be used to supply the number of cores to use in the parallelization. Defaults to `detectCores()-1`.
 #' @param ... Not used.
 #'
 #' @details 
-#' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of \code{object$formula}, the function directly returns what is available from \code{object$pen.edf}. Similarly, for any smoothing terms included in the model as part of \code{object$ziformula} for modeling the probability of zero-inflation, the function directly returns what is available from \code{object$zipen.edf}. Note as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate.
+#' For the estimated or effective of freedom (EDF) associated with any smoothing terms included in the model as part of `object$formula`, the function directly returns what is available from `object$pen.edf`. Similarly, for any smoothing terms included in the model as part of `object$ziformula` for modeling the probability of zero-inflation, the function directly returns what is available from `object$zipen.edf`. Note as stated in the [CBFM()], these values are pulled straight from the GAM part of the estimation algorithm and consequently may only be *very* approximate.
 #' 
-#' For the EDF associated with the spatial and/or temporal basis function coefficients, for each species up to three EDFs are given depending on which of \code{B_space/B_time/B_spacetime} are included in the model. Note because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model. 
+#' For the EDF associated with the spatial and/or temporal basis function coefficients, for each species up to three EDFs are given depending on which of `B_space/B_time/B_spacetime` are included in the model. Note because of the way the CBFM is set up, there is usually a considerable amount of penalization taking place for regression coefficients corresponding to the spatial and/or temporal basis functions, and so one should expect these value to usually be *much* smaller than the corresponding number of basis functions included in the model.
 #'  
-#' @return A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in \code{object$y}, while the number of rows depends on the number of smoothing terms included in \code{object$formula} and which of \code{B_space/B_time/B_spacetime} were included in the model.
+#' @return A matrix of species-specific EDFs, with the the number of columns equal to the number of columns in `y`, while the number of rows depends on the number of smoothing terms included in `object$formula` and which of `B_space/B_time/B_spacetime` were included in the model.
 #' 
 #'
 #' @author Francis K.C. Hui <fhui28@gmail.com>, Chris Haak
@@ -166,12 +166,16 @@ edf.CBFM <- function(object, ncores = NULL, ...) {
      if(!(object$family$family[1] %in% c("zipoisson","zinegative.binomial"))) {
           weights_mat <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp) # Overwrite weights_mat since only one quantity needed
           weights_mat[is.na(object$y)] <- 0
+          weights_mat <- weights_mat * object$weights # Apply observation weights
           }
      if(object$family$family[1] %in% c("zipoisson","zinegative.binomial")) {
           weights_mat_betabeta <- matrix(weights_mat$out, nrow = num_units, ncol = num_spp)
           weights_mat_betabeta[is.na(object$y)] <- 0
+          weights_mat_betabeta <- weights_mat_betabeta * object$weights # Apply observation weights
           weights_mat$out_zeroinflzeroinfl[is.na(object$y)] <- 0
           weights_mat$out_zeroinflbetas[is.na(object$y)] <- 0
+          weights_mat$out_zeroinflzeroinfl <- weights_mat$out_zeroinflzeroinfl * object$weights
+          weights_mat$out_zeroinflbetas <- weights_mat$out_zeroinflbetas * object$weights
           }
 
      # [W^{1/2}X, W^{1/2}B]
