@@ -2,10 +2,24 @@
 ## Hidden and not exported
 
 #' @noRd
-
-.update_G_fn <- function(Ginv, basis_effects_mat, Sigmainv, B, X, ziX = NULL, zioffset = NULL, 
-                         y_vec, linpred_vec, weights, dispparam, powerparam, zibetas,
-                         trial_size, family, G_control, use_rank_element, return_correlation) {
+.update_G_fn <- function(Ginv, 
+                         basis_effects_mat, 
+                         Sigmainv, 
+                         B, 
+                         X, 
+                         ziX = NULL, 
+                         zioffset = NULL, 
+                         y_vec, 
+                         linpred_vec, 
+                         weights, 
+                         dispparam, 
+                         powerparam, 
+                         zibetas,
+                         trial_size, 
+                         family, 
+                         G_control, 
+                         use_rank_element, 
+                         return_correlation) {
      
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
@@ -136,8 +150,10 @@
      
      
 #' @noRd
-
-.update_LoadingG_fn <- function(G, G_control, use_rank_element, correlation) {
+.update_LoadingG_fn <- function(G, 
+                                G_control, 
+                                use_rank_element, 
+                                correlation) {
      num_spp <- nrow(G)
      num_rank <- G_control$rank[use_rank_element]
      use_structure <- G_control$structure[use_rank_element]
@@ -249,18 +265,32 @@
      
 
 #' @noRd
-
-.update_Sigma_fn <- function(Sigmainv, lambdas = NULL, basis_effects_mat, Ginv,
-                             B, X, ziX = NULL, zioffset = NULL,
-                             y_vec, linpred_vec, weights, dispparam, powerparam, zibetas,
-                             trial_size, family, Sigma_control, estimate_lambda, which_B) {
+.update_Sigma_fn <- function(Sigmainv, 
+                             lambdas = NULL, 
+                             basis_effects_mat, 
+                             Ginv,
+                             B, 
+                             X, 
+                             ziX = NULL, 
+                             zioffset = NULL,
+                             y_vec, 
+                             linpred_vec, 
+                             weights, 
+                             dispparam, 
+                             powerparam, 
+                             zibetas,
+                             trial_size, 
+                             family, 
+                             Sigma_control, 
+                             estimate_lambda, 
+                             which_B) {
 
      num_spp <- nrow(basis_effects_mat)
      num_basisfns <- ncol(Sigmainv)
      trial_size <- as.vector(trial_size)
 
      Sigma_control$method <- match.arg(Sigma_control$method, choices = c("simple","REML","ML")) 
-     Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_control$inv_method, choices = c("chol2inv","schulz")) 
+     Sigma_control$inv_method <- "chol2inv" #match.arg(Sigma_contpermits rol$inv_method, choices = c("chol2inv","schulz")) 
      
      AT_Ginv_A <- crossprod(basis_effects_mat, Ginv) %*% basis_effects_mat
      
@@ -268,7 +298,6 @@
           linpred_vec[linpred_vec > 5] <- 5
           linpred_vec[linpred_vec < -5] <- -5
           }
-
           
      if(Sigma_control$method == "simple") { 
           if(estimate_lambda)
@@ -277,7 +306,7 @@
           new_Sigma <- AT_Ginv_A / num_spp
           return(as.matrix(new_Sigma))
           }
-
+     
      if(Sigma_control$method %in% c("REML","ML")) { 
           zieta <- NULL
           if(family$family[1] %in% c("zipoisson","zinegative.binomial")) {                        
@@ -373,32 +402,46 @@
                     if(any(Sigma_control$lower_space_lambdas < 1e-8))
                          Sigma_control$lower_space_lambdas[which(Sigma_control$lower_space_lambdas < 1e-8)] <- 1e-8
                     
+                    prior_precision_space <- NULL
+                    if(!is.null(Sigma_control[["prior_covariance_space"]]))
+                         prior_precision_space <- .pinv(Sigma_control[["prior_covariance_space"]])
                     if(is.matrix(Sigma_control[["custom_space"]])) {
                         Sigmainv_space <- .pinv(Sigma_control[["custom_space"]])
                         trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
                         KronGinvSigmainv <- kronecker(Ginv, Sigmainv_space)
 
-                        fn <- function(x) {
-                            expx <- mgcv::notExp(x)
-                            out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                            out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
-                            return(as.vector(-out))
-                            }
+                        if(is.null(prior_precision_space)) {
+                             fn <- function(x) {
+                                  expx <- mgcv::notExp(x)
+                                  out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                                  out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
+                                  return(as.vector(-out))
+                                  }
+                              }
+                        
+                        if(!is.null(prior_precision_space)) {
+                             fn <- function(x) {
+                                  expx <- mgcv::notExp(x)
+                                  Sigmainv_total <- expx * Sigmainv_space + prior_precision_space
+                                  trace_quantity_total <- sum(diag(Sigmainv_total %*% AT_Ginv_A))
+                                  e <- eigen(Sigmainv_total, only.values = TRUE, symmetric = TRUE)$values
+                                  out <- 0.5*num_spp*sum(log(e[e > .Machine$double.eps])) - 0.5*trace_quantity_total
+                                  out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_total))$mod
+                                  return(as.vector(-out))
+                                   }
+                             }
                         
                         update_lambda <- stats::optimise(f = fn, 
                                                          interval = c(mgcv::notLog(1/Sigma_control$upper_space_lambdas), mgcv::notLog(1/Sigma_control$lower_space_lambdas)), 
                                                          maximum = FALSE)
                         new_lambda <- 1/mgcv::notExp(update_lambda$m)
-                        # update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
-                        #                        fn = fn, 
-                        #                        control = list(trace = 0, maxit = 1000), 
-                        #                        method = "BFGS")
-                        # new_lambda <- 1/mgcv::notExp(update_lambda$par)
                         }
                     if(is.list(Sigma_control[["custom_space"]])) {
-                         fn_lambda <- function(x) { 
+                         fn_lambda <- function(x) {
                               expx <- mgcv::notExp(x)
                               Sigmainv_space <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_space"]][[j2]]) * expx[j2])) 
+                              if(!is.null(prior_precision_space))
+                                   Sigmainv_space <- Sigmainv_space + prior_precision_space
                               trace_quantity <- sum(diag(Sigmainv_space %*% AT_Ginv_A))
                               e <- eigen(Sigmainv_space, only.values = TRUE, symmetric = TRUE)$values
                               
@@ -422,31 +465,46 @@
                     if(any(Sigma_control$lower_time_lambdas < 1e-8))
                          Sigma_control$lower_time_lambdas[which(Sigma_control$lower_time_lambdas < 1e-8)] <- 1e-8
                     
+                    prior_precision_time <- NULL 
+                    if(!is.null(Sigma_control[["prior_covariance_time"]]))
+                         prior_precision_time <- .pinv(Sigma_control[["prior_covariance_time"]])
                     if(is.matrix(Sigma_control[["custom_time"]])) {
                          Sigmainv_time <- .pinv(Sigma_control[["custom_time"]])
                          trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
                          KronGinvSigmainv <- kronecker(Ginv, Sigmainv_time)
-                         fn <- function(x) { 
-                              expx <- mgcv::notExp(x)
-                              out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                              out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
-                              return(as.vector(-out))
+                         
+                         if(is.null(prior_precision_time)) {
+                              fn <- function(x) {
+                                   expx <- mgcv::notExp(x)
+                                   out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                                   out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
+                                   return(as.vector(-out))
+                                   }
                               }
-                    
+                         
+                         if(!is.null(prior_precision_time)) {
+                              fn <- function(x) {
+                                   expx <- mgcv::notExp(x)
+                                   Sigmainv_total <- expx * Sigmainv_time + prior_precision_time
+                                   trace_quantity_total <- sum(diag(Sigmainv_total %*% AT_Ginv_A))
+                                   e <- eigen(Sigmainv_total, only.values = TRUE, symmetric = TRUE)$values
+                                   out <- 0.5*num_spp*sum(log(e[e > .Machine$double.eps])) - 0.5*trace_quantity_total
+                                   out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_total))$mod
+                                   return(as.vector(-out))
+                                   }
+                              }
+                         
                          update_lambda <- stats::optimise(f = fn, 
                                                           interval = c(mgcv::notLog(1/Sigma_control$upper_time_lambdas), mgcv::notLog(1/Sigma_control$lower_time_lambdas)), 
                                                           maximum = FALSE)
                          new_lambda <- 1/mgcv::notExp(update_lambda$m)
-                         # update_lambda <- optim(par = mgcv::notLog(1/lambdas), 
-                         #                        fn = fn, 
-                         #                        control = list(trace = 0, maxit = 1000), 
-                         #                        method = "BFGS")
-                         # new_lambda <- 1/mgcv::notExp(update_lambda$par)
                          }
                     if(is.list(Sigma_control[["custom_time"]])) {
                          fn_lambda <- function(x) { 
                               expx <- mgcv::notExp(x)
                               Sigmainv_time <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_time"]][[j2]]) * expx[j2])) 
+                              if(!is.null(prior_precision_time))
+                                   Sigmainv_time <- Sigmainv_time + prior_precision_time
                               trace_quantity <- sum(diag(Sigmainv_time %*% AT_Ginv_A))
                               e <- eigen(Sigmainv_time, only.values = TRUE, symmetric = TRUE)$values
                               
@@ -469,16 +527,34 @@
                     if(any(Sigma_control$lower_spacetime_lambdas < 1e-8))
                          Sigma_control$lower_spacetime_lambdas[which(Sigma_control$lower_spacetime_lambdas < 1e-8)] <- 1e-8
                     
+                    prior_precision_spacetime <- NULL 
+                    if(!is.null(Sigma_control[["prior_covariance_spacetime"]]))
+                         prior_precision_spacetime <- .pinv(Sigma_control[["prior_covariance_spacetime"]])
                     if(is.matrix(Sigma_control[["custom_spacetime"]])) {
                          Sigmainv_spacetime <- .pinv(Sigma_control[["custom_spacetime"]])
                          trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
                          KronGinvSigmainv <- kronecker(Ginv, Sigmainv_spacetime)
-                         fn <- function(x) { 
-                              expx <- mgcv::notExp(x)
-                              out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
-                              out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
-                              return(as.vector(-out))
+                         
+                         if(is.null(prior_precision_spacetime)) {
+                              fn <- function(x) {
+                                   expx <- mgcv::notExp(x)
+                                   out <- 0.5*num_spp*num_basisfns*log(expx) - 0.5*expx*trace_quantity
+                                   out <- out - 0.5*determinant(BtKB + expx*KronGinvSigmainv)$mod
+                                   return(as.vector(-out))
                               }
+                         }
+                         
+                         if(!is.null(prior_precision_spacetime)) {
+                              fn <- function(x) {
+                                   expx <- mgcv::notExp(x)
+                                   Sigmainv_total <- expx * Sigmainv_spacetime + prior_precision_spacetime
+                                   trace_quantity_total <- sum(diag(Sigmainv_total %*% AT_Ginv_A))
+                                   e <- eigen(Sigmainv_total, only.values = TRUE, symmetric = TRUE)$values
+                                   out <- 0.5*num_spp*sum(log(e[e > .Machine$double.eps])) - 0.5*trace_quantity_total
+                                   out <- out - 0.5*determinant(BtKB + kronecker(Ginv, Sigmainv_total))$mod
+                                   return(as.vector(-out))
+                              }
+                         }
                          
                          update_lambda <- stats::optimise(f = fn, 
                                                           interval = c(mgcv::notLog(1/Sigma_control$upper_spacetime_lambdas), mgcv::notLog(1/Sigma_control$lower_spacetime_lambdas)), 
@@ -494,6 +570,8 @@
                          fn_lambda <- function(x) { 
                               expx <- mgcv::notExp(x)
                               Sigmainv_spacetime <- Reduce("+", lapply(1:length(lambdas), function(j2) .pinv(Sigma_control[["custom_spacetime"]][[j2]]) * expx[j2])) 
+                              if(!is.null(prior_precision_spacetime))
+                                   Sigmainv_spacetime <- Sigmainv_spacetime + prior_precision_spacetime
                               trace_quantity <- sum(diag(Sigmainv_spacetime %*% AT_Ginv_A))
                               e <- eigen(Sigmainv_spacetime, only.values = TRUE, symmetric = TRUE)$values
                               
@@ -565,31 +643,34 @@
      if(estimate_lambda_not_Sigma) {
           if(which_B == 1) {
                if(is.matrix(Sigma_control[["custom_space"]]))
-                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
-                                cov = Sigma_control[["custom_space"]] * Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma, invcov = .pinv(Sigma_control[["custom_space"]]) / Sigma)
                if(is.list(Sigma_control[["custom_space"]]))
-               out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
-                           invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / Sigma[x])) )
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma, invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_space"]][[x]]) / Sigma[x])) )
+               
+               if(!is.null(Sigma_control[["prior_covariance_space"]]))
+                    out$invcov <- out$invcov + .pinv(Sigma_control[["prior_covariance_space"]])
                out$cov <- .pinv(out$invcov)
                }
           if(which_B == 2) {
                if(is.matrix(Sigma_control[["custom_time"]]))
-                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
-                                cov = Sigma_control[["custom_time"]] * Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma, invcov = .pinv(Sigma_control[["custom_time"]]) / Sigma)
                if(is.list(Sigma_control[["custom_time"]]))
-                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
-                                invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / Sigma[x])) )
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma, invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / Sigma[x])) )
+               
+               if(!is.null(Sigma_control[["prior_covariance_time"]]))
+                    out$invcov <- out$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
                out$cov <- .pinv(out$invcov)
                }
           if(which_B == 3) {
                if(is.matrix(Sigma_control[["custom_spacetime"]]))
-                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
-                                cov = Sigma_control[["custom_spacetime"]] * Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma, invcov = .pinv(Sigma_control[["custom_spacetime"]]) / Sigma)
                if(is.list(Sigma_control[["custom_spacetime"]]))
-                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma,
-                                invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / Sigma[x])) )
-                    out$cov <- .pinv(out$invcov)
-                    }
+                    out <- list(Loading = NULL, nugget = NULL, lambdas = Sigma, invcov = Reduce("+", lapply(1:length(Sigma), function(x) .pinv(Sigma_control[["custom_spacetime"]][[x]]) / Sigma[x])) )
+               
+               if(!is.null(Sigma_control[["prior_covariance_spacetime"]]))
+                    out$invcov <- out$invcov + .pinv(Sigma_control[["prior_covariance_spacetime"]])
+               out$cov <- .pinv(out$invcov)
+               }
           }
      
      return(out)
