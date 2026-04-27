@@ -2296,6 +2296,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                inner_err <- Inf
                inner_inner_counter <- 0
                cw_inner_logL <- -Inf
+               new_inner_logL <- -Inf  # initialize before loop in case above gam() fails and breaks early
                while(inner_err > 1e-4) { 
                     if(inner_inner_counter > 25)
                          break;
@@ -2980,6 +2981,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          inner_err <- 100
                          inner_inner_counter <- 0
                          cw_inner_logL <- -Inf
+                         new_inner_logL <- -Inf  # initialize before loop in case below gam() fails and breaks early
                          
                          while(inner_err > 1e-4) {
                               if(inner_inner_counter > 50)
