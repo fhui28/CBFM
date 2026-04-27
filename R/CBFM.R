@@ -2286,6 +2286,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                     cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
                
                initw <- dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)) / (1-dnbinom(0, mu = exp(cw_eta), size = fit0$family$getTheta(TRUE)))
+               initw <- pmin(initw, 100)  # cap EM posterior odds to prevent Inf when P(Y=0) ~ 1
                w1 <- rep(1,num_units)
                w1[which(y[,j]==0)] <- 0
                w2 <- numeric(num_units)
@@ -2296,6 +2297,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                inner_err <- Inf
                inner_inner_counter <- 0
                cw_inner_logL <- -Inf
+               new_inner_logL <- -Inf  # initialize before loop in case gam() fails and breaks early
                while(inner_err > 1e-4) { 
                     if(inner_inner_counter > 25)
                          break;
@@ -2363,6 +2365,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          cw_eta <- cw_eta + model.offset(model.frame(fit0))[find_nonzeros]
                     
                     initw <- dnbinom(0, mu = exp(cw_eta), size = 1/fit0$dispparam) / (1-dnbinom(0, mu = exp(cw_eta), size = 1/fit0$dispparam))
+                    initw <- pmin(initw, 100)  # cap EM posterior odds to prevent Inf when P(Y=0) ~ 1
                     w1 <- rep(1,num_units)
                     w1[which(y[,j]==0)] <- 0
                     w2 <- numeric(num_units)
@@ -2980,6 +2983,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          inner_err <- 100
                          inner_inner_counter <- 0
                          cw_inner_logL <- -Inf
+                         new_inner_logL <- -Inf  # initialize before loop in case gam() fails and breaks early
                          
                          while(inner_err > 1e-4) {
                               if(inner_inner_counter > 50)
@@ -2989,6 +2993,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                                mu = as.vector(exp(X %*% new_fit_CBFM_ptest$betas[j,] + new_offset + formula_offset)), 
                                                size = 1/new_fit_CBFM_ptest$dispparam[j])
                               initw <- initw / (1 - initw)
+                              initw <- pmin(initw, 100)  # cap EM posterior odds to prevent Inf when P(Y=0) ~ 1
                               initw <- initw[find_nonzeros]
                               w1 <- rep(1, num_units)
                               w1[which(y[,j]==0)] <- 0
