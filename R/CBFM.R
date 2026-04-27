@@ -2506,7 +2506,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_time <- list(lambdas = 10) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_time$invcov <- .pinv(Sigma_control[["custom_time"]])
                     if(!is.null(Sigma_control[["prior_covariance_time"]]))
-                         new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_space$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
+                         new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_time$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
                     new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
                     }
                if(is.list(Sigma_control[["custom_time"]])) {
@@ -2517,7 +2517,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                          new_LoadingnuggetSigma_time <- list(lambdas = rep(10, length(Sigma_control[["custom_time"]]))) #' This is an arbitrary starting value!
                     new_LoadingnuggetSigma_time$invcov <- Reduce("+", lapply(1:length(Sigma_control[["custom_time"]]), function(x) .pinv(Sigma_control[["custom_time"]][[x]]) / new_LoadingnuggetSigma_time$lambdas[x])) # Note this object will not contain the individual constituent Sigma_time matrices. 
                     if(!is.null(Sigma_control[["prior_covariance_time"]]))
-                         new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_space$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
+                         new_LoadingnuggetSigma_time$invcov <- new_LoadingnuggetSigma_time$invcov + .pinv(Sigma_control[["prior_covariance_time"]])
                     new_LoadingnuggetSigma_time$cov <- .pinv(new_LoadingnuggetSigma_time$invcov)
                     }
                }
