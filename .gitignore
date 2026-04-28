@@ -1,7 +1,6 @@
 Meta
 doc
 inst/doc
-DiscussionwithChris_CBFMmultipleSigmamatrices.pdf
 DiscussionwithChris_CBFMmultipleSigmamatrices.jpg
 .Rproj.user
 .Rhistory
@@ -11,3 +10,4 @@ src/*.o
 src/*.so
 src/*.dll
 revdep/
+.positai
