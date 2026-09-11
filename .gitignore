@@ -11,4 +11,3 @@ src/*.so
 src/*.dll
 revdep/
 .positai
-notes.R
