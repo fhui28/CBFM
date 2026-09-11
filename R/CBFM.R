@@ -122,6 +122,7 @@
 
 #' \item{lower_spacetime_lambdas/upper_spacetime_lambdas: }{Can be safely ignored for almost all applications.}
 #' }
+#' 
 #' @param G_control A list of parameters for controlling the fitting process for the "inner" estimation part of the CBFM pertaining to the so-called baseline between-species correlation matrices of the basis function regression coefficients. This should be a list with the following arguments:
 #' \describe{
 #' \item{rank: }{The rank of the between-species correlation matrices of the basis function regression coefficients. This either equals to a single scalar/character string equal to "full", or a vector or scalars/character strings (equal to "full") with length equal to how many of `B_space/B_time/B_spacetime` are supplied. If it is a scalar, then it is assumed the same rank is used for all the correlation matrices.
@@ -140,6 +141,8 @@
 #' \item{tol: }{The tolerance value to use when assessing convergence. Convergence for the inner algorithm is assessed based on the norm of the difference between estimated parameters from successive iterations.} 
 
 #' \item{method: }{The method by which to update the community-level covariance matrices. The current options are "REML" (default) which uses optimizing the Laplace approximated restricted maximum likelihood, "ML" which is the same but with the Laplace approximated (unrestricted) maximum likelihood, and "simple" which uses a fast large sample covariance update. *Note the simple method is faster than the former, but is \emph{much} less accurate and we only recommend using it for pilot testing. Also, please avoid using rank = \"full\" when deploying the simple method as most likely will not work.*} 
+
+#' \item{loading_penalty: }{A ridge penalty can be applied to regularize the ``loading" matrix when a reduced-rank structure is adopted for the between-species correlation matrix. This argument is the tuning parameter controlling the strength of the penalty. Defaults to 0, in which case no penalty is applied.}
 
 #' \item{trace: }{If set to `TRUE` or `1`, then information at each iteration step of the inner algorithm will be printed.}
 
@@ -1742,7 +1745,7 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                                       lower_spacetime_lambdas = NULL, upper_spacetime_lambdas = NULL), 
                  G_control = list(rank = 5, structure = "unstructured", 
                                   nugget_profile = seq(0.05, 0.95, by = 0.05), maxit = 100, 
-                                  tol = 1e-4, method = "REML", trace = 0, 
+                                  tol = 1e-4, method = "REML", loading_penalty = 0, trace = 0, 
                                   custom_space = NULL, custom_time = NULL, custom_spactime = NULL),
                  k_check_control = list(subsample = 5000, n.rep = 400)) { 
      
@@ -3117,7 +3120,6 @@ CBFM <- function(y, formula, ziformula = NULL, data,
                inner_counter <- inner_counter + 1
                rm(all_update_coefs, update_Xcoefsspp_fn, inner_params_diff)
                }          
-          
           
           ##-------------------------
           ## Update mean vector for normal distribution of basis functions coefficients, if required 
