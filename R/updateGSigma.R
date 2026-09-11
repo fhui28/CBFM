@@ -210,7 +210,7 @@
                               new_Loading[j,] <- as.vector(Ej / sqrt(sum(Ej^2)) * sqrt(1 - G_control$nugget_profile[k0]))
                          }
                
-                    err <- c(err, 0.5 * sum((G - tcrossprod(new_Loading))^2))
+                    err <- c(err, 0.5 * sum((G - tcrossprod(new_Loading) - diag(x = G_control$nugget_profile[k0], nrow = num_spp))^2))
                     diff <- err[length(err)-1]/err[length(err)] - 1
                     if(G_control$trace > 0)
                          message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
