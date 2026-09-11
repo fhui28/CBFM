@@ -72,3 +72,4 @@ Language: en-US
 NeedsCompilation: no
 Roxygen: list(markdown = FALSE)
 Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3
