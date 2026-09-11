@@ -323,7 +323,7 @@ The following response distributions are permitted:
 Hurdle CBFMs are also possible; please see \code{\link[=makeahurdle]{makeahurdle()}} for more information.
 }
 
-Missing (\code{NA}) values are permitted as part of the response matrix. These are simply passed over during the fitting process i.e., effectively the action \code{\link[stats:na.fail]{stats::na.omit()}} is taken.
+Missing (\code{NA}) values are permitted as part of the response matrix. These are simply passed over during the fitting process i.e., effectively the action \code{\link[stats:na.omit]{stats::na.omit()}} is taken.
 }
 
 \subsection{Constructing basis functions}{

@@ -53,7 +53,7 @@ If \code{se_cor = FALSE}, then a (cross-)correlation matrix is returned. If \cod
 Takes a fitted \code{CBFM} object calculates the residual between-species correlation matrix due to (all) the spatial and/temporal basis functions, along with corresponding uncertainty intervals if desired (via a simulation-based approach; see Hui et al., 2023). Similar to \code{\link[=predict.CBFM]{predict.CBFM()}}, this correlation matrix can be calculated based on a different sets of basis functions to those used to actually fit the model. Additionally, the user can supplied two sets of spatial and/or temporal basis functions, in which case the function calculates cross-correlations (between and within species) between these two sets of basis functions.
 }
 \details{
-This function is somewhat similar to \code{\link[boral:get.residual.cor]{boral::get.residual.cor()}} and \code{\link[gllvm:getResidualCor.gllvm]{gllvm::getResidualCor()}}, in calculating a residual between-species correlation matrix due to (all) the basis functions i.e., residual spatio-temporal correlations, along with corresponding uncertainty intervals if desired. Recall the general form of the mean regression model for the CBFM is given by
+This function is somewhat similar to \code{\link[boral:get.residual.cor]{boral::get.residual.cor()}} and \code{\link[gllvm:getResidualCor]{gllvm::getResidualCor()}}, in calculating a residual between-species correlation matrix due to (all) the basis functions i.e., residual spatio-temporal correlations, along with corresponding uncertainty intervals if desired. Recall the general form of the mean regression model for the CBFM is given by
 
 \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 

@@ -20,6 +20,7 @@ Useful links:
 
 Authors:
 \itemize{
+  \item Francis K.C. Hui \email{fhui28@gmail.com}
   \item Chris Haak
 }
 
