@@ -398,6 +398,12 @@
           control$method <- "REML"
      if(is.null(control$inv_method))
           control$inv_method <- "chol2inv"
+     if(!is.null(control$loading_penalty)) { 
+         if(control$loading_penalty < 0 || length(control$loading_penalty) != 1)
+             stop("G_control$loading_penalty should be a non-negative scalar.")
+         }
+     if(is.null(control$loading_penalty))
+         control$loading_penalty <- 0
      if(is.null(control$trace))
           control$trace <- 0
           
