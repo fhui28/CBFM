@@ -105,10 +105,10 @@
                counter <- 0
                diff <- 10
                cw_G <- chol2inv(chol(Ginv))
-      
+
                while(diff > G_control$tol & counter < G_control$maxit) {
                     cw_Ginv_Sigmainv <- Matrix::Matrix(kronecker(chol2inv(chol(cw_G)), Sigmainv), sparse = TRUE)
-           
+
                     if(G_control$inv_method == "chol2inv")
                          tic <- proc.time()
                          Q1 <- as.vector(chol2inv(chol(Matrix::forceSymmetric(BtKB + cw_Ginv_Sigmainv)))) ## THIS IS THE BOTTLENECK
@@ -118,7 +118,7 @@
            #                     rm(mat)
            #                     }
                          toc <- proc.time()
-                         
+
                     new_G <- matrix(0, nrow = num_spp, ncol = num_spp)
                     if(num_spp > 1)
                          new_G[lower.tri(new_G, diag = TRUE)] <- crossprod(Q2, Q1)
@@ -126,7 +126,7 @@
            #                     new_G <- matrix(as.vector(crossprod(Q2, Q1)), 1, 1)
                     new_G <- new_G + t(new_G) - diag(x = diag(new_G), nrow = num_spp)
                     new_G <- (new_G + A_Sigmain_AT)/num_basisfns
-                    new_G <- Matrix::forceSymmetric(new_G) 
+                    new_G <- Matrix::forceSymmetric(new_G)
            
                     diff <- 0.5 * mean(as.vector((new_G - cw_G)^2))
                     if(G_control$trace > 0)
@@ -216,14 +216,14 @@
                          message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
                     counter <- counter + 1
                     }
-                    
+
                if(err[length(err)] < min_err) {
                     best_Loading <- new_Loading
                     best_nugget <- G_control$nugget_profile[k0]
                     min_err <- err[length(err)]
                     }
                }
-          
+
           out <- list(Loading = best_Loading,
                       nugget = best_nugget,
                       cov = tcrossprod(best_Loading) + diag(x = best_nugget, nrow = num_spp))
@@ -242,8 +242,8 @@
                
                do_svd <- svd(Gtilde)
                new_approx <- do_svd$u[, 1:num_rank,drop=FALSE] %*% tcrossprod(diag(x = do_svd$d[1:num_rank], nrow = num_rank), do_svd$v[, 1:num_rank,drop=FALSE])
-               new_nugget <- mean(diag(G - new_approx))
-                         
+               new_nugget <- max(mean(diag(G - new_approx)), .Machine$double.eps
+)
                err <- c(err, 0.5 * mean((G - new_approx - diag(x = new_nugget, nrow = num_spp))^2))
                diff <- err[length(err)-1]/err[length(err)] - 1
                if(G_control$trace)
@@ -252,11 +252,11 @@
                counter <- counter + 1
                }
                rm(do_svd)
-          
+
           do_svd <- svd(new_approx)
           new_Loading <- do_svd$u[, 1:num_rank,drop=FALSE] %*% diag(x = sqrt(do_svd$d[1:num_rank]), nrow = num_rank)
           rm(do_svd)
-          
+
           out <- list(Loading = new_Loading, nugget = new_nugget, cov = tcrossprod(new_Loading) + diag(x = new_nugget, nrow = num_spp))
           out$invcov <- chol2inv(chol(out$cov))
           return(out)
