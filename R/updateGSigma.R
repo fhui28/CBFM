@@ -239,23 +239,24 @@
           cw_nugget <- min(diag(G))*0.1
           while(diff > G_control$tol & counter < G_control$maxit) {
                Gtilde <- G - diag(x = cw_nugget, nrow = num_spp)
+               Gtilde <- 0.5 * (Gtilde + t(Gtilde))
                
-               do_svd <- svd(Gtilde)
-               new_approx <- do_svd$u[, 1:num_rank,drop=FALSE] %*% tcrossprod(diag(x = do_svd$d[1:num_rank], nrow = num_rank), do_svd$v[, 1:num_rank,drop=FALSE])
-               new_nugget <- max(mean(diag(G - new_approx)), .Machine$double.eps
-)
-               err <- c(err, 0.5 * mean((G - new_approx - diag(x = new_nugget, nrow = num_spp))^2))
+               eig <- eigen(Gtilde, symmetric = TRUE)
+               shrunk_values <- pmax(eig$values[1:num_rank] - G_control$loading_penalty, 0)
+               
+               #do_svd <- svd(Gtilde)
+               #new_approx <- do_svd$u[, 1:num_rank,drop=FALSE] %*% tcrossprod(diag(x = do_svd$d[1:num_rank], nrow = num_rank), do_svd$v[, 1:num_rank,drop=FALSE])
+               new_Loading <- sweep(eig$vectors[, 1:num_rank, drop = FALSE], MARGIN = 2, STATS = sqrt(shrunk_values), FUN = "*")
+               new_approx <- tcrossprod(new_Loading)
+               new_nugget <- max(mean(diag(G - new_approx)), .Machine$double.eps)
+               err <- c(err, 
+                        0.5 * sum((G - new_approx - diag(x = new_nugget, nrow = num_spp))^2) + G_control$loading_penalty * sum(new_Loadings^2))
                diff <- err[length(err)-1]/err[length(err)] - 1
                if(G_control$trace)
                     message("Inner iteration: ", counter, "\t Difference: ", round(diff,5))
                cw_nugget <- new_nugget
                counter <- counter + 1
                }
-               rm(do_svd)
-
-          do_svd <- svd(new_approx)
-          new_Loading <- do_svd$u[, 1:num_rank,drop=FALSE] %*% diag(x = sqrt(do_svd$d[1:num_rank]), nrow = num_rank)
-          rm(do_svd)
 
           out <- list(Loading = new_Loading, nugget = new_nugget, cov = tcrossprod(new_Loading) + diag(x = new_nugget, nrow = num_spp))
           out$invcov <- chol2inv(chol(out$cov))
