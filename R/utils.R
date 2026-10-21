@@ -208,7 +208,7 @@
 
 
 ## Get the full S matrix from GAMs. Relies on the fact gam always move the parametric terms first
-.get_bigS <- function(fit_gam, num_X = length(coef(fit_gam))) {
+.get_bigS <- function(fit_gam, num_X) {
    bigS <- Matrix::Matrix(0, nrow = num_X, ncol = num_X, sparse = TRUE)
    num_smooth_terms <- length(fit_gam$smooth)
    if(num_smooth_terms == 0)
