@@ -237,56 +237,57 @@ residuals.CBFM <- function(object, type = "response", seed = NULL, ...) {
 #' @export
 # Note Pearson residuals currently not allowed
 residuals.CBFM_hurdle <- function(object, type = "response", seed = NULL, ...) {
-        if(!inherits(object, "CBFM_hurdle")) 
-                stop("`object' is not of class \"CBFM_hurdle\"")
-
-        type <- match.arg(type, choices = c("response", "dunnsmyth", "PIT"))
-        num_units <- nrow(object$count_fit$y)
-        num_spp <- ncol(object$count_fit$y)
-
+     if(!inherits(object, "CBFM_hurdle")) 
+          stop("`object' is not of class \"CBFM_hurdle\"")
      
-        out <- object$count_fit$y - fitted.CBFM_hurdle(object)
-        if(type == "response")
-                out <- out
+     type <- match.arg(type, choices = c("response", "dunnsmyth", "PIT"))
+     num_units <- nrow(object$count_fit$y)
+     num_spp <- ncol(object$count_fit$y)
      
-        if(type %in% c("PIT","dunnsmyth")) {
-                set.seed(seed)
-                getfits <- object$count_fit$fitted
-                getfits[is.na(getfits)] <- 1 # This should not matter
-                if(object$count_fit$family$family[1] %in% c("ztpoisson")) {
-                        a <- .phurdlepoisson(pmax(0,object$count_fit$y-1), lambda = getfits, zeroprob = 1 - object$pa_fit$fitted)
-                        a <- matrix(a, nrow = num_units, ncol = num_spp)
-                        a[object$count_fit$y == 0] <- 0 ## Anything with a zero count should have a lower DS residual limit of zero
-                        b <- .phurdlepoisson(object$count_fit$y, lambda = getfits, zeroprob = 1 - object$pa_fit$fitted)
-                        b <- matrix(b, nrow = num_units, ncol = num_spp)
-                        }
-                if(object$count_fit$family$family[1] %in% c("ztnegative.binomial")) {
-                        a <- .phurdlenb2(pmax(0,object$count_fit$y-1), mu = getfits, 
-                                         phi = matrix(object$count_fit$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE), 
-                                         zeroprob = 1 - object$pa_fit$fitted)
-                        a <- matrix(a, nrow = num_units, ncol = num_spp)
-                        a[object$count_fit$y == 0] <- 0 ## Anything with a zero count should have a lower DS residual limit of zero
-                        b <- .phurdlenb2(object$count_fit$y, mu = getfits, 
-                                         phi = matrix(object$count_fit$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE), 
-                                         zeroprob = 1 - object$pa_fit$fitted)
-                        b <- matrix(b, nrow = num_units, ncol = num_spp)
-                        }
-                        
-        out <- runif(length(object$count_fit$y), min = a, max = b)
-        rm(a, b, getfits)
+     
+     out <- object$count_fit$y - fitted.CBFM_hurdle(object)
+     if(type == "response")
+          out <- out
+     
+     if(type %in% c("PIT","dunnsmyth")) {
+          set.seed(seed)
+          #getfits <- object$count_fit$fitted
+          #getfits[is.na(getfits)] <- 1 # This should not matter
+          getfits <- exp(object$count_fit$linear_predictors)
+          if(object$count_fit$family$family[1] %in% c("ztpoisson")) {
+               a <- .phurdlepoisson(pmax(0,object$count_fit$y-1), lambda = getfits, zeroprob = 1 - object$pa_fit$fitted)
+               a <- matrix(a, nrow = num_units, ncol = num_spp)
+               a[object$count_fit$y == 0] <- 0 ## Anything with a zero count should have a lower DS residual limit of zero
+               b <- .phurdlepoisson(object$count_fit$y, lambda = getfits, zeroprob = 1 - object$pa_fit$fitted)
+               b <- matrix(b, nrow = num_units, ncol = num_spp)
+          }
+          if(object$count_fit$family$family[1] %in% c("ztnegative.binomial")) {
+               a <- .phurdlenb2(pmax(0,object$count_fit$y-1), mu = getfits, 
+                                phi = matrix(object$count_fit$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE), 
+                                zeroprob = 1 - object$pa_fit$fitted)
+               a <- matrix(a, nrow = num_units, ncol = num_spp)
+               a[object$count_fit$y == 0] <- 0 ## Anything with a zero count should have a lower DS residual limit of zero
+               b <- .phurdlenb2(object$count_fit$y, mu = getfits, 
+                                phi = matrix(object$count_fit$dispparam, nrow = num_units, ncol = num_spp, byrow = TRUE), 
+                                zeroprob = 1 - object$pa_fit$fitted)
+               b <- matrix(b, nrow = num_units, ncol = num_spp)
+          }
+          
+          out <- runif(length(object$count_fit$y), min = a, max = b)
+          rm(a, b, getfits)
           out[which(out > (1-.Machine$double.eps))] <- (1-.Machine$double.eps)
           out[which(out < .Machine$double.eps)] <- .Machine$double.eps
-
-        if(type == "dunnsmyth")
+          
+          if(type == "dunnsmyth")
                out <- qnorm(out)
           
           out <- matrix(out, nrow = num_units, ncol = num_spp)
           rownames(out) <- rownames(object$count_fit$y)
           colnames(out) <- colnames(object$count_fit$y)
-          }
-          
+     }
+     
      
      set.seed(NULL)
      return(out)
-     }
+}
 
