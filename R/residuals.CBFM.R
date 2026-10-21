@@ -252,8 +252,8 @@ residuals.CBFM_hurdle <- function(object, type = "response", seed = NULL, ...) {
      if(type %in% c("PIT","dunnsmyth")) {
           set.seed(seed)
           #getfits <- object$count_fit$fitted
-          #getfits[is.na(getfits)] <- 1 # This should not matter
           getfits <- exp(object$count_fit$linear_predictors)
+          getfits[is.na(getfits)] <- 1 # This should not matter
           if(object$count_fit$family$family[1] %in% c("ztpoisson")) {
                a <- .phurdlepoisson(pmax(0,object$count_fit$y-1), lambda = getfits, zeroprob = 1 - object$pa_fit$fitted)
                a <- matrix(a, nrow = num_units, ncol = num_spp)
