@@ -208,13 +208,17 @@
 
 
 ## Get the full S matrix from GAMs. Relies on the fact gam always move the parametric terms first
-.get_bigS <- function(fit_gam, num_X) {
-   bigS <- Matrix::Matrix(0, num_X, num_X, sparse = TRUE)
+.get_bigS <- function(fit_gam, num_X = length(coef(fit_gam))) {
+   bigS <- Matrix::Matrix(0, nrow = num_X, ncol = num_X, sparse = TRUE)
    num_smooth_terms <- length(fit_gam$smooth)
    if(num_smooth_terms == 0)
       return(bigS)
    
-   num_Smatrices_per_smooth <- lapply(fit_gam$smooth, function(x) length(x$S)) # The sum of this should equal length(fit_gam$full.sp), or equivalently fit_gam$smooth[[num_smooth_terms]]$last.sp
+   all_sp <- if(!is.null(fit_gam$full.sp)) fit_gam$full.sp else  fit_gam$sp
+   if(is.null(all_sp))
+        stop("No smoothing parameters found in fit_gam$full.sp or fit_gam$sp.")
+   
+   num_Smatrices_per_smooth <- lapply(fit_gam$smooth, function(x) length(x$S)) # The sum of this should equal all_sp, or equivalently fit_gam$smooth[[num_smooth_terms]]$last.sp
    sp_index <- split(1:fit_gam$smooth[[num_smooth_terms]]$last.sp, rep(1:num_smooth_terms, num_Smatrices_per_smooth)) # Because fs, te, and ti smooths have multiple S and smoothing parameters, then this tells you how many and indexes the S/sp's within each smooth term. This is very similar to extracting first.sp and last.sp from each smooth
    rm(num_Smatrices_per_smooth)
    #num_smooth_cols <- sum(sapply(fit_gam$smooth, function(x) x$df)) # According to ?smooth.construct, this is the degrees of freedom associated with this term when unpenalized and unconstrained
@@ -222,10 +226,10 @@
    num_parametric_cols <- num_X - num_smooth_cols
 
    subS <- lapply(1:num_smooth_terms, function(j) {
-      out <- fit_gam$full.sp[sp_index[[j]][1]] * fit_gam$smooth[[j]]$S[[1]]
+      out <- all_sp[sp_index[[j]][1]] * fit_gam$smooth[[j]]$S[[1]]
       if(length(sp_index[[j]]) > 1) { # To deal with smooths that have multiple S matrices and smoothing parameters
          for(l0 in 2:length(sp_index[[j]]))
-            out <- out + fit_gam$full.sp[sp_index[[j]][l0]] * fit_gam$smooth[[j]]$S[[l0]]
+            out <- out + all_sp[sp_index[[j]][l0]] * fit_gam$smooth[[j]]$S[[l0]]
           }
       
       if(any(!is.finite(out))) {
