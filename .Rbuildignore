@@ -9,6 +9,7 @@
 ^.github
 ^paper$
 DiscussionwithChris_CBFMmultipleSigmamatrices.pdf
+notes.R
 ^dev$
 ^revdep$
 ^README.Rmd$

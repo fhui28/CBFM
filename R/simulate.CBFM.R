@@ -184,7 +184,7 @@ simulate.CBFM <- function (object, nsim = 1, seed = NULL, max_resp = Inf, condit
                                              G = true_model$G,
                                              trial_size = true_model$trial_size,
                                              dispparam = true_model$dispparam, 
-                                             powerparam = true_model$dispparam, 
+                                             powerparam = true_model$powerparam, 
                                              max_resp = max_resp,
                                              only_y = TRUE)
                       )

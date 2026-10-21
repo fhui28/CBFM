@@ -3,7 +3,7 @@
 #' @description 
 #' `r lifecycle::badge("stable")`
 #' 
-#' For each species, partition the variance of the linear predictor from a fitted `CBFM` object into components associated with (groups of) the covariates, and the basis function included; see Hui et al., (2023) for more details.
+#' For each species, partition the variance of the linear predictor from a fitted `CBFM` object into components associated with (groups of) the covariates, and the included basis function; see Hui et al., (2023) for more details.
 #' 
 #' @param object An object of class `CBFM`.
 #' @param groupX A vector of group indicator variables, which allows the variance partitioning to be done for groups of covariates (including the intercept) i.e., calculating how much of the total variation does a certain subset of the covariates explain. The length of `groupX` must be equal to `ncol(object$betas)`. Defaults to `NULL`, in which case all the covariates are treated as a single group.
@@ -13,9 +13,9 @@
 #' 
 #' \deqn{g(\mu_{ij}) = \eta_{ij} = x_i^\top\beta_j + b_i^\top a_j,}
 #'
-#' where \eqn{g(.)} is a known link function, \eqn{x_i^\top\beta_j} is the component of the linear predictor due to the explained covariates (however they end up being included in the CBFM fit), and \eqn{b_i^\top a_j} is the component due to the inclusion of basis functions noting it may include spatial, temporal, and/or spatio-temporal basis functions. Note for zero-inflated distributions, this \eqn{\mu_{ij}} is the mean of the count component i.e., the variance partitioning does not take into account/is not applied to covariates used in modeling the probability of zero-inflation.
+#' where \eqn{g(.)} is a known link function, \eqn{x_i^\top\beta_j} is the component of the linear predictor due to the measured covariates (however they end up being included in the CBFM fit), and \eqn{b_i^\top a_j} is the component due to the inclusion of basis functions noting it may include spatial, temporal, and/or spatio-temporal basis functions. Note for zero-inflated distributions, this \eqn{\mu_{ij}} is the mean of the count component i.e., the variance partitioning does not take into account/is not applied to covariates used in modeling the probability of zero-inflation.
 #'     
-#' For each species, variation partitioning is performed by calculating the variance due to each component in \eqn{\eta_{ij}}, and then rescaling them to ensure they sum to one. The general details of this type of variation partitioning is given in Ovaskainen et al., (2017) and Bjork et al. (2018) among others for latent variables models. Note the variance due the basis functions is itself broken up into components depending on what basis functions are included in the model. For example, if a fitted `CBFM` object included basis functions for `B_space` and `B_space` (but not `B_spacetime`), then the variance is partitioned into separate components for the spatial and temporal basis functions (Hui et al., 2023)
+#' For each species, variation partitioning is performed by calculating the variance due to each component in \eqn{\eta_{ij}}, and then rescaling them to ensure they sum to one. The general details of this type of variation partitioning is given in Ovaskainen et al., (2017) and Bjork et al. (2018) among others for latent variables models. Note the variance due the basis functions is itself broken up into components depending on what basis functions are included in the model. For example, if a fitted `CBFM` object included basis functions for `B_space` and `B_time`, but not `B_spacetime`, then the variance is partitioned into separate components for the spatial and temporal basis functions (Hui et al., 2023)
 #'
 #' If `groupX` is supplied, the variance due to the included covariates is done based on subsets of covariates (including the intercept) as identified by `groupX`, and then rescaled correspondingly. This is useful if one was to, for example, quantify the proportion of variation in each species which is explained by each specific environmental covariate and there are multiple terms associated with each covariate e.g., due to polynomial or smoothing terms.
 #'
@@ -23,7 +23,7 @@
 #'
 #' @return A list with the following components (if applicable):
 #' \describe{
-#' \item{varpart_X}{Vector containing the proportion of variance for each species explained by measure predictors, and grouped according to `groupX` if supplied.}
+#' \item{varpart_X}{Vector containing the proportion of variance for each species explained by the measured predictors, and grouped according to `groupX` if supplied.}
 
 #' \item{varpart_B_space}{Vector containing the proportion of variance for each species explained by spatial basis functions.}
 
@@ -119,56 +119,61 @@
 #' @importFrom stats cor cov var
 #' @md
 
-varpart <- function(object, groupX = NULL) {
-    if(!inherits(object, "CBFM")) 
-        stop("`object' is not of class \"CBFM\"")
-
-    num_spp <- nrow(object$betas)
+varpart <- function(object, 
+                    groupX = NULL) {
+     if(!inherits(object, "CBFM")) 
+          stop("`object' is not of class \"CBFM\"")
      
-     #tmp_formula <- as.formula(paste("response", paste(as.character(object$formula),collapse = " ") ) )
-     #nullfit <- gam(tmp_formula, data = data.frame(response = runif(nrow(object$y)), object$data), fit = TRUE, control = list(maxit = 1))
+     num_spp <- nrow(object$betas)
+     
      X <- model.matrix.CBFM(object)
-     #rm(tmp_formula, nullfit)
      rownames(X) <- rownames(object$data)
-    
+     
      if(!is.null(groupX)) { 
           if(length(groupX) != ncol(object$betas)) 
                stop("If groupX is supplied, then it must be a vector with the length equal to ncol(object$betas).") 
-        }
-
-    #if(!is.null(object$traits)) {
-    #    trait.linpred <- array(0, dim = c(nrow(fit.mcmc), object$n, num_spp))
-    #    all_cors_spp <- matrix(0, nrow(fit.mcmc), num_spp)
-    #    }
-
-    X_var <- tcrossprod(X, object$betas)
-    X_var[is.na(object$y)] <- NA
-    X_var <- apply(tcrossprod(X, object$betas), 2, var, na.rm = TRUE)
-    if(!is.null(groupX)) {
-          X_var <- matrix(0, nrow = length(unique(groupX)), ncol = num_spp)        
-          for(k0 in 1:length(unique(groupX))) {
-              cw_X_var <- tcrossprod(X[,which(groupX==k0),drop=FALSE], object$betas[,which(groupX==k0),drop=FALSE])
-              cw_X_var[is.na(object$y)] <- NA
-              X_var[k0,] <- apply(cw_X_var, 2, var, na.rm = TRUE)
+          if (anyNA(groupX)) 
+               stop("`groupX` must not contain missing values.")
+     }
+     
+     #if(!is.null(object$traits)) {
+     #    trait.linpred <- array(0, dim = c(nrow(fit.mcmc), object$n, num_spp))
+     #    all_cors_spp <- matrix(0, nrow(fit.mcmc), num_spp)
+     #    }
+     
+     X_var <- tcrossprod(X, object$betas)
+     X_var[is.na(object$y)] <- NA
+     X_var <- apply(X_var, 2, var, na.rm = TRUE)
+     if(!is.null(groupX)) {
+          ug <- unique(groupX) 
+          X_var <- matrix(0, nrow = length(ug), ncol = num_spp)        
+          for(k0 in seq_along(ug)) {
+               sel_cols <- which(groupX == ug[k0])
+               cw_X_var <- tcrossprod(X[, sel_cols, drop = FALSE], object$betas[, sel_cols, drop = FALSE])
+               cw_X_var[is.na(object$y)] <- NA
+               X_var[k0,] <- apply(cw_X_var, 2, var, na.rm = TRUE)
                }
-          }
           
+          rownames(X_var) <- paste0("Group", ug)
+          colnames(X_var) <- rownames(object$betas)
+          }
+     
      B_space_var <- B_time_var <- B_spacetime_var <- rep(0, num_spp)
      if(object$which_B_used[1]) {
-        cw_B_var <- tcrossprod(object$B[,1:object$num_B_space,drop=FALSE], object$basis_effects_mat[,1:object$num_B_space,drop=FALSE])
-        cw_B_var[is.na(object$y)] <- NA
-        B_space_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
-        }
+          cw_B_var <- tcrossprod(object$B[,1:object$num_B_space,drop=FALSE], object$basis_effects_mat[,1:object$num_B_space,drop=FALSE])
+          cw_B_var[is.na(object$y)] <- NA
+          B_space_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
+     }
      if(object$which_B_used[2]) {
-        cw_B_var <- tcrossprod(object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE], object$basis_effects_mat[,object$num_B_space + (1:object$num_B_time),drop=FALSE])
-        cw_B_var[is.na(object$y)] <- NA
-         B_time_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
-        }
+          cw_B_var <- tcrossprod(object$B[,object$num_B_space + (1:object$num_B_time),drop=FALSE], object$basis_effects_mat[,object$num_B_space + (1:object$num_B_time),drop=FALSE])
+          cw_B_var[is.na(object$y)] <- NA
+          B_time_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
+     }
      if(object$which_B_used[3]) {
-        cw_B_var <- tcrossprod(object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE], object$basis_effects_mat[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE])
-        cw_B_var[is.na(object$y)] <- NA
-        B_spacetime_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
-        }
+          cw_B_var <- tcrossprod(object$B[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE], object$basis_effects_mat[,object$num_B_space + object$num_B_time + (1:object$num_B_spacetime),drop=FALSE])
+          cw_B_var[is.na(object$y)] <- NA
+          B_spacetime_var <- apply(cw_B_var, 2, var, na.rm = TRUE)
+     }
      #if(!is.null(object$traits)) {
      #     cw.traits.coefs <- cbind(fit.mcmc[k, grep("traits.int",colnames(fit.mcmc))], matrix(fit.mcmc[k, grep("traits.coefs",colnames(fit.mcmc))], nrow = ncol(object$X)+1))
      #     rownames(cw.traits.coefs) <- c("beta0", colnames(object$X))
@@ -176,7 +181,7 @@ varpart <- function(object, groupX = NULL) {
      #     cw.trait.linpred <- tcrossprod(cbind(1,object$X), trait.X.coefs)
      #     all_cors_spp[k,] <-  sapply(1:num_spp, function(i) cor(cw.X.linpred[,i], cw.trait.linpred[,i])^2)
      #     }
-    
+     
      B_total_var <- B_space_var + B_time_var + B_spacetime_var
      if(is.null(groupX)) {
           var_X <- X_var / (X_var + B_total_var) 
@@ -185,32 +190,29 @@ varpart <- function(object, groupX = NULL) {
           var_Bspacetime <- B_spacetime_var / (X_var + B_total_var)
           names(var_X) <- names(var_Bspace) <- names(var_Btime) <- names(var_Bspacetime) <- rownames(object$betas)
           }
-
      if(!is.null(groupX)) {
-          var_X <- matrix(0, nrow = length(unique(groupX)), ncol = num_spp) 
-          for(k0 in 1:length(unique(groupX))) 
-               var_X[k0,] <- X_var[k0,] / (colSums(X_var) + B_total_var)
-          rownames(var_X) <- paste0("Group", unique(groupX))
+          denominator <- colSums(X_var) + B_total_var
+          var_X <- sweep(X_var, 2, denominator, "/")
           
           var_Bspace <- B_space_var / (colSums(X_var) + B_total_var)
           var_Btime <- B_time_var / (colSums(X_var) + B_total_var)
           var_Bspacetime <- B_spacetime_var / (colSums(X_var) + B_total_var)
           colnames(var_X) <- names(var_Bspace) <- names(var_Btime) <- names(var_Bspacetime) <- rownames(object$betas)
           }
-
-          
-    out <- list(varpart_X = var_X)
+     
+     
+     out <- list(varpart_X = var_X)
      if(object$which_B_used[1])
           out$varpart_B_space <- var_Bspace
      if(object$which_B_used[2])
           out$varpart_B_time <- var_Btime
      if(object$which_B_used[3])
           out$varpart_B_spacetime <- var_Bspacetime
-    #if(!is.null(object$traits)) {
-    #    out$R2.traits <- colMeans(all_cors_spp)
-    #    names(all_cors_spp) <- colnames(object$y) 
-    #    }
-    return(out)
-    }
+     #if(!is.null(object$traits)) {
+     #    out$R2.traits <- colMeans(all_cors_spp)
+     #    names(all_cors_spp) <- colnames(object$y) 
+     #    }
+     return(out)
+     }
 
 
